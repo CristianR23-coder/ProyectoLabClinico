@@ -1,0 +1,117 @@
+@import "primeicons/primeicons.css";
+
+/* ===== RESET/BASE PARA QUE EL MENU SE FUSIONE CON EL ASIDE ===== */
+::ng-deep .sidebar-menu,
+::ng-deep .sidebar-menu .p-panelmenu,
+::ng-deep .sidebar-menu .p-panelmenu-panel,
+::ng-deep .sidebar-menu .p-panelmenu-content {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+/* ===== CABECERAS (nivel 1) ===== */
+::ng-deep .sidebar-menu .p-panelmenu-header > a {
+  background: transparent !important;
+  color: #eaf2ff !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: .6rem .65rem !important;
+  display: flex; align-items: center; gap: .6rem;
+}
+::ng-deep .sidebar-menu .p-panelmenu-header > a:hover,
+::ng-deep .sidebar-menu .p-panelmenu-header > a:focus {
+  background: rgba(255,255,255,.10) !important;
+}
+
+/* Estado expandido (similar al “activo” del modelo) */
+::ng-deep .sidebar-menu .p-panelmenu-header.p-highlight > a {
+  background: rgba(255,255,255,.12) !important;
+  border-left: 3px solid #22d3ee !important; /* barra cian a la izquierda */
+  padding-left: .55rem !important;           /* compensa la barra */
+}
+
+/* ===== ITEMS INTERNOS ===== */
+::ng-deep .sidebar-menu .p-menuitem-link {
+  background: transparent !important;
+  color: #eaf2ff !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: .5rem .6rem .5rem 2rem !important; /* sangría */
+  display: flex; align-items: center; gap: .55rem;
+}
+::ng-deep .sidebar-menu .p-menuitem-link:hover,
+::ng-deep .sidebar-menu .p-menuitem-link:focus {
+  background: rgba(255,255,255,.10) !important;
+}
+
+/* Item activo (subnivel) con indicador izquierdo */
+::ng-deep .sidebar-menu .p-menuitem-link.p-menuitem-link-active {
+  background: rgba(255,255,255,.12) !important;
+  border-left: 3px solid #22d3ee !important;
+  padding-left: 1.8rem !important; /* compensa la barra */
+}
+
+/* Íconos y carets en claro */
+::ng-deep .sidebar-menu .p-menuitem-icon,
+::ng-deep .sidebar-menu .p-panelmenu-header .p-panelmenu-icon {
+  color: #ffffff !important;
+  opacity: .95;
+}
+
+/* Scroll sutil */
+::ng-deep .sidebar-menu .p-panelmenu { overflow: auto; }
+
+/* === COLORES BASE (texto e iconos) === */
+:host ::ng-deep .sidebar-menu .p-panelmenu-header > a,
+:host ::ng-deep .sidebar-menu .p-menuitem-link {
+  color: #facc15 !important; /* texto amarillo */
+}
+
+:host ::ng-deep .sidebar-menu .p-panelmenu-header > a .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-menuitem-link .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-panelmenu-header .p-panelmenu-icon {
+  color: #facc15 !important; /* iconos amarillos */
+}
+
+/* === HOVER === */
+:host ::ng-deep .sidebar-menu .p-panelmenu-header > a:hover,
+:host ::ng-deep .sidebar-menu .p-menuitem-link:hover {
+  color: #ffffff !important; /* texto blanco en hover */
+}
+
+:host ::ng-deep .sidebar-menu .p-panelmenu-header > a:hover .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-menuitem-link:hover .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-panelmenu-header > a:hover .p-panelmenu-icon {
+  color: #ffffff !important; /* iconos blancos en hover */
+}
+
+/* === ACTIVO/SELECCIONADO === */
+:host ::ng-deep .sidebar-menu .p-menuitem-link.p-menuitem-link-active {
+  color: #22d3ee !important; /* cian para activo */
+}
+
+:host ::ng-deep .sidebar-menu .p-menuitem-link.p-menuitem-link-active .p-menuitem-icon {
+  color: #22d3ee !important;
+}
+
+/* === (Opcional) Heredar color en todo el árbol del menú === */
+:host ::ng-deep .sidebar-menu * {
+  color: inherit;
+}
+
+/* ==== ITEM ACTIVO CON ROUTER ==== */
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active,
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active-exact {
+  background: rgba(255, 255, 255, 0.12) !important; /* sombreado */
+  color: #22d3ee !important;                        /* texto cian */
+  border-left: 3px solid #22d3ee !important;        /* barra izquierda */
+  padding-left: 1.8rem !important;                  /* compensar la barra */
+}
+
+/* Icono del item activo */
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active-exact .p-menuitem-icon {
+  color: #22d3ee !important;
+}

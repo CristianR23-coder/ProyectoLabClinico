@@ -1,0 +1,45 @@
+/* Shell general en 2 columnas: ASIDE | CONTENIDO */
+.app-shell{
+  /* Ancho del aside controlado por variable */
+  --aside-width: 14rem; /* ~= w-56 de Tailwind (224px) */
+
+  display: grid;
+  grid-template-columns: var(--aside-width) 1fr;
+  grid-template-rows: 60px 1fr auto;
+  grid-template-areas:
+    "aside header"
+    "aside main"
+    "aside footer";
+  height: 100vh;
+  transition: grid-template-columns .3s ease;
+}
+
+/* Áreas */
+.header-area { grid-area: header; }
+.aside-area  { grid-area: aside; overflow: hidden; border-right: 1px solid #e5e7eb; }
+.main-area   { grid-area: main; min-width: 0; }   /* permite que el contenido se reduzca correctamente */
+.footer-area { grid-area: footer; }
+
+/* Estado ABIERTO: aside con ancho */
+.app-shell.aside-open{
+  --aside-width: 14rem; /* 224px */
+}
+
+/* Estado CERRADO: aside a 0 */
+.app-shell.aside-closed{
+  --aside-width: 0;
+}
+
+/* Opcional: cuando está cerrado, evita sombras/bordes y eventos dentro del aside */
+.app-shell.aside-closed .aside-area{
+  border-right: 0;
+  pointer-events: none;
+}
+
+.aside-area { transition: width .3s ease, border-color .3s ease; }
+.aside-area {
+  grid-area: aside;
+  overflow: hidden;
+  border-right: 0;
+}
+  

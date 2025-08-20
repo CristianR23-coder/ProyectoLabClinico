@@ -1,0 +1,29 @@
+.lab-footer.p-toolbar {
+  background: #1f3b99;         /* azul como el header */
+  color: #ffffff;
+  border-radius: 0;
+  border: none;
+  min-height: 40px;
+  padding: 0 .75rem;
+  align-items: center;         /* centra verticalmente */
+  font-size: 0.85rem;
+}
+
+/* Flex de los grupos */
+.lab-footer .left,
+.lab-footer .right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Enlaces */
+.lab-footer .footer-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.lab-footer .footer-link:hover {
+  text-decoration: underline;
+}
