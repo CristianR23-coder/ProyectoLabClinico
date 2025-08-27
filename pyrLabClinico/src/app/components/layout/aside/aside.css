@@ -1,0 +1,130 @@
+@import "primeicons/primeicons.css";
+
+/* ===== RESET/BASE PARA QUE EL MENU SE FUSIONE CON EL ASIDE ===== */
+::ng-deep .sidebar-menu,
+::ng-deep .sidebar-menu .p-panelmenu,
+::ng-deep .sidebar-menu .p-panelmenu-panel,
+::ng-deep .sidebar-menu .p-panelmenu-content {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+/* ===== CABECERAS (nivel 1) ===== */
+::ng-deep .sidebar-menu .p-panelmenu-header > a {
+  background: transparent !important;
+  color: #eaf2ff !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: .6rem .65rem !important;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+::ng-deep .sidebar-menu .p-panelmenu-header > a:hover,
+::ng-deep .sidebar-menu .p-panelmenu-header > a:focus {
+  background: #ffffff1a !important;
+}
+
+/* Estado expandido (activo) */
+::ng-deep .sidebar-menu .p-panelmenu-header.p-highlight > a {
+  background: #ffffff1f !important;
+  border-left: 3px solid #22d3ee !important;
+  padding-left: .55rem !important;
+}
+
+/* ===== ITEMS INTERNOS ===== */
+::ng-deep .sidebar-menu .p-menuitem-link {
+  background: transparent !important;
+  color: #eaf2ff !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: .5rem .6rem .5rem 2rem !important; /* sangría */
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+::ng-deep .sidebar-menu .p-menuitem-link:hover,
+::ng-deep .sidebar-menu .p-menuitem-link:focus {
+  background: rgba(255, 255, 255, .10) !important;
+}
+
+/* Item activo (subnivel) con indicador izquierdo */
+::ng-deep .sidebar-menu .p-menuitem-link.p-menuitem-link-active {
+  background: rgba(255, 255, 255, .12) !important;
+  border-left: 3px solid #22d3ee !important;
+  padding-left: 1.8rem !important;
+}
+
+/* Scroll sutil */
+::ng-deep .sidebar-menu .p-panelmenu {
+  overflow: auto;
+}
+
+/* === (Opcional) Heredar color en todo el árbol === */
+:host ::ng-deep .sidebar-menu * {
+  color: inherit;
+}
+
+/* ==== ITEM ACTIVO CON ROUTER ==== */
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active,
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active-exact {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #22d3ee !important;
+  border-left: 3px solid #22d3ee !important;
+  padding-left: 1.8rem !important;
+}
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-menuitem-link.router-link-active-exact .p-menuitem-icon {
+  color: #22d3ee !important;
+}
+
+/* =========================
+   MODO EXPANDIDO (por defecto)
+   ========================= */
+::ng-deep .sidebar-menu .p-menuitem-link {
+  padding: .5rem .6rem .5rem clamp(1rem, 6%, 2.5rem) !important;
+  display: flex;
+  align-items: center;
+  gap: clamp(.4rem, 2.5vw, .75rem);
+}
+.app-shell.aside-open ::ng-deep .sidebar-menu .p-panelmenu-header.p-highlight > a {
+  border-left: 3px solid #22d3ee !important;
+  padding-left: .55rem !important;
+}
+
+/* === COLAPSADO (icon-only) === */
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu,
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu-panel,
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu-content {
+  overflow: visible;
+}
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu-content {
+  display: none !important;
+}
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu-header-link,
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-menuitem-link {
+  width: 100% !important;
+  height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border-left: 0 !important;
+}
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu-header-link svg.p-icon,
+:host-context(.aside-closed) ::ng-deep .sidebar-menu .p-panelmenu-header-label {
+  display: none !important;
+}
+:host-context(.aside-closed) .section-title,
+:host-context(.aside-closed) h6 {
+  display: none;
+}
+
+/* ===== HOVER (unificado) ===== */
+:host ::ng-deep .sidebar-menu .p-panelmenu-header-link:hover .p-menuitem-icon,
+:host ::ng-deep .sidebar-menu .p-menuitem-link:hover .p-menuitem-icon {
+  color: #0f172a !important; /* azul oscuro visible */
+}

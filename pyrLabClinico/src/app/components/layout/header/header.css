@@ -1,0 +1,19 @@
+@import "primeicons/primeicons.css";
+
+/* Botones Prime sin fondo/borde: */
+:host ::ng-deep .p-button { background: transparent !important; border: 0 !important; padding: 0 !important; }
+:host ::ng-deep .p-button:enabled:hover { background: transparent !important; }
+
+/* PrimeIcons (los <i class="pi ...">) */
+:host ::ng-deep .pi { color: #1f3b99; transition: color .2s ease; }
+:host ::ng-deep .pi:hover { color: #22d3ee; }
+
+/* Solo los SVG de iconos (campana/grid), NO los arcos */
+:host .icon-svg { stroke: #1f3b99; fill: none; transition: stroke .2s; }
+:host .icon-svg:hover { stroke: #22d3ee; }
+
+/* SVG de los arcos de "settings": forzamos sin relleno y en blanco */
+:host .ring-svg circle { fill: none !important; stroke: #ffffff; }
+
+/* Punto naranja de notificaciones: */
+:host .notif-dot { top: -2px; right: 6px; width: 10px; height: 10px; }

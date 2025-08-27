@@ -1,0 +1,22 @@
+<main class="app-shell" [class.aside-open]="isAsideOpen" [class.aside-closed]="!isAsideOpen">
+  <header class="header-area">
+    <app-header></app-header>
+  </header>
+
+  <aside class="aside-area">
+    <!-- 👇 recibe el click desde el aside -->
+    <app-aside [isAsideOpen]="isAsideOpen"
+               (toggleAside)="isAsideOpen = !isAsideOpen">
+    </app-aside>
+  </aside>
+
+  <content class="main-area">
+    <router-outlet></router-outlet>
+    <app-content></app-content>
+  </content>
+
+  <footer class="footer-area">
+    <app-footer></app-footer>
+  </footer>
+</main>
+

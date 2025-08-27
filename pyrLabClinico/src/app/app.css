@@ -1,0 +1,39 @@
+/* Shell */
+.app-shell{
+  --aside-width: 14rem;
+  display: grid;
+  grid-template-columns: var(--aside-width) 1fr;
+  grid-template-rows: 60px 1fr auto;
+  grid-template-areas:
+    "aside header"
+    "aside main"
+    "aside footer";
+  height: 100vh;
+  transition: grid-template-columns .3s ease;
+  gap: 0; /* asegúrate de no tener separación */
+}
+
+/* Áreas */
+.header-area { grid-area: header; }
+.aside-area  { grid-area: aside; overflow: hidden; /* ❌ sin borde aquí */ }
+.main-area   { grid-area: main; min-width: 0; }
+.footer-area { grid-area: footer; }
+
+/* Pon el separador entre aside y contenido solo donde lo necesitas */
+.header-area,
+.main-area {
+  border-left: 1px solid #e5e7eb;
+}
+
+/* Nada en el footer para que no aparezca la línea */
+.footer-area {
+  border-left: 0;
+  /* y asegúrate del fondo del footer */
+  background: #1f3b99; 
+  color: #fff;
+}
+
+/* Estados */
+.app-shell.aside-open  { --aside-width: 14rem; }
+.app-shell.aside-closed{ --aside-width: 5.5rem; }
+

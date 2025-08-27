@@ -1,0 +1,13 @@
+/* solo los iconos */
+@import "primeicons/primeicons.css";
+@import "tailwindcss";
+
+/* opcional, global */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  /*background: #ffffff;  modo claro */
+  color: #111827;
+}
+
+
