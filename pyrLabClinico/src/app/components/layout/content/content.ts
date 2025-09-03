@@ -3,13 +3,11 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { MenuItem } from 'primeng/api';
 import { Router, NavigationEnd, RouterModule } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-content',
   standalone: true,
-  imports: [BreadcrumbModule, RouterModule, CardModule, ButtonModule],
+  imports: [BreadcrumbModule, RouterModule],
   templateUrl: './content.html',
   styleUrl: './content.css'
 })

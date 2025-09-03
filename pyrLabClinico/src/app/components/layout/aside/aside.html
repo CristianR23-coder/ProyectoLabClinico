@@ -2,7 +2,7 @@
   <!-- HEADER -->
   <div class="h-14 px-4 flex items-center gap-2 border-b border-white/15">
     @if (isAsideOpen) {
-    <img src="logo.png" alt="Laboratorio" class="h-8" />
+    <a [routerLink]="['/']"><img src="logo.png" alt="Laboratorio" class="h-8" /></a>
     <span class="font-bold tracking-wide">
       Lab<span class="text-emerald-400">PRO</span>
     </span>
@@ -16,7 +16,12 @@
     </div>
 
     } @else {
-    <img src="logo_collapsed.png" alt="Laboratorio" class="h-8" />
+    <a [routerLink]="['/']">
+      <img src="logo_collapsed.png" alt="Laboratorio" class="h-8" />
+      <!-- 👈 altura fija, ancho auto -->
+    </a>
+
+
     <!-- Izquierda: botón hamburguesa -->
     <div class="flex items-center gap-3">
       <button pButton type="button" (click)="onToggle()"
@@ -32,5 +37,5 @@
     <p-panelMenu [model]="items" styleClass="sidebar-menu"></p-panelMenu>
   </div>
   <div class="h-10 px-4 flex items-center text-[11px] text-white/70 border-t border-white/10">
-    v1.1.0
+    v1.2.0
   </div>

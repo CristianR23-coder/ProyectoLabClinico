@@ -1,0 +1,61 @@
+<!-- create-result.html -->
+<p-dialog header="Ingresar resultados" [modal]="true" [draggable]="false" [resizable]="false"
+          appendTo="body" [(visible)]="visible" (onHide)="onHide()"
+          [style]="{ width: '1000px', maxWidth: '98vw' }"
+          [breakpoints]="{ '960px': '95vw', '640px': '98vw' }">
+  <form [formGroup]="form" class="space-y-4">
+    <div class="text-sm text-gray-500">Orden-Examen: <span class="font-mono">{{ ordenExamenId }}</span></div>
+    <div formArrayName="items" class="space-y-4">
+      <div *ngFor="let g of items.controls; let i = index" [formGroupName]="i" class="border rounded p-3">
+        <div class="font-semibold mb-2">{{ g.value.nombre }}</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ng-container [ngSwitch]="g.value.tipo">
+            <div *ngSwitchCase="'num'">
+              <label class="block text-sm">Valor numérico</label>
+              <p-inputNumber formControlName="valorNum" class="w-full"></p-inputNumber>
+            </div>
+            <div *ngSwitchCase="'texto'">
+              <label class="block text-sm">Valor texto</label>
+              <input pInputText formControlName="valorTexto" class="w-full" />
+            </div>
+            <div *ngSwitchCase="'bool'">
+              <label class="block text-sm">Resultado</label>
+              <p-select formControlName="valorBool"
+                        [options]="[{label:'Negativo',value:false},{label:'Positivo',value:true}]"
+                        optionLabel="label" optionValue="value" class="w-full"></p-select>
+            </div>
+          </ng-container>
+
+          <div>
+            <label class="block text-sm">Unidad</label>
+            <input pInputText formControlName="unidad" class="w-full" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm">Ref. mín</label>
+              <p-inputNumber formControlName="refMin" class="w-2"></p-inputNumber>
+            </div>
+            <div>
+              <label class="block text-sm">Ref. máx</label>
+              <p-inputNumber formControlName="refMax" class="w-2"></p-inputNumber>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label class="block text-sm">Observación</label>
+          <textarea pTextarea rows="2" formControlName="observacion" class="w-full"></textarea>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <button pButton type="button" label="Cancelar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
+      <button pButton type="button" label="Guardar" icon="pi pi-check" class="p-button-success" (click)="submit()"></button>
+    </div>
+  </ng-template>
+</p-dialog>

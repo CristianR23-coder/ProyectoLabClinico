@@ -1,0 +1,136 @@
+<p-dialog
+  [header]="sample ? ('Muestra ' + (sample.codigoBarra || sample.id)) : 'Muestra'"
+  [modal]="true" [draggable]="false" [resizable]="false" [closable]="true"
+  appendTo="body"
+  [style]="{ width: '720px', maxWidth: '98vw' }"
+  [breakpoints]="{ '960px': '95vw', '640px': '98vw' }"
+  [(visible)]="visible" (onHide)="onHide()">
+
+  <ng-container *ngIf="sample as s">
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-sm text-gray-500">
+        <span class="mr-2">ID:</span><span class="font-mono">{{ s.id }}</span>
+      </div>
+      <p-tag [severity]="getStatusSeverity(s.estado)" [value]="s.estado" styleClass="capitalize"></p-tag>
+    </div>
+
+    <p-divider />
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <div class="text-xs text-gray-500">Código de barra</div>
+        <div class="font-medium font-mono">{{ s.codigoBarra || '—' }}</div>
+      </div>
+
+      <div>
+        <div class="text-xs text-gray-500">Tipo</div>
+        <div class="font-medium">{{ s.tipo }}</div>
+      </div>
+
+      <div>
+        <div class="text-xs text-gray-500">Orden</div>
+        <div class="font-medium">
+          #{{ s.ordenId }}
+          <span *ngIf="s.ordenNumero" class="text-gray-500 ml-1">({{ s.ordenNumero }})</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs text-gray-500">Fecha de toma</div>
+        <div class="font-medium">
+          {{ s.fechaToma ? (s.fechaToma | date:'dd/MM/yyyy HH:mm') : '—' }}
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4" *ngIf="s.paciente || s.medico || s.aseguradora">
+      <div *ngIf="s.paciente">
+        <div class="text-xs text-gray-500">Paciente</div>
+        <div class="font-medium">
+          {{ s.paciente }}
+          <span *ngIf="s.pacienteDoc" class="text-gray-500 ml-1">({{ s.pacienteDoc }})</span>
+        </div>
+      </div>
+
+      <div *ngIf="s.medico">
+        <div class="text-xs text-gray-500">Médico</div>
+        <div class="font-medium">{{ s.medico }}</div>
+      </div>
+
+      <div *ngIf="s.aseguradora">
+        <div class="text-xs text-gray-500">Aseguradora</div>
+        <div class="font-medium">{{ s.aseguradora }}</div>
+      </div>
+    </div>
+
+    <div class="mt-4" *ngIf="s.observacion">
+      <div class="text-xs text-gray-500">Observación</div>
+      <div class="whitespace-pre-line">{{ s.observacion }}</div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4" *ngIf="s.creadoEn || s.actualizadoEn">
+      <div *ngIf="s.creadoEn">
+        <div class="text-xs text-gray-500">Creado</div>
+        <div class="font-medium">{{ s.creadoEn | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+      <div *ngIf="s.actualizadoEn">
+        <div class="text-xs text-gray-500">Actualizado</div>
+        <div class="font-medium">{{ s.actualizadoEn | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <div class="flex items-center justify-between w-full">
+      <!-- Si hay exámenes asociados, selector + botón -->
+      <div class="flex items-center gap-2" *ngIf="(examsForSample?.length ?? 0) > 0; else simpleAdd">
+        <p-select
+          [(ngModel)]="selectedExamId"
+          [options]="examsForSample ?? []"
+          optionLabel="nombre"
+          optionValue="examenId"
+          placeholder="Selecciona examen"
+          class="min-w-[220px]">
+        </p-select>
+
+        <button
+          pButton
+          type="button"
+          label="Ingresar resultados"
+          icon="pi pi-plus"
+          class="p-button-primary"
+          (click)="onAddResultsWithExam()"
+          [disabled]="!sample">
+        </button>
+      </div>
+
+      <!-- Modo simple (sin selector de examen) -->
+      <ng-template #simpleAdd>
+        <button
+          pButton
+          type="button"
+          label="Ingresar resultados"
+          icon="pi pi-plus"
+          class="p-button-primary"
+          (click)="onAddResultsSimple()"
+          [disabled]="!sample">
+        </button>
+      </ng-template>
+
+      <div class="flex gap-2 ml-auto">
+        <button pButton type="button" label="Imprimir" icon="pi pi-print" class="p-button-text" (click)="onPrint()" [disabled]="!sample"></button>
+        <button pButton type="button" label="Editar" icon="pi pi-pencil" class="p-button-text" (click)="onEdit()" [disabled]="!sample"></button>
+        <button pButton type="button" label="Cerrar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- 👇 Diálogo hijo embebido: CreateResult -->
+<app-new-result-dialog
+  [(visible)]="showCreateResult"
+  [ordenExamenId]="ctxOrdenExamenId"
+  [parametros]="ctxParams"
+  (create)="onCreateResults($event)"
+  (cancel)="onCancelCreate()">
+</app-new-result-dialog>

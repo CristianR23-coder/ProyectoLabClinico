@@ -1,0 +1,147 @@
+<section class="max-w-[1200px] mx-auto p-4">
+  <!-- Toolbar -->
+  <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
+    <h2 class="text-2xl font-bold">Muestras</h2>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search text-gray-400 p-3"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Buscar por código, tipo, orden…"
+          [(ngModel)]="globalQuery"
+          (input)="dt.filterGlobal(globalQuery, 'contains')"
+          class="w-64 max-w-full"
+          aria-label="Buscar muestras"
+        />
+      </span>
+
+      <button
+        pButton
+        type="button"
+        label="Limpiar"
+        class="p-button-text !text-red-500 hover:!bg-red-50"
+        (click)="clearSearch()"
+        [disabled]="!globalQuery">
+      </button>
+
+      <button
+        pButton
+        type="button"
+        label="Agregar muestra"
+        icon="pi pi-plus"
+        class="p-button-primary"
+        (click)="onAdd()"
+        [routerLink]="['/muestras/nueva']">
+      </button>
+    </div>
+  </header>
+
+  <!-- Tabs por estado -->
+  <p-tabs [(value)]="estadoValue" (valueChange)="onEstadoChange($event)" scrollable class="mb-3">
+    <p-tablist>
+      <p-tab *ngFor="let t of estadoTabs" [value]="t.value">
+        <i [class]="t.icon" class="mr-2"></i>{{ t.label }}
+      </p-tab>
+    </p-tablist>
+  </p-tabs>
+
+  <!-- Tabla -->
+  <p-table
+    #dt
+    [value]="samples"
+    dataKey="id"
+    [paginator]="true"
+    [rows]="pageSize"
+    [rowsPerPageOptions]="[5,10,20,50]"
+    [responsiveLayout]="'scroll'"
+    [globalFilterFields]="globalFields"
+    sortMode="multiple"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Mostrando {first}–{last} de {totalRecords}"
+    class="rounded-xl overflow-hidden shadow-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="codigoBarra" class="whitespace-nowrap">
+          Código <p-sortIcon field="codigoBarra"></p-sortIcon>
+        </th>
+        <th pSortableColumn="tipo" class="whitespace-nowrap">
+          Tipo <p-sortIcon field="tipo"></p-sortIcon>
+        </th>
+        <th pSortableColumn="ordenId" class="whitespace-nowrap">
+          Orden <p-sortIcon field="ordenId"></p-sortIcon>
+        </th>
+        <th pSortableColumn="fechaToma" class="whitespace-nowrap">
+          Fecha toma <p-sortIcon field="fechaToma"></p-sortIcon>
+        </th>
+        <th pSortableColumn="estado" class="whitespace-nowrap">
+          Estado <p-sortIcon field="estado"></p-sortIcon>
+        </th>
+        <th class="whitespace-nowrap">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-s>
+      <tr>
+        <td class="font-mono">{{ s.codigoBarra || '—' }}</td>
+        <td>{{ s.tipo }}</td>
+        <td>#{{ s.ordenId }}</td>
+        <td>{{ s.fechaToma ? (s.fechaToma | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+        <td>
+          <p-tag [severity]="getStatusSeverity(s.estado)" [value]="s.estado" styleClass="capitalize"></p-tag>
+        </td>
+        <td class="flex gap-2 flex-wrap">
+          <button
+            pButton
+            pTooltip="Ver"
+            class="p-button-sm"
+            icon="pi pi-eye"
+            (click)="onView(s)"
+            [routerLink]="['/muestras/ver', s.id]">
+          </button>
+          <button
+            pButton
+            pTooltip="Editar"
+            class="p-button-sm p-button-text"
+            icon="pi pi-pencil"
+            (click)="onEdit(s)">
+          </button>
+          <button
+            pButton
+            pTooltip="Eliminar"
+            class="p-button-sm p-button-danger p-button-text"
+            icon="pi pi-trash"
+            (click)="onDelete(s)">
+          </button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="text-center italic text-gray-500 py-6">
+          No hay resultados que coincidan con “{{ globalQuery }}”.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>
+
+<!-- Visor de detalles -->
+<app-view-sample
+  [(visible)]="showView"
+  [sample]="selectedDetail"
+  [appendToBody]="true"
+  (close)="showView=false">
+</app-view-sample>
+
+<!-- Diálogo de edición -->
+<app-edit-sample-dialog
+  [(visible)]="showEdit"
+  [sample]="sampleToEdit"
+  (update)="onUpdated($event)"
+  (remove)="onRemoveSample($event)"
+  (cancel)="showEdit=false">
+</app-edit-sample-dialog>

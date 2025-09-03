@@ -1,0 +1,43 @@
+<!-- view-result.html -->
+<p-dialog [header]="'Resultados – ' + (ordenExamenId || '')" [modal]="true" [draggable]="false" [resizable]="false"
+          appendTo="body" [(visible)]="visible" (onHide)="onHide()"
+          [style]="{ width: '760px', maxWidth: '98vw' }"
+          [breakpoints]="{ '960px': '95vw', '640px': '98vw' }">
+
+  <p-table [value]="items" [responsiveLayout]="'scroll'">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Parámetro</th>
+        <th>Valor</th>
+        <th>Unidad</th>
+        <th>Referencia</th>
+        <th>Validado</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-r>
+      <tr>
+        <td class="font-mono">{{ r.parametroId }}</td>
+        <td>
+          <ng-container [ngSwitch]="r.tipo">
+            <span *ngSwitchCase="'num'">{{ r.valorNum }}</span>
+            <span *ngSwitchCase="'texto'">{{ r.valorTexto }}</span>
+            <span *ngSwitchCase="'bool'">{{ r.valorBool ? 'Positivo' : 'Negativo' }}</span>
+          </ng-container>
+        </td>
+        <td>{{ r.unidad || '—' }}</td>
+        <td>
+          <span *ngIf="r.refMin!=null || r.refMax!=null">{{ r.refMin ?? '—' }} – {{ r.refMax ?? '—' }}</span>
+          <span *ngIf="r.refMin==null && r.refMax==null">—</span>
+        </td>
+        <td><p-tag [value]="r.validado ? 'Sí' : 'No'" [severity]="r.validado ? 'success' : 'info'"></p-tag></td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end w-full">
+      <button pButton type="button" label="Cerrar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
+    </div>
+  </ng-template>
+</p-dialog>

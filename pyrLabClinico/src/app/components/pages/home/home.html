@@ -1,0 +1,24 @@
+<div class="home-container">
+    <h1 class="welcome">Bienvenido al Laboratorio Clínico</h1>
+    <p class="subtitle">Seleccione una opción para comenzar:</p>
+
+    <div class="cards">
+      <p-card header="Órdenes" subheader="Gestión de órdenes médicas" styleClass="card">
+        <ng-template pTemplate="footer">
+          <button pButton label="Ver órdenes" icon="pi pi-folder" routerLink="/ordenes"></button>
+        </ng-template>
+      </p-card>
+
+      <p-card header="Muestras" subheader="Registro y control de muestras" styleClass="card">
+        <ng-template pTemplate="footer">
+          <button pButton label="Ver muestras" icon="pi pi-inbox" routerLink="/muestras"></button>
+        </ng-template>
+      </p-card>
+
+      <p-card header="Resultados" subheader="Consulta de resultados" styleClass="card">
+        <ng-template pTemplate="footer">
+          <button pButton label="Ver resultados" icon="pi pi-chart-line" routerLink="/resultados"></button>
+        </ng-template>
+      </p-card>
+    </div>
+  </div>

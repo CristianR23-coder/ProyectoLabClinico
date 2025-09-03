@@ -1,0 +1,2 @@
+/* Usamos Tailwind para casi todo. Si quieres capitalizar estados: */
+:host ::ng-deep .p-tag.capitalize .p-tag-value { text-transform: capitalize; }
