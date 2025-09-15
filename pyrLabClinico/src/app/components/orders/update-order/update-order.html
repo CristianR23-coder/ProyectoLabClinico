@@ -1,160 +1,174 @@
-<p-dialog
-  [header]="order ? ('Editar orden ' + order.numero) : 'Editar orden'"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [closable]="true"
-  appendTo="body"
-  [style]="{ width: '1000px', maxWidth: '98vw' }"
-  [breakpoints]="{ '960px': '95vw', '640px': '98vw' }"
-  [(visible)]="visible"
-  (onHide)="onHide()"
->
-  <form [formGroup]="form" class="space-y-4">
-    <!-- Encabezado básico -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">N° Orden</label>
-        <input pInputText formControlName="numero" class="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Fecha de creación</label>
-        <p-datepicker formControlName="fechaCreacion" [showIcon]="true" iconDisplay="input" [showTime]="true"
-                      hourFormat="24" class="w-full"></p-datepicker>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Estado</label>
-        <p-select formControlName="estado" [options]="estados" optionLabel="label" optionValue="value"
-                  placeholder="Selecciona estado" class="w-full"></p-select>
-      </div>
+<form [formGroup]="form" (ngSubmit)="save()" class="space-y-5">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div *ngIf="order?.id">
+      <label class="block mb-1 text-sm font-semibold">Código</label>
+      <input pInputText [value]="'ORD-' + (order?.id ?? '')" readonly />
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Paciente</label>
-        <input pInputText type="text" formControlName="pacienteId" class="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Médico</label>
-        <input pInputText type="text" formControlName="medicoId" class="w-full" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Aseguradora</label>
-        <input pInputText type="text" formControlName="aseguradoraId" class="w-full" />
-      </div>
-    </div>
-
-    <p-divider></p-divider>
-
-    <!-- Muestras -->
     <div>
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">Muestras</h3>
-        <button pButton type="button" icon="pi pi-plus" label="Agregar muestra" class="p-button-text"
-                (click)="addMuestra()"></button>
-      </div>
-
-      <div class="space-y-3">
-        <div class="grid grid-cols-12 gap-2 items-end" *ngFor="let g of muestras.controls; let i = index">
-          <div class="col-span-12 md:col-span-3">
-            <label class="block text-sm font-medium mb-1">Tipo</label>
-            <p-select [formControl]="g.controls.tipo" [options]="tiposMuestra" optionLabel="label"
-                      optionValue="value" placeholder="Tipo de muestra" class="w-full"></p-select>
-          </div>
-
-          <div class="col-span-12 md:col-span-3">
-            <label class="block text-sm font-medium mb-1">Código de barra</label>
-            <input pInputText type="text" [formControl]="g.controls.codigoBarra" class="w-full" placeholder="Opcional" />
-          </div>
-
-          <div class="col-span-12 md:col-span-4">
-            <label class="block text-sm font-medium mb-1">Fecha de toma</label>
-            <p-datepicker [formControl]="g.controls.fechaToma" [showIcon]="true" iconDisplay="input"
-                          [showTime]="true" hourFormat="24" class="w-full"></p-datepicker>
-          </div>
-
-          <div class="col-span-12 md:col-span-2 text-right">
-            <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-danger"
-                    (click)="removeMuestra(i)" [disabled]="muestras.length === 1"></button>
-          </div>
-
-          <div class="col-span-12">
-            <textarea pTextarea rows="2" [formControl]="g.controls.observacion"
-                      placeholder="Observación (opcional)" class="w-full"></textarea>
-          </div>
-        </div>
-      </div>
+      <label class="block mb-1 text-sm font-semibold">Estado</label>
+      <p-select formControlName="state"
+                [options]="stateOptions" optionLabel="label" optionValue="value"
+                placeholder="Selecciona estado">
+      </p-select>
     </div>
 
-    <p-divider></p-divider>
-
-    <!-- Exámenes -->
     <div>
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">Exámenes</h3>
-        <button pButton type="button" icon="pi pi-plus" label="Agregar examen" class="p-button-text"
-                (click)="addExamen()"></button>
-      </div>
-
-      <div class="space-y-3">
-        <div class="grid grid-cols-12 gap-2 items-center" *ngFor="let g of examenes.controls; let i = index">
-          <div class="col-span-12 md:col-span-6">
-            <label class="block text-sm font-medium mb-1">Examen</label>
-            <p-autoComplete [formControl]="g.controls.examCtrl" [suggestions]="filteredExams" field="nombre"
-                            (completeMethod)="filterExam($event)"
-                            (onSelect)="onExamSelect($event.value, i)"
-                            [dropdown]="true" [forceSelection]="true" placeholder="Buscar por código o nombre"
-                            class="w-full">
-              <ng-template let-ex pTemplate="item">
-                <div class="flex justify-between w-full">
-                  <span class="font-mono text-sm">{{ ex.codigo }}</span>
-                  <span class="ml-2">{{ ex.nombre }}</span>
-                  <span class="ml-auto">{{ ex.precio | currency: currencyCode:'symbol-narrow':'1.0-0' }}</span>
-                </div>
-              </ng-template>
-            </p-autoComplete>
-            <small class="text-gray-500">Seleccionado: {{ g.controls.examNombre.value || '—' }}</small>
-          </div>
-
-          <div class="col-span-6 md:col-span-3">
-            <label class="block text-sm font-medium mb-1">Precio</label>
-            <p-inputNumber [formControl]="g.controls.precio" mode="currency" [currency]="currencyCode" class="w-full"></p-inputNumber>
-          </div>
-
-          <div class="col-span-6 md:col-span-2">
-            <label class="block text-sm font-medium mb-1">Panel (opcional)</label>
-            <input pInputText type="text" [formControl]="g.controls.panelId" placeholder="panelId" class="w-full" />
-          </div>
-
-          <div class="col-span-12 md:col-span-1 text-right">
-            <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-danger"
-                    (click)="removeExamen(i)" [disabled]="examenes.length === 1"></button>
-          </div>
-        </div>
-      </div>
+      <label class="block mb-1 text-sm font-semibold">Prioridad</label>
+      <p-select formControlName="priority"
+                [options]="priorityOptions" optionLabel="label" optionValue="value"
+                placeholder="Selecciona prioridad">
+      </p-select>
     </div>
 
-    <!-- Resumen -->
-    <div class="border-t pt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div class="text-sm text-gray-500">
-        Pruebas totales: <span class="font-semibold text-gray-700">{{ totalPruebas }}</span>
-      </div>
-      <div class="text-right text-lg">
-        Total: <span class="font-bold">{{ total | currency: currencyCode:'symbol-narrow':'1.0-0' }}</span>
-      </div>
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Paciente <span class="text-red-500">*</span></label>
+      <p-select formControlName="patientId"
+                [options]="patients" optionLabel="lastName" optionValue="id"
+                [filter]="true" filterBy="lastName,firstName,docNumber"
+                placeholder="Selecciona paciente">
+        <ng-template pTemplate="item" let-p>
+          <div class="flex flex-col">
+            <span>{{ p.lastName }}, {{ p.firstName }}</span>
+            <small class="text-color-secondary">{{ p.docType }} {{ p.docNumber }}</small>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="selectedItem" let-p>
+          <span *ngIf="p">{{ p.lastName }}, {{ p.firstName }}</span>
+        </ng-template>
+      </p-select>
+      <small class="p-error" *ngIf="form.get('patientId')?.invalid && form.get('patientId')?.touched">Requerido.</small>
     </div>
-  </form>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-between w-full">
-      <button pButton type="button" label="Eliminar" icon="pi pi-trash" class="p-button-danger p-button-text"
-              (click)="onRemove()" [disabled]="!order"></button>
-
-      <div class="flex gap-2">
-        <button pButton type="button" label="Cancelar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
-        <button pButton type="button" label="Guardar cambios" icon="pi pi-check" class="p-button-success"
-                (click)="submit()"></button>
-      </div>
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Médico (opcional)</label>
+      <p-select formControlName="doctorId"
+                [options]="doctors" optionLabel="name" optionValue="id"
+                [filter]="true" filterBy="name,docNumber" placeholder="Selecciona médico">
+        <ng-template pTemplate="item" let-d>
+          <div class="flex flex-col">
+            <span>{{ d.name }}</span>
+            <small class="text-color-secondary">{{ d.docNumber }}</small>
+          </div>
+        </ng-template>
+      </p-select>
     </div>
-  </ng-template>
-</p-dialog>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Aseguradora (opcional)</label>
+      <p-select formControlName="insuranceId"
+                [options]="insurances" optionLabel="name" optionValue="id"
+                [filter]="true" filterBy="name,nit" placeholder="Selecciona aseguradora">
+      </p-select>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Fecha de orden</label>
+      <p-datepicker formControlName="orderDate" [showIcon]="true" inputId="orderDate" appendTo="body"></p-datepicker>
+      <small class="p-error" *ngIf="form.get('orderDate')?.invalid && form.get('orderDate')?.touched">Requerido.</small>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Estado de registro</label>
+      <p-select formControlName="status"
+                [options]="[{label:'Activo', value:'ACTIVE'},{label:'Inactivo', value:'INACTIVE'}]"
+                optionLabel="label" optionValue="value">
+      </p-select>
+    </div>
+
+    <div class="md:col-span-3">
+      <label class="block mb-1 text-sm font-semibold">Observación</label>
+      <textarea pTextarea formControlName="observations" rows="4" placeholder="Observación (opcional)" class="w-full"></textarea>
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <!-- Total calculado -->
+  <div class="flex items-center justify-between">
+    <div class="text-color-secondary">El total se calcula automáticamente con base en los exámenes.</div>
+    <div class="text-xl font-semibold">
+      Total: {{ order?.netTotal || 0 | number:'1.0-0' }}
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <!-- Agregar examen (control reactivo examToAddId) -->
+  <div class="flex items-end gap-3" *ngIf="order">
+    <div class="flex-1">
+      <label class="block mb-1 text-sm font-semibold">Agregar examen</label>
+      <p-select [formControl]="form.controls.examToAddId"
+                [options]="availableExams"
+                optionLabel="name" optionValue="id"
+                [filter]="true" filterBy="code,name"
+                placeholder="Buscar por nombre o código"
+                [disabled]="disableAllEdits">
+        <ng-template pTemplate="item" let-ex>
+          <div class="flex flex-col">
+            <span>{{ ex.code }} — {{ ex.name }}</span>
+            <small class="text-color-secondary">Precio base: {{ ex.priceBase | number:'1.0-0' }}</small>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="selectedItem" let-ex>
+          <span *ngIf="ex">{{ ex.code }} — {{ ex.name }}</span>
+        </ng-template>
+      </p-select>
+    </div>
+
+    <button pButton type="button" label="Agregar" icon="pi pi-plus"
+            (click)="addExam()"
+            [disabled]="disableAllEdits || !form.controls.examToAddId.value">
+    </button>
+  </div>
+
+  <p-divider></p-divider>
+
+  <div *ngIf="order">
+    <h3 class="text-lg font-semibold mb-2">Exámenes de la orden</h3>
+
+    <p-table [value]="order.items ?? []" [tableStyle]="{ 'min-width':'56rem' }" dataKey="id">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 8rem">Código</th>
+          <th>Nombre</th>
+          <th style="width: 10rem" class="text-right">Precio</th>
+          <th style="width: 10rem">Estado</th>
+          <th style="width: 8rem">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-it>
+        <tr>
+          <td>{{ it.code }}</td>
+          <td>{{ it.name }}</td>
+          <td class="text-right">{{ it.price | number:'1.0-0' }}</td>
+          <td>
+            <p-tag [value]="examStatusOf(it) || '—'"
+                   [severity]="statusSeverity(examStatusOf(it))"></p-tag>
+          </td>
+          <td class="text-center">
+            <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+                    (click)="removeItem(it)" [disabled]="disableAllEdits"
+                    pTooltip="Quitar examen"></button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center py-4 text-color-secondary">Sin exámenes en esta orden.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-divider></p-divider>
+
+  <div class="flex items-center justify-end gap-3">
+    <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50"
+            label="Cancelar" (click)="cancel()"></button>
+    <button pButton type="submit" label="Guardar" icon="pi pi-check"
+            [disabled]="saving || form.invalid"></button>
+  </div>
+</form>

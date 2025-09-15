@@ -1,0 +1,121 @@
+<div class="card p-5" [formGroup]="form">
+    <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
+        <h2 class="text-2xl font-bold">Exámenes</h2>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Búsqueda global + sincroniza el control q -->
+            <span class="p-input-icon-left">
+                <i class="pi pi-search text-gray-400 p-3"></i>
+                <input #q pInputText type="text" class="w-64 max-w-full"
+                    placeholder="Buscar por código, nombre, método…" aria-label="Buscar exámenes" (input)="dt.filterGlobal(($any($event.target).value || ''), 'contains');
+                        form.patchValue({ q: $any($event.target).value || '' })" />
+            </span>
+
+            <!-- Filtro: estado (formControlName, NO ngModel) -->
+            <p-select formControlName="status" [options]="statusOptions" [style]="{width:'180px'}" [showClear]="true"
+                placeholder="Estado" optionLabel="label" optionValue="value">
+            </p-select>
+
+            <!-- Filtro: tipo de muestra -->
+            <p-select formControlName="specimenType" [options]="specimenOptions" [style]="{width:'200px'}"
+                [showClear]="true" placeholder="Tipo de muestra" optionLabel="label" optionValue="value">
+            </p-select>
+
+            <button pButton type="button" label="Limpiar" class="p-button-text !text-red-500 hover:!bg-red-50"
+                (click)="q.value=''; dt.reset(); clearFilters()"
+                [disabled]="!(q.value.length || form.value.status || form.value.specimenType)">
+            </button>
+
+            <a pButton type="button" label="Agregar examen" icon="pi pi-plus" class="p-button-primary"
+                severity="success" (click)="openCreateExam()"></a>
+        </div>
+    </header>
+
+    <div class="h-0.5 w-16 bg-emerald-500 mb-3"></div>
+
+    <!-- Tabla -->
+    <p-table #dt [value]="(rows$ | async) ?? []" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10,20,50]"
+        dataKey="id" sortMode="multiple" [tableStyle]="{'min-width':'72rem'}"
+        [globalFilterFields]="['code','name','method','specimenType']">
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="code">Código <p-sortIcon field="code"></p-sortIcon></th>
+                <th pSortableColumn="name">Nombre <p-sortIcon field="name"></p-sortIcon></th>
+                <th pSortableColumn="method">Método <p-sortIcon field="method"></p-sortIcon></th>
+                <th pSortableColumn="specimenType">Muestra <p-sortIcon field="specimenType"></p-sortIcon></th>
+                <th pSortableColumn="processingTimeMin" class="text-right">Tiempo (min) <p-sortIcon
+                        field="processingTimeMin"></p-sortIcon></th>
+                <th pSortableColumn="priceBase" class="text-right">Precio <p-sortIcon field="priceBase"></p-sortIcon>
+                </th>
+                <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+                <th class="w-40">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+            <tr>
+                <td>{{ row.code }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.method || '—' }}</td>
+                <td>{{ row.specimenType || '—' }}</td>
+                <td class="text-right">{{ row.processingTimeMin ?? '—' }}</td>
+                <td class="text-right">{{ row.priceBase | number:'1.0-0' }}</td>
+                <td><p-tag [value]="row.status" [severity]="statusTag(row.status)"></p-tag></td>
+                <td class="flex gap-2">
+                    <a pButton icon="pi pi-eye" [text]="true" [rounded]="true" severity="info"
+                        (click)="openViewExam(row.id)" pTooltip="Ver detalles"></a>
+                    <a pButton icon="pi pi-pencil" [text]="true" [rounded]="true" severity="success"
+                        (click)="openEditExam(row.id)" pTooltip="Editar"></a>
+                    <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+                        (click)="onDelete(row.id!)" pTooltip="Eliminar"></button>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center py-6">Sin resultados</td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <p-dialog [(visible)]="showCreateExam" [modal]="true" [style]="{width:'800px'}">
+        <ng-template pTemplate="header">
+            <span class="font-bold text-xl md:text-2xl">Nuevo examen</span>
+        </ng-template>
+        <app-create-exam (created)="onExamCreated($event)" (cancelled)="showCreateExam=false"></app-create-exam>
+    </p-dialog>
+
+    <p-dialog [(visible)]="showEditExam" [modal]="true" [style]="{width:'800px'}" (onHide)="showEditExam=false">
+        <ng-template pTemplate="header">
+            <span class="font-bold text-xl md:text-2xl">Editar examen</span>
+        </ng-template>
+        <app-edit-exam *ngIf="selectedExamId != null" [examId]="selectedExamId" (saved)="showEditExam=false"
+            (cancelled)="showEditExam=false"></app-edit-exam>
+    </p-dialog>
+
+    <p-dialog [(visible)]="showViewExam" [modal]="true" [draggable]="false" [resizable]="false"
+        [style]="{ width: '720px' }" (onHide)="showViewExam=false">
+        <ng-template pTemplate="header">
+            <span class="font-bold text-xl md:text-2xl">Detalles del examen</span>
+        </ng-template>
+
+        <app-view-exam *ngIf="selectedExamId != null" [examId]="selectedExamId"
+            (editRequested)="openEditExam($event); showViewExam = false" (deleteRequested)="onDelete($event)"
+            (closed)="showViewExam=false">
+        </app-view-exam>
+    </p-dialog>
+
+    <!-- Modal: Ver -->
+    <p-dialog [(visible)]="showViewExam" [modal]="true" [draggable]="false" [resizable]="false"
+        [style]="{ width: '720px' }" (onHide)="closeViewExam()">
+        <ng-template pTemplate="header">
+            <span class="font-bold text-xl md:text-2xl">Detalles del examen</span>
+        </ng-template>
+        <app-view-exam *ngIf="selectedExamId != null" [examId]="selectedExamId" (editRequested)="onViewEdit($event)"
+            (deleteRequested)="onViewDelete($event)" (closed)="closeViewExam()">
+        </app-view-exam>
+    </p-dialog>
+
+</div>

@@ -1,148 +1,120 @@
+import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
-/* PrimeNG v20 */
 import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
+import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
-import { TooltipModule } from 'primeng/tooltip';
-import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
 
-/* 👇 IMPORTA TU DIALOGO DE RESULTADOS (ajusta rutas!) */
-import { CreateResult } from '../../results/create-result/create-result';  // ⬅️ AJUSTA ruta real
-import type { ParamDef } from '../../results/create-result/create-result'; // ⬅️ AJUSTA ruta real
+import { SamplesService } from '../../../services/sample-service';
+import { OrdersService } from '../../../services/order-service';
 
-export type SampleStatus = 'pendiente' | 'tomada' | 'rechazada' | 'enviada' | 'archivada';
-
-export interface SampleDetail {
-  id: string;
-  codigoBarra?: string | null;
-  tipo: string;
-  ordenId: string;
-  ordenNumero?: string;
-  fechaToma?: string | Date | null;
-  estado: SampleStatus;
-  observacion?: string | null;
-
-  // opcionales visuales
-  paciente?: string;
-  pacienteDoc?: string;
-  medico?: string;
-  aseguradora?: string | null;
-  creadoEn?: string | Date;
-  actualizadoEn?: string | Date;
-}
-
-/** Exámenes que usan esta muestra (si hay varios) */
-export interface SampleExamLink {
-  examenId: string;        // ej. 'ex-glu'
-  nombre: string;          // ej. 'Glucosa'
-  ordenExamenId: string;   // ej. 'OE-ORD-001-ex-glu'
-}
+import { SampleI } from '../../../models/sample-model';
+import { OrderI } from '../../../models/order-model';
+import { SpecimenType } from '../../../models/exam-model';
 
 @Component({
   selector: 'app-view-sample',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule, // necesario para [(ngModel)]
-    DialogModule, ButtonModule, TagModule, DividerModule, TooltipModule, SelectModule,
-    CreateResult, // ⬅️ integra el diálogo hijo
-  ],
-  templateUrl: './view-sample.html',
-  styleUrls: ['./view-sample.css'],
+  imports: [CommonModule, DialogModule, CardModule, DividerModule, TagModule, ButtonModule],
+  templateUrl: './view-sample.html'
 })
-export class ViewSample {
-  /* ====== Inputs / Outputs ====== */
+export class ViewSample implements OnInit {
+  private samplesSvc = inject(SamplesService);
+  private ordersSvc = inject(OrdersService);
+
+  /** Modo diálogo */
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
-  /** Muestra a visualizar */
-  @Input() sample: SampleDetail | null = null;
+  /** Contenido / referencia */
+  @Input() sample?: SampleI | null;
+  @Input() sampleId?: number | null;
 
-  /** Lista opcional de exámenes ligados a la muestra (si hay varios) */
-  @Input() examsForSample: SampleExamLink[] | null = null;
+  /** Opcional: forzar appendTo="body" en el diálogo */
+  @Input() appendToBody = false;
 
-  /** Para overlays */
-  @Input() appendToBody = true;
-
-  /** Acciones externas (opcionales) */
-  @Output() edit = new EventEmitter<SampleDetail>();
-  @Output() print = new EventEmitter<SampleDetail>();
+  /** Eventos para acciones (el padre decide qué hacer) */
+  @Output() editRequested = new EventEmitter<number>();
+  @Output() deleteRequested = new EventEmitter<number>();
   @Output() close = new EventEmitter<void>();
 
-  /* ====== Estado local ====== */
-  selectedExamId: string | null = null;
+  loading = true;
+  order?: OrderI;
 
-  // Estado del diálogo hijo (CreateResult)
-  showCreateResult = false;
-  ctxOrdenExamenId = '';
-  ctxParams: ParamDef[] = [];
+  ngOnInit(): void {
+    if (this.sample) {
+      this.loading = false;
+      this.loadOrder(this.sample.orderId);
+      return;
+    }
 
-  // Catálogo estático de parámetros por examen (mock)
-  parametrosPorExamen: Record<string, ParamDef[]> = {
-    'ex-glu': [
-      { parametroId:'GLU', nombre:'Glucosa', tipo:'num',  unidad:'mg/dL', refMin:70, refMax:100, posicion:1 },
-      { parametroId:'OBS', nombre:'Observación', tipo:'texto', posicion:2 },
-    ],
-    'ex-col': [
-      { parametroId:'COLT', nombre:'Colesterol Total', tipo:'num', unidad:'mg/dL', refMin:0, refMax:200, posicion:1 },
-    ],
-  };
+    const id = this.sampleId;
+    if (!id) {
+      this.loading = false;
+      return;
+    }
 
-  // Fallback para asegurar campos aunque no haya params configurados
-  defaultParams: ParamDef[] = [
-    { parametroId:'VAL', nombre:'Valor', tipo:'num', unidad:'u', refMin:0, refMax:100, posicion:1 },
-    { parametroId:'OBS', nombre:'Observación', tipo:'texto', posicion:2 },
-  ];
+    this.samplesSvc.getById(id).subscribe(s => {
+      this.sample = s ?? undefined;
+      this.loading = false;
+      if (s) this.loadOrder(s.orderId);
+    });
+  }
 
-  /* ====== Helpers ====== */
-  getStatusSeverity(s: SampleStatus): 'success' | 'info' | 'warn' | 'danger' {
-    switch (s) {
-      case 'tomada':    return 'success';
-      case 'enviada':   return 'info';
-      case 'pendiente': return 'warn';
-      case 'rechazada':
-      case 'archivada': return 'danger';
+  private loadOrder(orderId?: number) {
+    if (!orderId) return;
+    this.ordersSvc.getById(orderId).subscribe(o => (this.order = o ?? undefined));
+  }
+
+  // ===== UI helpers =====
+  tagSeverity(state?: string): 'info' | 'success' | 'warning' | 'danger' | undefined {
+    switch (state) {
+      case 'RECOLECTADA': return 'info';
+      case 'EN_PROCESO':  return 'warning';
+      case 'EVALUADA':    return 'success';
+      case 'RECHAZADA':
+      case 'ANULADA':     return 'danger';
+      default:            return undefined;
     }
   }
 
-  onHide() {
+  specimenLabel(t?: SpecimenType): string {
+    switch (t) {
+      case 'SANGRE': return 'Sangre';
+      case 'SUERO':  return 'Suero';
+      case 'PLASMA': return 'Plasma';
+      case 'ORINA':  return 'Orina';
+      case 'SALIVA': return 'Saliva';
+      case 'HECES':  return 'Heces';
+      case 'TEJIDO': return 'Tejido';
+      case 'OTRA':   return 'Otra';
+      default:       return '—';
+    }
+  }
+
+  patientName(): string {
+    const p = this.order?.patient;
+    return p ? `${p.lastName ?? ''}, ${p.firstName ?? ''}`.trim() : '—';
+    }
+
+  // ===== acciones =====
+  onEdit(): void {
+    if (this.sample?.id) this.editRequested.emit(this.sample.id);
+  }
+
+  onDelete(): void {
+    if (this.sample?.id) this.deleteRequested.emit(this.sample.id);
+  }
+
+  onClose(): void {
     this.visible = false;
     this.visibleChange.emit(false);
     this.close.emit();
   }
-  onEdit()  { if (this.sample) this.edit.emit(this.sample); }
-  onPrint() { if (this.sample) this.print.emit(this.sample); }
 
-  /* ====== Abrir CreateResult SIN contenedor ====== */
-  onAddResultsSimple() {
-    if (!this.sample) return;
-    // Para demo: asumimos examen "Glucosa"
-    this.ctxOrdenExamenId = `OE-${this.sample.ordenId}-ex-glu`;
-    const p = this.parametrosPorExamen['ex-glu'] ?? [];
-    this.ctxParams = p.length ? p : this.defaultParams;  // fallback
-    // debug opcional:
-    // console.log('open dialog (simple)', { id: this.ctxOrdenExamenId, params: this.ctxParams });
-    this.showCreateResult = true;
+  get appendToTarget(): any {
+    return this.appendToBody ? 'body' : null;
   }
-
-  onAddResultsWithExam() {
-    if (!this.sample || !(this.examsForSample?.length)) return;
-    const ex = this.examsForSample.find(x => x.examenId === this.selectedExamId) ?? this.examsForSample[0];
-    this.ctxOrdenExamenId = ex.ordenExamenId;
-    const p = this.parametrosPorExamen[ex.examenId] ?? [];
-    this.ctxParams = p.length ? p : this.defaultParams;  // fallback
-    // console.log('open dialog (exam)', { id: this.ctxOrdenExamenId, params: this.ctxParams });
-    this.showCreateResult = true;
-  }
-
-  /* Callbacks del diálogo interno (demo) */
-  onCreateResults(payload: any) {
-    console.log('Resultados creados (mock):', payload);
-    this.showCreateResult = false;
-  }
-  onCancelCreate() { this.showCreateResult = false; }
 }

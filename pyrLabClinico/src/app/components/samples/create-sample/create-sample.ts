@@ -1,124 +1,161 @@
+// src/app/components/samples/create-sample/create-sample.ts
+import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Router } from '@angular/router';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
-/* PrimeNG v20 */
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
-import { TextareaModule } from 'primeng/textarea';
-import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { TagModule } from 'primeng/tag';
 
-export type SampleStatus = 'pendiente' | 'tomada' | 'rechazada' | 'enviada' | 'archivada';
+import { SamplesService } from '../../../services/sample-service';
+import { OrdersService } from '../../../services/order-service';
+import { ExamsService } from '../../../services/exam-service';
 
-export interface NewSamplePayload {
-  ordenId: string;
-  tipo: string;
-  codigoBarra?: string | null;
-  fechaToma: Date | string;
-  estado: SampleStatus;
-  observacion?: string | null;
-}
+import { SampleI, SampleState } from '../../../models/sample-model';
+import { OrderI } from '../../../models/order-model';
+import { ExamI, SpecimenType } from '../../../models/exam-model';
 
 @Component({
-  selector: 'app-new-sample-dialog',
+  selector: 'app-create-sample',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule,
-    DialogModule, ButtonModule, InputTextModule,
-    DatePickerModule, TextareaModule, DividerModule, SelectModule,
+    InputTextModule, DatePickerModule, SelectModule, TextareaModule,
+    ButtonModule, DividerModule, TagModule
   ],
-  templateUrl: './create-sample.html',
-  styleUrls: ['./create-sample.css'],
+  templateUrl: './create-sample.html'
 })
-export class CreateSample implements OnInit {
-  @Input() visible = false;                 // al entrar por ruta lo encendemos en ngOnInit
-  @Output() visibleChange = new EventEmitter<boolean>();
+export class CreateSample implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  private svc = inject(SamplesService);
+  private ordersSvc = inject(OrdersService);
+  private examsSvc = inject(ExamsService);
 
-  /** Si vienes desde /ordenes/:id/muestras/nueva puedes inyectar el ordenId aquí */
-  @Input() ordenIdPrefill: string | null = null;
+  readonly fixedState: SampleState = 'RECOLECTADA';
 
-  @Output() create = new EventEmitter<NewSamplePayload>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() created = new EventEmitter<SampleI>();
+  @Output() cancelled = new EventEmitter<void>();
 
-  // ✅ Form reactivo (definite assignment)
-  form!: FormGroup;
+  // Catálogos / cache
+  orders: OrderI[] = [];
+  allExams: ExamI[] = [];
 
-  tiposMuestra = [
-    { label: 'Sangre', value: 'Sangre' },
-    { label: 'Suero',  value: 'Suero'  },
-    { label: 'Plasma', value: 'Plasma' },
-    { label: 'Orina',  value: 'Orina'  },
-    { label: 'Hisopo', value: 'Hisopo' },
-    { label: 'Tejido', value: 'Tejido' },
-    { label: 'Otro',   value: 'Otro'   },
-  ];
+  // Opciones para selects (label/value)
+  ordersOptions: { label: string; value: number }[] = [];
+  allowedTipos: { label: string; value: SpecimenType }[] = [];
 
-  estados: { label: string; value: SampleStatus }[] = [
-    { label: 'pendiente', value: 'pendiente' },
-    { label: 'tomada',    value: 'tomada'    },
-    { label: 'rechazada', value: 'rechazada' },
-    { label: 'enviada',   value: 'enviada'   },
-    { label: 'archivada', value: 'archivada' },
-  ];
+  // Subscriptions
+  private subs: Subscription[] = [];
 
-  constructor(private fb: FormBuilder, private router: Router) {
-    this.form = this.fb.group({
-      ordenId:       ['', Validators.required],
-      tipo:          ['Sangre', Validators.required],
-      codigoBarra:   [null],
-      fechaToma:     [new Date(), Validators.required],
-      estado:        ['pendiente' as SampleStatus, Validators.required],
-      observacion:   [null],
-    });
-  }
+  // Formulario
+  form = this.fb.group({
+    orderId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
+    type: this.fb.control<SpecimenType | null>(null, { validators: [Validators.required] }),
+    barcode: this.fb.control<string>(''),
+    drawDate: this.fb.control<Date | null>(new Date()),
+    state:      this.fb.control<SampleState | null>('RECOLECTADA', { nonNullable: true }),
+    observations: this.fb.control<string>(''),
+  });
 
   ngOnInit(): void {
-    // al entrar por /muestras/nueva mostramos el diálogo
-    this.visible = true;
-    if (this.ordenIdPrefill) {
-      this.form.get('ordenId')?.setValue(this.ordenIdPrefill);
+    // Cargar órdenes y armar opciones
+    this.subs.push(
+      this.ordersSvc.orders$.subscribe(os => {
+        this.orders = os ?? [];
+        this.ordersOptions = (os ?? []).map(o => ({
+          label: `ORD-${o.id} · ${o.patient?.lastName}, ${o.patient?.firstName}`,
+          value: o.id!
+        }));
+      })
+    );
+
+    // Cargar exámenes (para specimenType de cada examen)
+    this.subs.push(
+      this.examsSvc.exams$.subscribe(xs => {
+        this.allExams = xs ?? [];
+        // Si ya hay orderId seleccionado, recalculamos
+        const currentOrderId = this.form.controls.orderId.value;
+        if (currentOrderId) this.computeAllowedTipos(currentOrderId);
+      })
+    );
+
+    // Recalcular tipos cuando cambia la orden
+    this.subs.push(
+      this.form.controls.orderId.valueChanges.subscribe(id => {
+        this.onOrderChange(id);
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subs.forEach(s => s.unsubscribe());
+  }
+
+  // Cuando cambia la orden, recalculamos los tipos disponibles
+  onOrderChange(id: number | null) {
+    if (!id) {
+      this.allowedTipos = [];
+      this.form.controls.type.setValue(null);
+      return;
+    }
+    this.computeAllowedTipos(id, this.form.controls.type.value ?? undefined);
+  }
+
+  private computeAllowedTipos(orderId: number, keepIfMissing?: SpecimenType) {
+    const order = this.orders.find(o => o.id === orderId);
+    const examIds = (order?.items ?? []).map(it => it.examId);
+
+    const tipos = examIds
+      .map(id => this.allExams.find(e => e.id === id)?.specimenType)
+      .filter((t): t is SpecimenType => !!t);
+
+    const set = new Set<SpecimenType>(tipos);
+    if (keepIfMissing && !set.has(keepIfMissing)) set.add(keepIfMissing);
+
+    const toLabel = (t: SpecimenType) =>
+      t === 'SANGRE' ? 'Sangre' :
+      t === 'SUERO'  ? 'Suero'  :
+      t === 'PLASMA' ? 'Plasma' :
+      t === 'ORINA'  ? 'Orina'  :
+      t === 'SALIVA' ? 'Saliva' :
+      t === 'HECES'  ? 'Heces'  :
+      t === 'TEJIDO' ? 'Tejido' : 'Otra';
+
+    this.allowedTipos = Array.from(set)
+      .sort()
+      .map(t => ({ label: toLabel(t), value: t }));
+
+    // si el valor actual ya no es válido, se limpia
+    const current = this.form.controls.type.value;
+    if (!current || !this.allowedTipos.some(o => o.value === current)) {
+      this.form.controls.type.setValue(null);
     }
   }
 
-  // UX
-  onHide() {
-    this.visible = false;
-    this.visibleChange.emit(false);
-    this.cancel.emit();
-    this.router.navigate(['/muestras']); // volver a la lista al cerrar
-  }
+  // Guardar
+  save(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const v = this.form.getRawValue();
 
-  submit() {
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-
-    const v = this.form.value;
-    const payload: NewSamplePayload = {
-      ordenId:     v.ordenId!,
-      tipo:        v.tipo!,
-      codigoBarra: v.codigoBarra ?? null,
-      fechaToma:   v.fechaToma!,
-      estado:      v.estado!,
-      observacion: v.observacion ?? null,
+    const payload: Omit<SampleI, 'id'> = {
+      orderId: v.orderId!,
+      type: v.type!,                    // ya validado por required
+      barcode: v.barcode || undefined,
+      drawDate: v.drawDate ? v.drawDate.toISOString() : undefined,
+      state: v.state ?? 'RECOLECTADA',
+      observations: v.observations || undefined
     };
 
-    this.create.emit(payload);
-    this.visible = false;
-    this.visibleChange.emit(false);
-    this.router.navigate(['/muestras']);
+    this.svc.add(payload).subscribe(newSample => this.created.emit(newSample));
   }
-}
 
-/* Tipos del formulario */
-type SampleForm = {
-  ordenId: FormControl<string>;
-  tipo: FormControl<string>;
-  codigoBarra: FormControl<string | null>;
-  fechaToma: FormControl<Date>;
-  estado: FormControl<SampleStatus>;
-  observacion: FormControl<string | null>;
-};
+  cancel(): void { this.cancelled.emit(); }
+}

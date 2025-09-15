@@ -1,152 +1,137 @@
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-/* PrimeNG v20 */
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
-import { TextareaModule } from 'primeng/textarea';
-import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 
-export type SampleStatus = 'pendiente' | 'tomada' | 'rechazada' | 'enviada' | 'archivada';
+import { SamplesService } from '../../../services/sample-service';
+import { OrdersService } from '../../../services/order-service';
+import { ExamsService } from '../../../services/exam-service';
 
-/** Modelo esperado para editar (ajústalo a tu API si difiere) */
-export interface SampleForEdit {
-  id: string;
-  ordenId: string;                 // FK a la orden
-  tipo: string;
-  codigoBarra?: string | null;
-  fechaToma: Date | string | null;
-  estado: SampleStatus;
-  observacion?: string | null;
-}
-
-export type SampleUpdatePayload = SampleForEdit;
+import { SampleI, SampleState } from '../../../models/sample-model';
+import { SpecimenType, ExamI } from '../../../models/exam-model';
+import { OrderI } from '../../../models/order-model';
 
 @Component({
-  selector: 'app-edit-sample-dialog',
+  selector: 'app-update-sample',
   standalone: true,
-  imports: [
-    CommonModule, ReactiveFormsModule,
-    DialogModule, ButtonModule, InputTextModule,
-    DatePickerModule, TextareaModule, DividerModule, SelectModule,
-  ],
-  templateUrl: './update-sample.html',
-  styleUrls: ['./update-sample.css'],
+  imports: [CommonModule, ReactiveFormsModule, InputTextModule, DatePickerModule, SelectModule, TextareaModule, ButtonModule, DividerModule],
+  templateUrl: './update-sample.html'
 })
-export class UpdateSample implements OnInit, OnChanges {
-  /* Visibilidad del diálogo */
-  @Input() visible = false;
-  @Output() visibleChange = new EventEmitter<boolean>();
+export class UpdateSample implements OnInit {
+  @Input() sampleId?: number;
+  @Output() saved = new EventEmitter<SampleI>();
+  @Output() cancelled = new EventEmitter<void>();
 
-  /* Datos */
-  @Input() sample: SampleForEdit | null = null;
+  private fb = inject(FormBuilder);
+  private samplesSvc = inject(SamplesService);
+  private ordersSvc = inject(OrdersService);
+  private examsSvc = inject(ExamsService);
 
-  /* Eventos */
-  @Output() update = new EventEmitter<SampleUpdatePayload>();
-  @Output() cancel = new EventEmitter<void>();
-  @Output() remove = new EventEmitter<string>(); // id de la muestra a eliminar
+  sample?: SampleI;
+  order?: OrderI;
+  allExams: ExamI[] = [];
+  allowedTipos: SpecimenType[] = [];
 
-  // --- Formulario ---
-  form!: FormGroup;
+  stateOptions: SampleState[] = ['RECOLECTADA', 'EN_PROCESO', 'RECHAZADA', 'ANULADA'];
 
-  tiposMuestra = [
-    { label: 'Sangre', value: 'Sangre' },
-    { label: 'Suero',  value: 'Suero'  },
-    { label: 'Plasma', value: 'Plasma' },
-    { label: 'Orina',  value: 'Orina'  },
-    { label: 'Hisopo', value: 'Hisopo' },
-    { label: 'Tejido', value: 'Tejido' },
-    { label: 'Otro',   value: 'Otro'   },
-  ];
+  form = this.fb.group({
+    orderId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
+    type:    this.fb.control<SpecimenType | null>(null, { validators: [Validators.required] }),
+    barcode: this.fb.control<string>(''),
+    drawDate:this.fb.control<Date | null>(null),
+    state:   this.fb.control<SampleState>('RECOLECTADA', { nonNullable: true }),
+    observations: this.fb.control<string>(''),
+  });
 
-  estados: { label: string; value: SampleStatus }[] = [
-    { label: 'pendiente', value: 'pendiente' },
-    { label: 'tomada',    value: 'tomada'    },
-    { label: 'rechazada', value: 'rechazada' },
-    { label: 'enviada',   value: 'enviada'   },
-    { label: 'archivada', value: 'archivada' },
-  ];
+  ngOnInit(): void {
+    this.examsSvc.list({ status: 'ACTIVE' }).subscribe(xs => this.allExams = xs);
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      ordenId:     ['', Validators.required],
-      tipo:        ['Sangre', Validators.required],
-      codigoBarra: [null],
-      fechaToma:   [new Date(), Validators.required],
-      estado:      ['pendiente' as SampleStatus, Validators.required],
-      observacion: [null],
+    if (!this.sampleId) return;
+    this.samplesSvc.getById(this.sampleId).subscribe(s => {
+      this.sample = s;
+      if (!s) return;
+      this.form.patchValue({
+        orderId: s.orderId,
+        type: s.type,
+        barcode: s.barcode ?? '',
+        drawDate: s.drawDate ? new Date(s.drawDate) : null,
+        state: s.state,
+        observations: s.observations ?? ''
+      });
+
+      // cargar orden y tipos permitidos
+      this.ordersSvc.getById(s.orderId).subscribe(o => {
+        this.order = o;
+        this.computeAllowedTipos(o?.id ?? 0, s.type);
+      });
+    });
+
+    this.form.controls.orderId.valueChanges.subscribe(id => {
+      if (id == null) {
+        this.order = undefined;
+        this.allowedTipos = [];
+        this.form.controls.type.setValue(null);
+        return;
+      }
+      this.ordersSvc.getById(id).subscribe(o => {
+        this.order = o;
+        this.computeAllowedTipos(o?.id ?? 0, this.form.controls.type.value ?? undefined);
+      });
     });
   }
 
-  ngOnInit(): void {
-    if (this.sample) this.loadFromSample(this.sample);
-  }
+  private computeAllowedTipos(orderId: number, keepIfMissing?: SpecimenType): void {
+    const currentOrder = this.order;
+    if (!currentOrder) {
+      this.allowedTipos = keepIfMissing ? [keepIfMissing] : [];
+      return;
+    }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['sample'] && this.sample) {
-      this.loadFromSample(this.sample);
-      if (!this.visible) {
-        this.visible = true;
-        this.visibleChange.emit(true);
-      }
+    const examIds = (currentOrder.items ?? []).map(it => it.examId);
+    const tipos = examIds
+      .map(id => this.allExams.find(e => e.id === id)?.specimenType)
+      .filter((t): t is SpecimenType => !!t);
+
+    const set = new Set<SpecimenType>(tipos);
+    if (keepIfMissing && !set.has(keepIfMissing)) set.add(keepIfMissing);
+
+    this.allowedTipos = Array.from(set).sort();
+
+    const current = this.form.controls.type.value;
+    if (!current || !this.allowedTipos.includes(current)) {
+      this.form.controls.type.setValue(null);
     }
   }
 
-  /* ====== Cargar valores al form ====== */
-  private loadFromSample(s: SampleForEdit) {
-    this.form.reset({
-      ordenId: s.ordenId,
-      tipo: s.tipo ?? 'Sangre',
-      codigoBarra: s.codigoBarra ?? null,
-      fechaToma: s.fechaToma ? new Date(s.fechaToma) : new Date(),
-      estado: s.estado,
-      observacion: s.observacion ?? null,
+  save(): void {
+    if (!this.sample?.id) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const v = this.form.getRawValue();
+
+    const patch: Partial<SampleI> = {
+      orderId: v.orderId!,
+      type: v.type!,
+      barcode: v.barcode || undefined,
+      drawDate: v.drawDate ? v.drawDate.toISOString() : undefined,
+      state: v.state ?? 'RECOLECTADA',
+      observations: v.observations || undefined
+    };
+
+    this.samplesSvc.update(this.sample.id, patch).subscribe(updated => {
+      if (updated) this.saved.emit(updated); // <-- tipos alineados
     });
   }
 
-  /* ====== UX ====== */
-  onHide() {
-    this.visible = false;
-    this.visibleChange.emit(false);
-    this.cancel.emit();
-  }
-
-  submit() {
-    if (!this.sample) return;
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-
-    const v = this.form.value;
-    const payload: SampleUpdatePayload = {
-      id: this.sample.id,
-      ordenId: v.ordenId!,
-      tipo: v.tipo!,
-      codigoBarra: v.codigoBarra ?? null,
-      fechaToma: v.fechaToma!,
-      estado: v.estado!,
-      observacion: v.observacion ?? null,
-    };
-
-    this.update.emit(payload);
-    this.visible = false;
-    this.visibleChange.emit(false);
-  }
-
-  onRemove() {
-    if (this.sample) this.remove.emit(this.sample.id);
+  cancel(): void {
+    this.cancelled.emit();
   }
 }
-
-/* Tipado fuerte opcional del form si lo deseas */
-type SampleForm = {
-  ordenId: FormControl<string>;
-  tipo: FormControl<string>;
-  codigoBarra: FormControl<string | null>;
-  fechaToma: FormControl<Date>;
-  estado: FormControl<SampleStatus>;
-  observacion: FormControl<string | null>;
-};

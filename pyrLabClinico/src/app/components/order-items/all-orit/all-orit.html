@@ -1,0 +1,118 @@
+<div class="card p-5">
+    <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
+        <h2 class="text-2xl font-bold">Órdenes (con exámenes)</h2>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <span class="p-input-icon-left">
+                <i class="pi pi-search text-gray-400 p-3"></i>
+                <input pInputText type="text" class="w-72 max-w-full"
+                    placeholder="Buscar por código, paciente, documento o examen…" [formControl]="form.controls.q" />
+            </span>
+
+            <button pButton type="button" label="Limpiar" class="p-button-text !text-red-500 hover:!bg-red-50"
+                (click)="dt.clear(); clear()" [disabled]="!(form.controls.q.value?.length)"></button>
+        </div>
+    </header>
+
+    <div class="h-0.5 w-16 bg-emerald-500 mb-3"></div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+        <!-- Filtros por estado -->
+        <button pButton type="button" label="Todas" icon="pi pi-list"
+            [severity]="form.value.state === undefined ? 'primary' : 'secondary'"
+            (click)="form.patchValue({ state: undefined })"></button>
+
+        <button pButton type="button" label="Creadas" icon="pi pi-plus-circle"
+            [severity]="form.value.state === 'CREADA' ? 'primary' : 'secondary'"
+            (click)="form.patchValue({ state: 'CREADA' })"></button>
+
+        <button pButton type="button" label="Tomadas" icon="pi pi-check"
+            [severity]="form.value.state === 'TOMADA' ? 'primary' : 'secondary'"
+            (click)="form.patchValue({ state: 'TOMADA' })"></button>
+
+        <button pButton type="button" label="Anuladas" icon="pi pi-times"
+            [severity]="form.value.state === 'ANULADA' ? 'danger' : 'secondary'"
+            (click)="form.patchValue({ state: 'ANULADA' })"></button>
+
+        <button pButton type="button" label="En proceso" icon="pi pi-spinner"
+            [severity]="form.value.state === 'EN_PROCESO' ? 'warn' : 'secondary'"
+            (click)="form.patchValue({ state: 'EN_PROCESO' })"></button>
+
+        <button pButton type="button" label="Entregadas" icon="pi pi-send"
+            [severity]="form.value.state === 'ENTREGADA' ? 'help' : 'secondary'"
+            (click)="form.patchValue({ state: 'ENTREGADA' })"></button>
+
+        <button pButton type="button" label="Validadas" icon="pi pi-shield"
+            [severity]="form.value.state === 'VALIDADA' ? 'success' : 'secondary'"
+            (click)="form.patchValue({ state: 'VALIDADA' })"></button>
+    </div>
+
+    <p-table #dt [value]="(rows$ | async) ?? []" dataKey="id" [paginator]="true" [rows]="10"
+        [rowsPerPageOptions]="[10,20,50]" sortMode="single" [tableStyle]="{ 'min-width':'78rem' }">
+
+        <!-- Encabezado -->
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="id">Código <p-sortIcon field="id"></p-sortIcon></th>
+                <th>Paciente</th>
+                <th pSortableColumn="orderDate">Fecha <p-sortIcon field="orderDate"></p-sortIcon></th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Exámenes</th>
+                <th class="text-right" pSortableColumn="netTotal">Total <p-sortIcon field="netTotal"></p-sortIcon></th>
+                <th class="w-40">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <!-- Fila -->
+        <ng-template pTemplate="body" let-row let-expanded="expanded">
+            <tr>
+                <td>ORD-{{ row.id }}</td>
+                <td>
+                    {{ row.patient?.firstName }} {{ row.patient?.lastName }}
+                    <small class="text-color-secondary" *ngIf="row.patient?.docNumber">
+                        ({{ row.patient.docNumber }})
+                    </small>
+                </td>
+                <td>{{ row.orderDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ row.priority }}</td>
+                <td><p-tag [value]="row.state" [severity]="tagSeverity(row.state)"></p-tag></td>
+
+                <td>
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium">{{ examsCount(row) }}</span>
+                        <small class="text-color-secondary truncate max-w-[320px]" [title]="examsCodes(row)">
+                            {{ examsCodes(row) }}
+                        </small>
+                    </div>
+                </td>
+
+                <td class="text-right">
+                    {{ (row.netTotal ?? sumItems(row)) | number:'1.0-0' }}
+                </td>
+
+                <td class="flex gap-2">
+                    <!-- 👇 ahora abre el modal con app-view-orit -->
+                    <button pButton icon="pi pi-eye" [text]="true" [rounded]="true" severity="info"
+                        (click)="openView(row.id!)" pTooltip="Ver"></button>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td class="text-center py-6">Sin resultados</td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <p-dialog [(visible)]="showView" [modal]="true" [draggable]="false" [resizable]="false"
+        [style]="{ width: '1200px' }" (onHide)="closeView()">
+        <ng-template pTemplate="header">
+            <span class="font-bold text-xl md:text-2xl">Detalle de orden</span>
+        </ng-template>
+
+        <!-- ✅ sin outputs; view-orit maneja su propio diálogo de edición -->
+        <app-view-orit *ngIf="viewedOrderId != null" [orderId]="viewedOrderId"></app-view-orit>
+    </p-dialog>
+</div>

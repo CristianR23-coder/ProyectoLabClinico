@@ -1,0 +1,43 @@
+<form [formGroup]="form" class="space-y-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Nombre <span class="text-red-500">*</span></label>
+      <input pInputText formControlName="name" placeholder="Nombre de la aseguradora" />
+      <small class="p-error" *ngIf="form.controls.name.invalid && form.controls.name.touched">Requerido.</small>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">NIT</label>
+      <input pInputText formControlName="nit" placeholder="NIT" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Email</label>
+      <input pInputText formControlName="email" placeholder="correo@dominio.com" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Teléfono</label>
+      <input pInputText formControlName="phone" placeholder="3001234567" />
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block mb-1 text-sm font-semibold">Dirección</label>
+      <input pInputText formControlName="address" placeholder="Calle 10 # 20-30" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Estado</label>
+      <p-select formControlName="status"
+                [options]="[{label:'Activo', value:'ACTIVE'},{label:'Inactivo', value:'INACTIVE'}]"
+                optionLabel="label" optionValue="value"></p-select>
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <div class="flex justify-end gap-3">
+    <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cancelar" (click)="cancel()"></button>
+    <button pButton type="button" label="Guardar" icon="pi pi-check" (click)="save()"></button>
+  </div>
+</form>

@@ -1,286 +1,225 @@
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
-/* PrimeNG v20 */
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { TextareaModule } from 'primeng/textarea';
-import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
-export type OrderStatus =
-  'pendiente' | 'en-proceso' | 'completada' | 'reportada' | 'cancelada';
-
-export interface Exam {
-  id: string;
-  codigo: string;
-  nombre: string;
-  precio: number;
-  panelId?: string | null;
-}
-
-/** Modelo esperado para editar (ajústalo a tu API si difiere) */
-export interface OrderForEdit {
-  id: string;
-  numero: string;
-  pacienteId: string;
-  medicoId: string;
-  aseguradoraId?: string | null;
-  fechaCreacion: Date | string;
-  estado: OrderStatus;
-  observaciones?: string;
-  muestras: {
-    tipo: string;
-    codigoBarra?: string | null;
-    fechaToma: Date | string;
-    observacion?: string | null;
-  }[];
-  examenes: {
-    examenId: string;
-    examNombre: string;
-    precio: number;
-    panelId?: string | null;
-  }[];
-}
-
-export interface OrderUpdatePayload extends OrderForEdit {
-  total: number;
-  pruebas: number;
-}
+import { OrdersService } from '../../../services/order-service';                 // ← ajusta si difiere (p.ej. '../../../services/order-service')
+import { ExamsService } from '../../../services/exam-service';         // ← ajusta si difiere
+import { OrderI, OrderState } from '../../../models/order-model';
+import { PatientI } from '../../../models/patient-model';
+import { DoctorI } from '../../../models/doctor-model';
+import { InsuranceI } from '../../../models/insurance-model';
+import { OrderItemI } from '../../../models/order-item-model';
+import { ExamI } from '../../../models/exam-model';
 
 @Component({
-  selector: 'app-edit-order-dialog',
+  selector: 'app-edit-order',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
-    DialogModule, ButtonModule, InputTextModule, InputNumberModule,
-    DatePickerModule, AutoCompleteModule, TextareaModule, DividerModule,
-    SelectModule,
+    CommonModule, RouterModule, ReactiveFormsModule,
+    InputTextModule, DatePickerModule, SelectModule, TextareaModule,
+    ButtonModule, DividerModule, TableModule, TagModule
   ],
-  templateUrl: './update-order.html',
-  styleUrls: ['./update-order.css'],
+  templateUrl: './update-order.html'
 })
-export class UpdateOrder implements OnInit, OnChanges {
-  /* Visibilidad del diálogo */
-  @Input() visible = false;
-  @Output() visibleChange = new EventEmitter<boolean>();
+export class UpdateOrder implements OnInit, OnDestroy {
+  @Input() orderId?: number;
+  @Output() saved = new EventEmitter<OrderI>();
+  @Output() cancelled = new EventEmitter<void>();
 
-  /* Datos de apoyo */
-  @Input() order: OrderForEdit | null = null;
-  @Input() examCatalog: Exam[] = [];
-  @Input() currencyCode = 'COP';
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+  private ordersSvc = inject(OrdersService);
+  private examsSvc = inject(ExamsService);
 
-  /* Eventos */
-  @Output() update = new EventEmitter<OrderUpdatePayload>();
-  @Output() cancel = new EventEmitter<void>();
-  @Output() remove = new EventEmitter<string>(); // id de la orden a eliminar (opcional)
+  private sub?: Subscription;
+  loading = true;
+  saving = false;
+  order?: OrderI;
 
-  // --- Formulario ---
-  form!: FormGroup;
-  filteredExams: Exam[] = [];
-
-  // Selects
-  tiposMuestra = [
-    { label: 'Sangre', value: 'Sangre' },
-    { label: 'Suero', value: 'Suero' },
-    { label: 'Plasma', value: 'Plasma' },
-    { label: 'Orina', value: 'Orina' },
-    { label: 'Hisopo', value: 'Hisopo' },
-    { label: 'Tejido', value: 'Tejido' },
-    { label: 'Otro', value: 'Otro' },
+  // catálogos demo
+  patients: PatientI[] = [
+    { id: 501, docType: 'CC', docNumber: '123456', firstName: 'Ana', lastName: 'Perez', status: 'ACTIVE' },
+    { id: 502, docType: 'CC', docNumber: '789012', firstName: 'Luis', lastName: 'Gomez', status: 'ACTIVE' }
+  ];
+  doctors: DoctorI[] = [
+    { id: 80, docNumber: 'M-998', name: 'Dr. Lopez', status: 'ACTIVE' },
+    { id: 81, docNumber: 'M-777', name: 'Dr. Ruiz', status: 'ACTIVE' }
+  ];
+  insurances: InsuranceI[] = [
+    { id: 7, name: 'Health Plus', nit: '900.123.456', status: 'ACTIVE' },
+    { id: 8, name: 'Care One', nit: '901.777.111', status: 'ACTIVE' }
   ];
 
-  estados: { label: string; value: OrderStatus }[] = [
-    { label: 'pendiente',  value: 'pendiente' },
-    { label: 'en-proceso', value: 'en-proceso' },
-    { label: 'completada', value: 'completada' },
-    { label: 'reportada',  value: 'reportada' },
-    { label: 'cancelada',  value: 'cancelada' },
+  // catálogo de exámenes
+  examsAll: ExamI[] = [];
+
+  priorityOptions = [
+    { label: 'Rutina', value: 'RUTINA' as const },
+    { label: 'Urgente', value: 'URGENTE' as const }
+  ];
+  stateOptions: { label: string; value: OrderState }[] = [
+    { label: 'Creada', value: 'CREADA' },
+    { label: 'Tomada', value: 'TOMADA' },
+    { label: 'En proceso', value: 'EN_PROCESO' },
+    { label: 'Validada', value: 'VALIDADA' },
+    { label: 'Entregada', value: 'ENTREGADA' },
+    { label: 'Anulada', value: 'ANULADA' },
   ];
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      numero: [{ value: '', disabled: true }],  // normalmente no se edita
-      pacienteId: ['', Validators.required],
-      medicoId: ['', Validators.required],
-      aseguradoraId: [null],
-      fechaCreacion: [new Date(), Validators.required],
-      estado: ['pendiente' as OrderStatus, Validators.required],
-      observaciones: [''],
+  // 🔑 Form reactivo (sin netTotal porque se calcula)
+  form = this.fb.group({
+    patientId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
+    doctorId: this.fb.control<number | null>(null),
+    insuranceId: this.fb.control<number | null>(null),
 
-      muestras: this.fb.array<FormGroup<MuestraForm>>([]),
-      examenes: this.fb.array<FormGroup<OrdenExamenForm>>([]),
+    priority: this.fb.control<'RUTINA' | 'URGENTE'>('RUTINA', { nonNullable: true }),
+    state: this.fb.control<OrderState>('CREADA', { nonNullable: true }),
+
+    orderDate: this.fb.control<Date | null>(null, { validators: [Validators.required] }),
+    observations: this.fb.control<string>(''),
+
+    status: this.fb.control<'ACTIVE' | 'INACTIVE'>('ACTIVE', { nonNullable: true }),
+
+    // ← Control para AGREGAR examen (reemplaza [(ngModel)])
+    examToAddId: this.fb.control<number | null>(null)
+  });
+
+  ngOnInit(): void {
+    // cargar exámenes
+    this.examsSvc.list().subscribe(list => (this.examsAll = list));
+
+    if (this.orderId == null) {
+      const idParam = this.route.snapshot.paramMap.get('id');
+      this.orderId = idParam ? Number(idParam) : undefined;
+    }
+    if (!this.orderId || Number.isNaN(this.orderId)) {
+      this.loading = false;
+      return;
+    }
+
+    this.sub = this.ordersSvc.getById(this.orderId).subscribe(ord => {
+      this.order = ord;
+      this.loading = false;
+      if (ord) this.patchForm(ord);
     });
   }
 
-  ngOnInit(): void {
-    // Si entras como ruta/overlay con la orden ya puesta:
-    if (this.order) this.loadFromOrder(this.order);
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['order'] && this.order) {
-      this.loadFromOrder(this.order);
-      // Mostrar el diálogo si llega una orden y visible no está activado aún
-      if (!this.visible) {
-        this.visible = true;
-        this.visibleChange.emit(true);
-      }
+  private patchForm(o: OrderI) {
+    this.form.reset({
+      patientId: o.patient?.id ?? null,
+      doctorId: o.doctor?.id ?? null,
+      insuranceId: o.insurance?.id ?? null,
+      priority: o.priority,
+      state: o.state,
+      orderDate: o.orderDate ? new Date(o.orderDate) : null,
+      observations: o.observations ?? '',
+      status: o.status ?? 'ACTIVE',
+      examToAddId: null
+    });
+
+    if (this.disableAllEdits) {
+      this.form.disable({ emitEvent: false });
     }
   }
 
-  // Getters cómodos
-  get muestras(): FormArray<FormGroup<MuestraForm>> { return this.form.get('muestras') as any; }
-  get examenes(): FormArray<FormGroup<OrdenExamenForm>> { return this.form.get('examenes') as any; }
-  get total(): number { return this.examenes.controls.reduce((a, g) => a + Number(g.get('precio')?.value ?? 0), 0); }
-  get totalPruebas(): number { return this.examenes.length; }
+  save(): void {
+    if (!this.order?.id) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const v = this.form.getRawValue();
 
-  /* ====== Cargar valores al form ====== */
-  private loadFromOrder(o: OrderForEdit) {
-    // limpiar arrays
-    this.muestras.clear();
-    this.examenes.clear();
+    const patientId = Number(v.patientId);
+    const doctorId = v.doctorId != null ? Number(v.doctorId) : undefined;
+    const insuranceId = v.insuranceId != null ? Number(v.insuranceId) : undefined;
 
-    // set valores base
-    this.form.patchValue({
-      numero: o.numero ?? '',
-      pacienteId: o.pacienteId,
-      medicoId: o.medicoId,
-      aseguradoraId: o.aseguradoraId ?? null,
-      fechaCreacion: o.fechaCreacion ? new Date(o.fechaCreacion) : new Date(),
-      estado: o.estado,
-      observaciones: o.observaciones ?? '',
-    });
+    const patient = this.patients.find(p => p.id === patientId)!;
+    const doctor = doctorId ? this.doctors.find(d => d.id === doctorId) : undefined;
+    const insurance = insuranceId ? this.insurances.find(i => i.id === insuranceId) : undefined;
 
-    // muestras
-    (o.muestras ?? []).forEach(m => {
-      this.muestras.push(this.fb.group<MuestraForm>({
-        tipo: new FormControl<string>(m.tipo ?? 'Sangre', { nonNullable: true, validators: [Validators.required] }),
-        codigoBarra: new FormControl<string | null>(m.codigoBarra ?? null),
-        fechaToma: new FormControl<Date>(m.fechaToma ? new Date(m.fechaToma) : new Date(), { nonNullable: true }),
-        observacion: new FormControl<string | null>(m.observacion ?? null),
-      }));
-    });
-    if (this.muestras.length === 0) this.addMuestra();
+    const dateVal = v.orderDate instanceof Date ? v.orderDate : new Date(v.orderDate as any);
 
-    // examenes
-    (o.examenes ?? []).forEach(e => {
-      this.examenes.push(this.fb.group<OrdenExamenForm>({
-        examenId: new FormControl<string>(e.examenId, { nonNullable: true, validators: [Validators.required] }),
-        examNombre: new FormControl<string>(e.examNombre ?? '', { nonNullable: true }),
-        precio: new FormControl<number>(e.precio ?? 0, { nonNullable: true, validators: [Validators.min(0)] }),
-        panelId: new FormControl<string | null>(e.panelId ?? null),
-        examCtrl: new FormControl<Exam | null>(null), // UI
-      }));
-    });
-    if (this.examenes.length === 0) this.addExamen();
-  }
-
-  /* ====== Muestras ====== */
-  addMuestra() {
-    const g = this.fb.group<MuestraForm>({
-      tipo: new FormControl<string>('Sangre', { nonNullable: true, validators: [Validators.required] }),
-      codigoBarra: new FormControl<string | null>(null),
-      fechaToma: new FormControl<Date>(new Date(), { nonNullable: true }),
-      observacion: new FormControl<string | null>(null),
-    });
-    this.muestras.push(g);
-  }
-  removeMuestra(i: number) { if (this.muestras.length > 1) this.muestras.removeAt(i); }
-
-  /* ====== Exámenes ====== */
-  addExamen() {
-    const g = this.fb.group<OrdenExamenForm>({
-      examenId: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
-      examNombre: new FormControl<string>('', { nonNullable: true }),
-      precio: new FormControl<number>(0, { nonNullable: true, validators: [Validators.min(0)] }),
-      panelId: new FormControl<string | null>(null),
-      examCtrl: new FormControl<Exam | null>(null), // UI
-    });
-    this.examenes.push(g);
-  }
-  removeExamen(i: number) { if (this.examenes.length > 1) this.examenes.removeAt(i); }
-
-  filterExam(event: any) {
-    const q = (event.query ?? '').toLowerCase();
-    this.filteredExams = this.examCatalog.filter(e =>
-      e.nombre.toLowerCase().includes(q) || e.codigo.toLowerCase().includes(q)
-    );
-  }
-  onExamSelect(exam: Exam, idx: number) {
-    const g = this.examenes.at(idx);
-    g.patchValue({
-      examenId: exam.id,
-      examNombre: `${exam.codigo} - ${exam.nombre}`,
-      precio: exam.precio ?? 0,
-      panelId: exam.panelId ?? null,
-    });
-  }
-
-  /* ====== UX ====== */
-  onHide() {
-    this.visible = false;
-    this.visibleChange.emit(false);
-    this.cancel.emit();
-  }
-
-  submit() {
-    if (!this.order) return;
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-
-    const v = this.form.getRawValue(); // incluye 'numero' deshabilitado
-    const payload: OrderUpdatePayload = {
-      id: this.order.id,
-      numero: v.numero ?? this.order.numero,
-      pacienteId: v.pacienteId!,
-      medicoId: v.medicoId!,
-      aseguradoraId: v.aseguradoraId ?? null,
-      fechaCreacion: v.fechaCreacion!,
-      estado: v.estado!,
-      observaciones: v.observaciones ?? '',
-      muestras: this.muestras.controls.map(g => ({
-        tipo: g.get('tipo')!.value!,
-        codigoBarra: g.get('codigoBarra')!.value ?? null,
-        fechaToma: g.get('fechaToma')!.value!,
-        observacion: g.get('observacion')!.value ?? null,
-      })),
-      examenes: this.examenes.controls.map(g => ({
-        examenId: g.get('examenId')!.value!,
-        examNombre: g.get('examNombre')!.value!,
-        precio: g.get('precio')!.value ?? 0,
-        panelId: g.get('panelId')!.value ?? null,
-      })),
-      total: this.total,
-      pruebas: this.totalPruebas,
+    const patch: Partial<OrderI> = {
+      patient, doctor, insurance,
+      priority: v.priority ?? 'RUTINA',
+      state: v.state ?? 'CREADA',
+      orderDate: dateVal.toISOString(),
+      observations: v.observations || undefined,
+      status: v.status ?? 'ACTIVE',
     };
 
-    this.update.emit(payload);
-    this.visible = false;
-    this.visibleChange.emit(false);
+    this.saving = true;
+    this.ordersSvc.update(this.order.id, patch).subscribe(updated => {
+      this.saving = false;
+      if (updated) this.saved.emit(updated);
+    });
   }
 
-  onRemove() {
-    if (this.order) this.remove.emit(this.order.id);
+  cancel(): void {
+    this.cancelled.emit();
+  }
+
+  // ——— Exámenes ———
+  get availableExams(): ExamI[] {
+    // Solo activos para agregar:
+    return this.examsAll.filter(x => x.status === 'ACTIVE');
+  }
+
+  addExam() {
+    if (!this.order?.id) return;
+    const id = this.form.controls.examToAddId.value;
+    if (!id) return;
+
+    const exam = this.examsAll.find(e => e.id === id);
+    if (!exam) return;
+
+    this.ordersSvc.addItem(this.order.id, exam).subscribe(ord => {
+      if (ord) {
+        this.order = ord;
+        this.form.controls.examToAddId.setValue(null); // limpiar selector
+      }
+    });
+  }
+
+  removeItem(it: OrderItemI) {
+    if (!this.order?.id || !it.id) return;
+    const ok = confirm(`¿Quitar el examen ${it.code} de la orden #${this.order.id}?`);
+    if (!ok) return;
+    this.ordersSvc.removeItem(this.order.id, it.id).subscribe(ord => {
+      if (ord) this.order = ord;
+    });
+  }
+
+  // Estado del EXAMEN (ACTIVE/INACTIVE) para mostrar
+  examStatusOf(it: OrderItemI): 'ACTIVE' | 'INACTIVE' | undefined {
+    return this.examsAll.find(e => e.id === it.examId)?.status;
+  }
+  statusSeverity(s?: 'ACTIVE' | 'INACTIVE'): 'success' | 'danger' | 'warning' | 'info' | undefined {
+    if (s === 'ACTIVE') return 'success';
+    if (s === 'INACTIVE') return 'danger';
+    return undefined;
+  }
+
+  // ——— Helpers UI ———
+  get disableAllEdits(): boolean {
+    const s = this.order?.state;
+    return s === 'ENTREGADA' || s === 'ANULADA';
   }
 }
-
-/* ====== Tipos fuertes para los form groups ====== */
-type MuestraForm = {
-  tipo: FormControl<string>;
-  codigoBarra: FormControl<string | null>;
-  fechaToma: FormControl<Date>;
-  observacion: FormControl<string | null>;
-};
-type OrdenExamenForm = {
-  examenId: FormControl<string>;
-  examNombre: FormControl<string>;
-  precio: FormControl<number>;
-  panelId: FormControl<string | null>;
-  examCtrl: FormControl<Exam | null>;
-};

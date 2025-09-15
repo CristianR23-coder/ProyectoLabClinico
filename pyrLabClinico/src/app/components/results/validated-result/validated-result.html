@@ -1,0 +1,83 @@
+<div class="min-w-[320px]">
+  @if (loading) {
+    <div class="p-4 text-center text-color-secondary">Cargando…</div>
+  } @else if (!result) {
+    <div class="p-4 text-center text-red-500">Resultado no encontrado.</div>
+  } @else {
+    <div class="mb-3 text-sm text-color-secondary">
+      <div><span class="font-semibold">Parámetro:</span> #{{ result.parameterId }} — {{ param?.name || '—' }}</div>
+      <div><span class="font-semibold">Unidad:</span> {{ result.units || param?.unit || '—' }}</div>
+      <div *ngIf="param?.typeValue==='NUMERICO'">
+        <span class="font-semibold">Ref.:</span> {{ param?.refMin ?? '—' }} – {{ param?.refMax ?? '—' }} {{ param?.unit || '' }}
+      </div>
+    </div>
+
+    <form [formGroup]="form" class="space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <ng-container [ngSwitch]="param?.typeValue">
+          <div *ngSwitchCase="'NUMERICO'">
+            <label class="block mb-1 text-sm font-semibold">Valor ({{ param?.unit || '—' }})</label>
+            <p-inputNumber formControlName="numValue" [useGrouping]="false" [readonly]="true"></p-inputNumber>
+          </div>
+          <div *ngSwitchDefault class="md:col-span-3">
+            <label class="block mb-1 text-sm font-semibold">Valor</label>
+            <input pInputText formControlName="textValue" readonly />
+          </div>
+        </ng-container>
+
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Fecha</label>
+          <p-datepicker formControlName="dateResult" [showIcon]="true" appendTo="body" [readonlyInput]="true" [disabled]="true"></p-datepicker>
+        </div>
+
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Fuera de rango</label>
+          <input pInputText [value]="form.controls.outRange.value === true ? 'Sí' : form.controls.outRange.value === false ? 'No' : '—'" readonly />
+        </div>
+
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Unidades</label>
+          <input pInputText formControlName="units" readonly />
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block mb-1 text-sm font-semibold">Método</label>
+          <input pInputText formControlName="method" readonly />
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block mb-1 text-sm font-semibold">Comentario</label>
+          <textarea pTextarea rows="2" formControlName="comment" class="w-full" readonly></textarea>
+        </div>
+
+        <!-- 👇 Único campo editable -->
+        <div class="md:col-span-3">
+          <label class="block mb-1 text-sm font-semibold">Validado/Rechazado por</label>
+          <p-select formControlName="validatedForId"
+                    [options]="doctors"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="true"
+                    placeholder="Selecciona médico"
+                    appendTo="body">
+          </p-select>
+          <small class="text-red-500" *ngIf="form.controls.validatedForId.touched && form.controls.validatedForId.invalid">
+            Debe seleccionar el médico que valida o rechaza.
+          </small>
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex items-center justify-end gap-3">
+        <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cancelar" (click)="onCancel()"></button>
+        <button pButton type="button" label="Rechazar" icon="pi pi-times" severity="danger"
+                (click)="onReject()"
+                [disabled]="form.controls.validatedForId.invalid"></button>
+        <button pButton type="button" label="Validar"  icon="pi pi-check" severity="success"
+                (click)="onValidate()"
+                [disabled]="form.controls.validatedForId.invalid"></button>
+      </div>
+    </form>
+  }
+</div>

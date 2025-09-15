@@ -1,0 +1,112 @@
+<div class="card p-5">
+  <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
+    <h2 class="text-2xl font-bold">Pacientes</h2>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search text-gray-400 p-3"></i>
+        <input #q pInputText type="text" class="w-64 max-w-full"
+               placeholder="Buscar por nombre, documento, email, teléfono o aseguradora…"
+               (input)="dt.filterGlobal(($any($event.target).value || ''), 'contains')" />
+      </span>
+
+      <button pButton type="button" label="Limpiar"
+              class="p-button-text !text-red-500 hover:!bg-red-50"
+              (click)="q.value=''; dt.reset(); clear()" [disabled]="!(q.value.length)"></button>
+
+      <button pButton type="button" label="Agregar" icon="pi pi-plus"
+              class="p-button-primary" (click)="openCreate()"></button>
+    </div>
+  </header>
+
+  <div class="h-0.5 w-16 bg-emerald-500 mb-3"></div>
+
+  <!-- Filtros -->
+  <div class="flex items-center gap-2 mb-3">
+    <button pButton type="button" label="Todos" icon="pi pi-list"
+            [severity]="isStatus(undefined) ? 'primary' : 'secondary'"
+            (click)="form.patchValue({status: undefined})"></button>
+
+    <button pButton type="button" label="Activos" icon="pi pi-check-circle"
+            [severity]="isStatus('ACTIVE') ? 'primary' : 'secondary'"
+            (click)="form.patchValue({status: 'ACTIVE'})"></button>
+
+    <button pButton type="button" label="Inactivos" icon="pi pi-ban"
+            [severity]="isStatus('INACTIVE') ? 'primary' : 'secondary'"
+            (click)="form.patchValue({status: 'INACTIVE'})"></button>
+  </div>
+
+  <p-table #dt [value]="(rows$ | async) ?? []"
+           [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10,20,50]"
+           dataKey="id"
+           [tableStyle]="{'min-width':'78rem'}"
+           [globalFilterFields]="[
+             'id','firstName','lastName','docNumber','email','phone','insurance.name','status'
+           ]">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="id">ID <p-sortIcon field="id"></p-sortIcon></th>
+        <th>Nombre</th>
+        <th pSortableColumn="docNumber">Documento <p-sortIcon field="docNumber"></p-sortIcon></th>
+        <th>Aseguradora</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+        <th class="w-40">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>{{ row.id }}</td>
+        <td>{{ row.lastName }}, {{ row.firstName }}</td>
+        <td>{{ row.docType || '—' }} {{ row.docNumber }}</td>
+        <td>{{ row.insurance?.name || '—' }}</td>
+        <td>{{ row.email || '—' }}</td>
+        <td>{{ row.phone || '—' }}</td>
+        <td><p-tag [value]="row.status" [severity]="tagSeverity(row.status)"></p-tag></td>
+
+        <td class="flex gap-2">
+          <button pButton icon="pi pi-eye"    [text]="true" [rounded]="true" severity="info"
+                  (click)="openView(row.id)" pTooltip="Ver"></button>
+          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" severity="success"
+                  (click)="openEdit(row.id)" pTooltip="Editar"></button>
+          <button pButton icon="pi pi-trash"  [text]="true" [rounded]="true" severity="danger"
+                  (click)="onViewDelete(row.id)" pTooltip="Eliminar"></button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="8" class="text-center py-6">Sin resultados</td></tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Modal: Crear -->
+  <p-dialog [(visible)]="showCreate" [modal]="true" [draggable]="false" [resizable]="false"
+            [style]="{ width: '1200px' }" (onHide)="closeCreate()">
+    <ng-template pTemplate="header"><span class="font-bold text-xl">Nuevo paciente</span></ng-template>
+    <app-create-patient (created)="onCreated()" (cancelled)="closeCreate()"></app-create-patient>
+  </p-dialog>
+
+  <!-- Modal: Editar -->
+  <p-dialog [(visible)]="showEdit" [modal]="true" [draggable]="false" [resizable]="false"
+            [style]="{ width: '1200px' }" (onHide)="closeEdit()">
+    <ng-template pTemplate="header"><span class="font-bold text-xl">Editar paciente</span></ng-template>
+    <app-update-patient *ngIf="selectedId!=null"
+                        [patientId]="selectedId"
+                        (saved)="onEdited()"
+                        (cancelled)="closeEdit()"></app-update-patient>
+  </p-dialog>
+
+  <!-- Modal: Ver -->
+  <p-dialog [(visible)]="showView" [modal]="true" [draggable]="false" [resizable]="false"
+            [style]="{ width: '1200px' }" (onHide)="closeView()">
+    <ng-template pTemplate="header"><span class="font-bold text-xl">Detalle</span></ng-template>
+    <app-view-patient *ngIf="viewedId!=null"
+                      [patientId]="viewedId"
+                      (editRequested)="onViewEdit($event)"
+                      (deleteRequested)="onViewDelete($event)"></app-view-patient>
+  </p-dialog>
+</div>

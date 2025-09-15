@@ -1,61 +1,103 @@
-<!-- create-result.html -->
-<p-dialog header="Ingresar resultados" [modal]="true" [draggable]="false" [resizable]="false"
-          appendTo="body" [(visible)]="visible" (onHide)="onHide()"
-          [style]="{ width: '1000px', maxWidth: '98vw' }"
-          [breakpoints]="{ '960px': '95vw', '640px': '98vw' }">
-  <form [formGroup]="form" class="space-y-4">
-    <div class="text-sm text-gray-500">Orden-Examen: <span class="font-mono">{{ ordenExamenId }}</span></div>
-    <div formArrayName="items" class="space-y-4">
-      <div *ngFor="let g of items.controls; let i = index" [formGroupName]="i" class="border rounded p-3">
-        <div class="font-semibold mb-2">{{ g.value.nombre }}</div>
+<div class="min-w-[320px]">
+  @if (loading) {
+  <div class="p-4 text-center text-color-secondary">Cargando…</div>
+  } @else {
+  <form [formGroup]="form" class="space-y-5">
+    <!-- Selección de contexto -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <!-- Orden -->
+      <div>
+        <label class="block mb-1 text-sm font-semibold">Orden <span class="text-red-500">*</span></label>
+        <p-select formControlName="orderId" [options]="orders" optionValue="id" [showClear]="true"
+          placeholder="Selecciona orden">
+          <ng-template pTemplate="item" let-o>ORD-{{ o.id }} — {{ o?.patient?.lastName ?? '' }}, {{
+            o?.patient?.firstName ?? '' }}</ng-template>
+          <ng-template pTemplate="selectedItem" let-o>ORD-{{ o?.id }}</ng-template>
+        </p-select>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <ng-container [ngSwitch]="g.value.tipo">
-            <div *ngSwitchCase="'num'">
-              <label class="block text-sm">Valor numérico</label>
-              <p-inputNumber formControlName="valorNum" class="w-full"></p-inputNumber>
-            </div>
-            <div *ngSwitchCase="'texto'">
-              <label class="block text-sm">Valor texto</label>
-              <input pInputText formControlName="valorTexto" class="w-full" />
-            </div>
-            <div *ngSwitchCase="'bool'">
-              <label class="block text-sm">Resultado</label>
-              <p-select formControlName="valorBool"
-                        [options]="[{label:'Negativo',value:false},{label:'Positivo',value:true}]"
-                        optionLabel="label" optionValue="value" class="w-full"></p-select>
-            </div>
-          </ng-container>
+      <!-- Muestra -->
+      <div>
+        <label class="block mb-1 text-sm font-semibold">Muestra <span class="text-red-500">*</span></label>
+        <p-select formControlName="sampleId" [options]="allowedSamples" optionValue="id" [showClear]="true"
+          placeholder="Muestra de la orden">
+          <ng-template pTemplate="item" let-s>#{{ s.id }} · {{ s.type }} · {{ s.barcode || 's/código' }}</ng-template>
+          <ng-template pTemplate="selectedItem" let-s>#{{ s?.id }} · {{ s?.type }}</ng-template>
+        </p-select>
+      </div>
 
-          <div>
-            <label class="block text-sm">Unidad</label>
-            <input pInputText formControlName="unidad" class="w-full" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-sm">Ref. mín</label>
-              <p-inputNumber formControlName="refMin" class="w-2"></p-inputNumber>
-            </div>
-            <div>
-              <label class="block text-sm">Ref. máx</label>
-              <p-inputNumber formControlName="refMax" class="w-2"></p-inputNumber>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-2">
-          <label class="block text-sm">Observación</label>
-          <textarea pTextarea rows="2" formControlName="observacion" class="w-full"></textarea>
-        </div>
+      <!-- Examen -->
+      <div>
+        <label class="block mb-1 text-sm font-semibold">Examen <span class="text-red-500">*</span></label>
+        <p-select formControlName="examId" [options]="allowedExams" optionValue="id" [showClear]="true"
+          placeholder="Examen de la orden">
+          <ng-template pTemplate="item" let-e>{{ e.name }} ({{ e.code }})</ng-template>
+          <ng-template pTemplate="selectedItem" let-e>{{ e?.name }}</ng-template>
+        </p-select>
       </div>
     </div>
-  </form>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2">
-      <button pButton type="button" label="Cancelar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
-      <button pButton type="button" label="Guardar" icon="pi pi-check" class="p-button-success" (click)="submit()"></button>
+    <!-- Parámetro -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Parámetro <span class="text-red-500">*</span></label>
+      <p-select formControlName="parameterId" [options]="allowedParams" optionValue="id" [showClear]="true"
+        placeholder="Selecciona parámetro">
+        <ng-template pTemplate="item" let-p>
+          {{ p.name }} <span class="text-color-secondary">({{ p.typeValue }})</span>
+        </ng-template>
+        <ng-template pTemplate="selectedItem" let-p>{{ p?.name }}</ng-template>
+      </p-select>
+      <div class="text-sm text-color-secondary mt-1" *ngIf="param?.typeValue==='NUMERICO'">
+        Ref.: {{ param?.refMin ?? '—' }} – {{ param?.refMax ?? '—' }} {{ param?.unit || '' }}
+      </div>
     </div>
-  </ng-template>
-</p-dialog>
+
+    <!-- Captura del valor -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <ng-container [ngSwitch]="param?.typeValue">
+        <!-- numérico -->
+        <div *ngSwitchCase="'NUMERICO'">
+          <label class="block mb-1 text-sm font-semibold">Valor ({{ param?.unit || '—' }})</label>
+          <p-inputNumber formControlName="numValue" [useGrouping]="false"></p-inputNumber>
+        </div>
+
+        <!-- texto -->
+        <div *ngSwitchDefault class="md:col-span-2">
+          <label class="block mb-1 text-sm font-semibold">Valor (texto)</label>
+          <input pInputText formControlName="textValue" />
+        </div>
+      </ng-container>
+
+      <div>
+        <label class="block mb-1 text-sm font-semibold">Unidades</label>
+        <input pInputText formControlName="units" placeholder="Opcional (toma por defecto la del parámetro)" />
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-semibold">Fecha resultado</label>
+        <p-datepicker formControlName="dateResult" [showIcon]="true" appendTo="body"></p-datepicker>
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-semibold">Estado</label>
+        <input pInputText [value]="fixedState" readonly />
+      </div>
+
+
+      <div class="md:col-span-3">
+        <label class="block mb-1 text-sm font-semibold">Comentario</label>
+        <textarea pTextarea formControlName="comment" rows="3" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <p-divider></p-divider>
+
+    <div class="flex items-center justify-end gap-3">
+      <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cancelar"
+        (click)="cancel()"></button>
+      <button pButton type="button" label="Guardar" icon="pi pi-check" severity="success" (click)="save()"
+        [disabled]="form.invalid"></button>
+    </div>
+  </form>
+  }
+</div>

@@ -1,43 +1,96 @@
-<!-- view-result.html -->
-<p-dialog [header]="'Resultados – ' + (ordenExamenId || '')" [modal]="true" [draggable]="false" [resizable]="false"
-          appendTo="body" [(visible)]="visible" (onHide)="onHide()"
-          [style]="{ width: '760px', maxWidth: '98vw' }"
-          [breakpoints]="{ '960px': '95vw', '640px': '98vw' }">
+<!-- src/app/results/view-result/view-result.html -->
+<div class="min-w-[320px]">
+  @if (loading) {
+    <div class="p-4 text-center text-color-secondary">Cargando…</div>
+  } @else if (!result) {
+    <div class="p-4 text-center text-red-500">Resultado no encontrado.</div>
+  } @else {
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+      <div>
+        <div class="flex items-center gap-3">
+          <h2 class="text-xl font-bold">Resultado #{{ result.id }}</h2>
+          <p-tag [value]="result.resultState" [severity]="tagSeverity(result.resultState)"></p-tag>
+        </div>
+        <div class="text-sm text-color-secondary mt-1">
+          Orden #{{ result.orderId }} · Muestra #{{ result.sampleId }} · Examen #{{ result.examId }} · Parámetro #{{ result.parameterId }}
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button pButton type="button" label="Editar" icon="pi pi-pencil" class="p-button-primary" (click)="requestEdit()"></button>
+        <button pButton type="button" label="Eliminar" icon="pi pi-trash" severity="danger" (click)="requestDelete()"></button>
+      </div>
+    </header>
 
-  <p-table [value]="items" [responsiveLayout]="'scroll'">
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Parámetro</th>
-        <th>Valor</th>
-        <th>Unidad</th>
-        <th>Referencia</th>
-        <th>Validado</th>
-      </tr>
-    </ng-template>
+    <div class="h-0.5 w-16 bg-emerald-500 mb-4"></div>
 
-    <ng-template pTemplate="body" let-r>
-      <tr>
-        <td class="font-mono">{{ r.parametroId }}</td>
-        <td>
-          <ng-container [ngSwitch]="r.tipo">
-            <span *ngSwitchCase="'num'">{{ r.valorNum }}</span>
-            <span *ngSwitchCase="'texto'">{{ r.valorTexto }}</span>
-            <span *ngSwitchCase="'bool'">{{ r.valorBool ? 'Positivo' : 'Negativo' }}</span>
-          </ng-container>
-        </td>
-        <td>{{ r.unidad || '—' }}</td>
-        <td>
-          <span *ngIf="r.refMin!=null || r.refMax!=null">{{ r.refMin ?? '—' }} – {{ r.refMax ?? '—' }}</span>
-          <span *ngIf="r.refMin==null && r.refMax==null">—</span>
-        </td>
-        <td><p-tag [value]="r.validado ? 'Sí' : 'No'" [severity]="r.validado ? 'success' : 'info'"></p-tag></td>
-      </tr>
-    </ng-template>
-  </p-table>
+    <!-- Detalles -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <div class="text-sm text-color-secondary">Parámetro</div>
+        <div class="font-medium">{{ param?.name || ('#' + result.parameterId) }}</div>
+      </div>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end w-full">
-      <button pButton type="button" label="Cerrar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
+      <div>
+        <div class="text-sm text-color-secondary">Examen</div>
+        <div class="font-medium">{{ exam?.name || ('#' + result.examId) }}</div>
+      </div>
+
+      <div>
+        <div class="text-sm text-color-secondary">Valor</div>
+        <div class="font-medium">
+          <ng-container *ngIf="result.numValue != null; else textVal">{{ result.numValue }}</ng-container>
+          <ng-template #textVal>{{ result.textValue || '—' }}</ng-template>
+        </div>
+      </div>
+
+      <div>
+        <div class="text-sm text-color-secondary">Unidades</div>
+        <div class="font-medium">{{ result.units || param?.unit || '—' }}</div>
+      </div>
+
+      <div *ngIf="param?.typeValue === 'NUMERICO'">
+        <div class="text-sm text-color-secondary">Rango de referencia</div>
+        <div class="font-medium">{{ param?.refMin ?? '—' }} – {{ param?.refMax ?? '—' }} {{ param?.unit || '' }}</div>
+      </div>
+
+      <div>
+        <div class="text-sm text-color-secondary">Fuera de rango</div>
+        <div class="font-medium">
+          <span *ngIf="result.outRange === true" class="text-red-600 font-semibold">Sí</span>
+          <span *ngIf="result.outRange === false" class="text-green-600">No</span>
+          <span *ngIf="result.outRange == null">—</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="text-sm text-color-secondary">Fecha</div>
+        <div class="font-medium">{{ result.dateResult ? (result.dateResult | date:'dd/MM/yyyy HH:mm') : '—' }}</div>
+      </div>
+
+      <div>
+        <div class="text-sm text-color-secondary">Método</div>
+        <div class="font-medium">{{ result.method || exam?.method || '—' }}</div>
+      </div>
+
+      <div class="md:col-span-2">
+        <div class="text-sm text-color-secondary">Validado por</div>
+        <div class="font-medium">
+          {{ doctor?.name || result.validatedFor || '—' }}
+          <span *ngIf="result.validatedForId"> (ID: {{ result.validatedForId }})</span>
+        </div>
+      </div>
+
+      <div class="md:col-span-2">
+        <div class="text-sm text-color-secondary">Comentario</div>
+        <div class="font-medium whitespace-pre-line">{{ result.comment || '—' }}</div>
+      </div>
     </div>
-  </ng-template>
-</p-dialog>
+
+    <p-divider class="my-5"></p-divider>
+
+    <div class="flex items-center justify-end">
+      <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cerrar" (click)="close()"></button>
+    </div>
+  }
+</div>

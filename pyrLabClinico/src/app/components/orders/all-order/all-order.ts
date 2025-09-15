@@ -1,224 +1,132 @@
+import { Component, EventEmitter, inject, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
-/* PrimeNG */
-import { Table, TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { TabsModule } from 'primeng/tabs';
+import { DialogModule } from 'primeng/dialog';
 
-/* Componentes de detalle y edición */
-import { ViewOrder, OrderDetail } from '../view-order/view-order'; // 👉 ajusta ruta si difiere
-import { UpdateOrder, OrderForEdit, OrderUpdatePayload } from '../update-order/update-order'; // 👉 ajusta ruta si difiere
+import { OrdersService } from '../../../services/order-service';
+import { OrderI, OrderState } from '../../../models/order-model';
+import { combineLatest, map, startWith } from 'rxjs';
 
-/* ================= Tipos ================= */
-export type OrderStatus =
-  'pendiente' | 'en-proceso' | 'completada' | 'reportada' | 'cancelada';
-
-export interface Order {
-  id: string;
-  numero: string;
-  paciente: string;
-  medico: string;
-  fechaCreacion: string | Date;
-  estado: OrderStatus;
-  muestras?: number;
-  pruebas: number;
-  total: number;
-}
-
-type TabValue = 'all' | OrderStatus;
-
-/* =============== MOCKS para la tabla =============== */
-const MOCK_ORDERS: Order[] = [
-  { id: '1', numero: 'ORD-20250902-001', paciente: 'Ana Gómez',    medico: 'Dra. Pérez',    fechaCreacion: '2025-09-01T09:15:00', estado: 'pendiente',  pruebas: 3, total: 120000 },
-  { id: '2', numero: 'ORD-20250901-002', paciente: 'Luis Rojas',   medico: 'Dr. Ramírez',   fechaCreacion: '2025-09-01T15:40:00', estado: 'en-proceso', pruebas: 1, total: 45000  },
-  { id: '3', numero: 'ORD-20250830-003', paciente: 'María Zapata', medico: 'Dra. Quintero', fechaCreacion: '2025-08-30T11:05:00', estado: 'completada', pruebas: 2, total: 98000  },
-];
+import { CreateOrder } from '../create-order/create-order';
+import { UpdateOrder } from '../update-order/update-order';
+import { ViewOrder } from '../view-order/view-order';
 
 @Component({
-  selector: 'app-all-order',
+  selector: 'app-orders-list',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, RouterModule,
-    TableModule, ButtonModule, InputTextModule, TagModule, TooltipModule, TabsModule,
-    ViewOrder, UpdateOrder, // necesarios para renderizar los diálogos
+    CommonModule, RouterModule, ReactiveFormsModule,
+    TableModule, InputTextModule, ButtonModule, TagModule, DialogModule,
+    CreateOrder, UpdateOrder, ViewOrder
   ],
-  templateUrl: './all-order.html',
-  styleUrls: ['./all-order.css'],
+  templateUrl: './all-order.html'
 })
-export class AllOrder implements OnInit {
-  /* Fuente de datos (mock por defecto). Si luego recibes [orders] desde un padre, se reemplaza. */
-  @Input() orders: Order[] = MOCK_ORDERS;
+export class AllOrder {
+  private fb = inject(FormBuilder);
+  private ordersSvc = inject(OrdersService);
+  order?: OrderI;
+  @Output() deleteRequested = new EventEmitter<number>();
+  showCreate = false;
 
-  @Input() currencyCode = 'COP';
-  @Input() pageSize = 10;
-
-  /* Eventos por si usas contenedor */
-  @Output() addOrder = new EventEmitter<void>();
-  @Output() viewOrder = new EventEmitter<Order>();
-  @Output() editOrder = new EventEmitter<Order>();
-  @Output() deleteOrder = new EventEmitter<Order>();
-
-  @ViewChild('dt') dt!: Table;
-
-  /* --------- Filtros/Búsqueda --------- */
-  globalQuery = '';
-  globalFields: string[] = ['numero', 'paciente', 'medico', 'estado'];
-
-  estadoTabs: { label: string; value: TabValue; icon: string }[] = [
-    { label: 'Todas',       value: 'all',        icon: 'pi pi-list' },
-    { label: 'Pendientes',  value: 'pendiente',  icon: 'pi pi-clock' },
-    { label: 'En proceso',  value: 'en-proceso', icon: 'pi pi-sync' },
-    { label: 'Completadas', value: 'completada', icon: 'pi pi-check' },
-    { label: 'Reportadas',  value: 'reportada',  icon: 'pi pi-check-circle' },
-  ];
-  estadoValue: TabValue = 'all';
-
-  /* --------- Estado del visor (Ver) --------- */
-  showView = false;
-  selectedDetail: OrderDetail | null = null;
-
-  /* --------- Estado del editor (Editar) --------- */
+  // Edit dialog state
   showEdit = false;
-  orderToEdit: OrderForEdit | null = null;
+  selectedOrderId?: number;
 
-  /* Catálogo de exámenes (para el diálogo de edición; mock) */
-  examCatalog = [
-    { id: 'ex-glu', codigo: 'GLU',  nombre: 'Glucosa',          precio: 18000 },
-    { id: 'ex-col', codigo: 'COLT', nombre: 'Colesterol Total', precio: 22000 },
-    { id: 'ex-hdl', codigo: 'HDL',  nombre: 'Colesterol HDL',   precio: 21000 },
-  ];
+  // View  
+  showView = false;
+  viewedOrderId?: number;
 
-  ngOnInit(): void {}
+  form = this.fb.group({
+    q: this.fb.control<string>(''),
+    state: this.fb.control<OrderState | undefined>(undefined)
+  });
 
-  /* --------- Tabs de estado --------- */
-  onEstadoChange(val: unknown) {
-    const v = String(val) as TabValue;
-    this.estadoValue = v;
-    if (!this.dt) return;
-    this.dt.filter(null, 'estado', 'equals');
-    if (v !== 'all') this.dt.filter(v, 'estado', 'equals');
-    if (this.globalQuery) this.dt.filterGlobal(this.globalQuery, 'contains');
+  readonly rows$ = combineLatest([
+    this.ordersSvc.orders$,
+    this.form.valueChanges.pipe(startWith(this.form.getRawValue()))
+  ]).pipe(
+    map(([orders, v]) => this.applyFilters(orders, { q: v.q || undefined, state: v.state || undefined }))
+  );
+
+  openCreate() { this.showCreate = true; }
+  closeCreate() { this.showCreate = false; }
+
+  onCreatedOrder(_: OrderI) {
+    this.showCreate = false; // orders$ se actualiza solo
   }
 
-  getStatusSeverity(status: OrderStatus): 'success' | 'info' | 'warn' | 'danger' {
-    switch (status) {
-      case 'completada':
-      case 'reportada':  return 'success';
-      case 'en-proceso': return 'info';
-      case 'pendiente':  return 'warn';
-      case 'cancelada':  return 'danger';
-    }
-  }
-
-  clearSearch() {
-    this.globalQuery = '';
-    if (this.dt) {
-      this.dt.clear();
-      if (this.estadoValue !== 'all') this.dt.filter(this.estadoValue, 'estado', 'equals');
-    }
-  }
-
-  /* ================= Acciones ================= */
-  onAdd() { this.addOrder.emit(); }
-
-  /* ---- Ver: abre ViewOrder con detalle (mock por ahora) ---- */
-  onView(order: Order) {
-    this.viewOrder.emit(order); // por si usas contenedor
-
-    this.selectedDetail = {
-      id: order.id,
-      numero: order.numero,
-      paciente: order.paciente,
-      medico: order.medico,
-      fechaCreacion: order.fechaCreacion,
-      estado: order.estado,
-      pruebas: order.pruebas,
-      total: order.total,
-      pacienteDoc: 'CC 1.234.567.890',
-      pacienteEdad: 34,
-      aseguradora: 'Colseguros',
-      observaciones: 'Paciente en ayunas.',
-      muestras: [
-        { tipo: 'Sangre', codigoBarra: 'ABC123', fechaToma: new Date(), observacion: null }
-      ],
-      examenes: [
-        { examenId: 'ex-glu', codigo: 'GLU',  nombre: 'Glucosa',          precio: 18000, estado: 'listo' },
-        { examenId: 'ex-col', codigo: 'COLT', nombre: 'Colesterol Total', precio: 22000, estado: 'en-proceso' },
-      ],
-      resultados: [
-        { examen: 'Glucosa', parametro: 'Valor', resultado: 89, unidad: 'mg/dL', referencia: '70–100', flag: 'N' }
-      ],
-    };
-
-    this.showView = true;
-  }
-
-  /* ---- Editar: abre EditOrderDialog ---- */
-  onEdit(order: Order) {
-    this.editOrder.emit(order); // por si usas contenedor
-    this.orderToEdit = this.mapToOrderForEdit(order);
+  openEdit(id: number) {
+    this.selectedOrderId = id;
     this.showEdit = true;
   }
-
-  /* Recibe cambios guardados desde el diálogo de edición */
-  onUpdated(payload: OrderUpdatePayload) {
-    // En real: PUT /ordenes/:id y recargar
-    this.orders = this.orders.map(o =>
-      o.id === payload.id
-        ? {
-            ...o,
-            estado: payload.estado,
-            total: payload.total,
-            pruebas: payload.pruebas,
-            fechaCreacion: payload.fechaCreacion,
-          }
-        : o
-    );
+  closeEdit() {
     this.showEdit = false;
+    this.selectedOrderId = undefined;
+  }
+  onEditedOrder(_: OrderI) {
+    this.closeEdit(); // orders$ se actualiza solo
+  }
+  // View handlers  ⬇️
+  openView(id: number) { this.viewedOrderId = id; this.showView = true; }
+  closeView() { this.showView = false; this.viewedOrderId = undefined; }
+
+  clear() { this.form.reset({ q: '', state: undefined }); }
+
+  tagSeverity(s?: OrderState): 'info' | 'warn' | 'success' | 'danger' | undefined {
+    switch (s) {
+      case 'CREADA': return 'info';
+      case 'TOMADA': return 'info';
+      case 'EN_PROCESO': return 'warn';
+      case 'VALIDADA': return 'success';
+      case 'ENTREGADA': return 'success';
+      case 'ANULADA': return 'danger';
+      default: return undefined;
+    }
   }
 
-  /* Eliminar desde el diálogo */
-  onRemoveOrder(id: string) {
-    // En real: DELETE /ordenes/:id y recargar
-    this.orders = this.orders.filter(o => o.id !== id);
-    this.showEdit = false;
+  fullName(o: OrderI): string {
+    const p = o.patient;
+    return p ? `${p.lastName ?? ''}, ${p.firstName ?? ''}`.trim() : '—';
   }
 
-  onDelete(order: Order) { this.deleteOrder.emit(order); }
+  private applyFilters(items: OrderI[], params?: { q?: string; state?: OrderState }): OrderI[] {
+    let out = items;
+    if (params?.state) out = out.filter(r => r.state === params.state);
 
-  /* ===== Helper: Order -> OrderForEdit ===== */
-  private mapToOrderForEdit(o: Order): OrderForEdit {
-    return {
-      id: o.id,
-      numero: o.numero,
-      pacienteId: 'PAC-001',          // en real: cargar desde backend
-      medicoId: 'MED-001',
-      aseguradoraId: null,
-      fechaCreacion: new Date(o.fechaCreacion),
-      estado: o.estado,
-      observaciones: '',
-      muestras: [
-        {
-          tipo: 'Sangre',
-          codigoBarra: 'ABC123',
-          fechaToma: new Date(),
-          observacion: null,
-        },
-      ],
-      examenes: [
-        {
-          examenId: 'ex-glu',
-          examNombre: 'GLU - Glucosa',
-          precio: 18000,
-          panelId: null,
-        },
-      ],
-    };
+    const q = params?.q?.trim().toLowerCase();
+    if (q) {
+      out = out.filter(r => {
+        const idStr = String(r.id ?? '');
+        const patient = r.patient ? `${r.patient.firstName} ${r.patient.lastName}`.toLowerCase() : '';
+        const doc = r.patient?.docNumber?.toLowerCase() ?? '';
+        return idStr.includes(q) || patient.includes(q) || doc.includes(q);
+      });
+    }
+    return [...out].sort((a, b) => (b.orderDate ?? '').localeCompare(a.orderDate ?? ''));
+  }
+
+  // ya tenías openEdit/closeEdit
+  onViewEdit(id: number) {
+    this.closeView();
+    this.openEdit(id);
+  }
+
+  onViewDelete(id: number) {
+    const ok = confirm(`¿Eliminar la orden #${id}? Esta acción no se puede deshacer.`);
+    if (!ok) return;
+    this.ordersSvc.remove(id).subscribe((success) => {
+      if (success) this.closeView();
+      // aquí puedes mostrar un toast si usas MessageService
+    });
+  }
+
+  onDelete() {
+    if (this.order?.id) this.deleteRequested.emit(this.order.id);
   }
 }

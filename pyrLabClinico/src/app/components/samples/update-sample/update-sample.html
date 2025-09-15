@@ -1,115 +1,46 @@
-<p-dialog
-  [header]="sample ? ('Editar muestra ' + (sample.codigoBarra || sample.id)) : 'Editar muestra'"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [closable]="true"
-  appendTo="body"
-  [style]="{ width: '720px', maxWidth: '98vw' }"
-  [breakpoints]="{ '960px': '95vw', '640px': '98vw' }"
-  [(visible)]="visible"
-  (onHide)="onHide()"
->
-  <form [formGroup]="form" class="space-y-4">
-    <!-- Orden / Tipo / Estado -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Orden ID</label>
-        <input pInputText formControlName="ordenId" class="w-full" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1">Tipo</label>
-        <p-select
-          formControlName="tipo"
-          [options]="tiposMuestra"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Tipo de muestra"
-          class="w-full">
-        </p-select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1">Estado</label>
-        <p-select
-          formControlName="estado"
-          [options]="estados"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Selecciona estado"
-          class="w-full">
-        </p-select>
-      </div>
-    </div>
-
-    <!-- Código de barra / Fecha toma -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Código de barra</label>
-        <input pInputText type="text" formControlName="codigoBarra" placeholder="Opcional" class="w-full" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1">Fecha de toma</label>
-        <p-datepicker
-          formControlName="fechaToma"
-          [showIcon]="true"
-          iconDisplay="input"
-          [showTime]="true"
-          hourFormat="24"
-          class="w-full">
-        </p-datepicker>
-      </div>
-    </div>
-
-    <!-- Observación -->
+<form [formGroup]="form" class="space-y-5">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
     <div>
-      <label class="block text-sm font-medium mb-1">Observación</label>
-      <textarea
-        pTextarea
-        formControlName="observacion"
-        rows="3"
-        class="w-full"
-        placeholder="Observación (opcional)"></textarea>
+      <label class="block mb-1 text-sm font-semibold">Orden <span class="text-red-500">*</span></label>
+      <input pInputText type="number" formControlName="orderId" placeholder="ID de la orden">
+      <small class="p-error" *ngIf="form.controls.orderId.invalid && form.controls.orderId.touched">Requerido.</small>
     </div>
 
-    <p-divider></p-divider>
-
-    <div class="text-sm text-gray-500">
-      Edita los campos necesarios y guarda los cambios.
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Tipo de muestra <span class="text-red-500">*</span></label>
+      <p-select formControlName="type"
+                [options]="allowedTipos"
+                [disabled]="allowedTipos.length === 0"
+                placeholder="Selecciona"
+                [showClear]="true">
+        <ng-template pTemplate="item" let-t>{{ t }}</ng-template>
+        <ng-template pTemplate="selectedItem" let-t>{{ t || '—' }}</ng-template>
+      </p-select>
+      <small class="text-color-secondary" *ngIf="allowedTipos.length">
+        Permitidos por los exámenes: {{ allowedTipos.join(', ') }}
+      </small>
     </div>
-  </form>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-between w-full">
-      <button
-        pButton
-        type="button"
-        label="Eliminar"
-        icon="pi pi-trash"
-        class="p-button-danger p-button-text"
-        (click)="onRemove()"
-        [disabled]="!sample">
-      </button>
-
-      <div class="flex gap-2">
-        <button
-          pButton
-          type="button"
-          label="Cancelar"
-          class="p-button-text !text-red-500 hover:!bg-red-50"
-          (click)="onHide()">
-        </button>
-        <button
-          pButton
-          type="button"
-          label="Guardar cambios"
-          icon="pi pi-check"
-          class="p-button-success"
-          (click)="submit()">
-        </button>
-      </div>
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Código de barras</label>
+      <input pInputText type="text" formControlName="barcode" placeholder="Opcional">
     </div>
-  </ng-template>
-</p-dialog>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Fecha de toma</label>
+      <p-datepicker formControlName="drawDate" [showIcon]="true" appendTo="body"></p-datepicker>
+    </div>
+
+    <div class="md:col-span-3">
+      <label class="block mb-1 text-sm font-semibold">Observaciones</label>
+      <textarea pTextarea formControlName="observations" rows="3" class="w-full" placeholder="Opcional"></textarea>
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <div class="flex items-center justify-end gap-3">
+    <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cancelar" (click)="cancel()"></button>
+    <button pButton type="button" label="Guardar" icon="pi pi-check" severity="success" (click)="save()" [disabled]="form.invalid"></button>
+  </div>
+</form>

@@ -1,0 +1,63 @@
+<form [formGroup]="form" class="space-y-4">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Nombres *</label>
+      <input pInputText formControlName="firstName" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Apellidos *</label>
+      <input pInputText formControlName="lastName" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Tipo doc</label>
+      <input pInputText formControlName="docType" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Documento *</label>
+      <input pInputText formControlName="docNumber" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Email</label>
+      <input pInputText formControlName="email" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Teléfono</label>
+      <input pInputText formControlName="phone" />
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Aseguradora (opcional)</label>
+      <p-select formControlName="insuranceId"
+                [options]="insurances"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,nit"
+                placeholder="Selecciona aseguradora"
+                appendTo="body">
+      </p-select>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Estado</label>
+      <p-select formControlName="status"
+                [options]="[{label:'Activo', value:'ACTIVE'},{label:'Inactivo', value:'INACTIVE'}]"
+                optionLabel="label" optionValue="value">
+      </p-select>
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <div class="flex items-center justify-end gap-3">
+    <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50"
+            label="Cancelar" (click)="cancel()"></button>
+    <button pButton type="button" label="Guardar" icon="pi pi-check"
+            (click)="save()"></button>
+  </div>
+</form>

@@ -1,150 +1,117 @@
-// update-result.component.ts
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-/* PrimeNG v20 */
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
-import { DividerModule } from 'primeng/divider';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 
-type ParamTipo = 'num' | 'texto' | 'bool';
-
-export interface ResultItem {
-  id: string;
-  ordenExamenId: string;
-  parametroId: string;
-  tipo: ParamTipo;
-  valorNum?: number | null;
-  valorTexto?: string | null;
-  valorBool?: boolean | null;
-  unidad?: string | null;
-  refMin?: number | null;
-  refMax?: number | null;
-  observacion?: string | null;
-  validado?: boolean;
-}
+import { ResultsService } from '../../../services/result-service';
+import { ResultI, ResultState } from '../../../models/result-model';
+import { ParameterService } from '../../../services/parameter-service';
+import { ParameterI } from '../../../models/parameter-model';
+import { DoctorsService } from '../../../services/doctor-service';
+import { DoctorI } from '../../../models/doctor-model';
 
 @Component({
-  selector: 'app-edit-result-dialog',
+  selector: 'app-update-result',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule,
-    DialogModule, ButtonModule, InputTextModule, InputNumberModule,
-    TextareaModule, DividerModule, SelectModule
+    InputTextModule, TextareaModule, InputNumberModule, DatePickerModule, SelectModule, ButtonModule, DividerModule
   ],
-  templateUrl: './update-result.html',
+  templateUrl: './update-result.html'
 })
-export class UpdateResult implements OnChanges {
-  @Input() visible = false;
-  @Output() visibleChange = new EventEmitter<boolean>();
+export class UpdateResult implements OnInit {
+  @Input({ required: true }) resultId!: number;
 
-  /** Bundle (mismo ordenExamenId) — estático por defecto */
-  @Input() items: ResultItem[] = [
-    { id:'r1', ordenExamenId:'OE-001', parametroId:'GLU',  tipo:'num',   valorNum:95, unidad:'mg/dL', refMin:70, refMax:100, validado:true },
-    { id:'r2', ordenExamenId:'OE-001', parametroId:'OBS',  tipo:'texto', valorTexto:'Ayunas', validado:true },
-  ];
+  @Output() saved = new EventEmitter<ResultI>();
+  @Output() cancelled = new EventEmitter<void>();
 
-  @Output() update = new EventEmitter<ResultItem[]>();
-  @Output() cancel = new EventEmitter<void>();
-  @Output() removeRow = new EventEmitter<string>();
+  private fb = inject(FormBuilder);
+  private resultsSvc = inject(ResultsService);
+  private paramsSvc = inject(ParameterService);
+  private doctorsSvc = inject(DoctorsService);
 
-  form!: FormGroup;
+  result?: ResultI;
+  param?: ParameterI;
+  doctors: DoctorI[] = [];
+  loading = true;
 
-  constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
-      items: this.fb.array<FormGroup<RowForm>>([]),
+  stateOptions: ResultState[] = ['PENDIENTE', 'VALIDADO', 'RECHAZADO'];
+
+  form = this.fb.group({
+    numValue: this.fb.control<number | null>(null),
+    textValue: this.fb.control<string | null>(null),
+    dateResult: this.fb.control<Date | null>(null),
+    resultState: this.fb.control<ResultState>('PENDIENTE', { nonNullable: true }),
+    validatedForId: this.fb.control<number | null>(null),
+    comment: this.fb.control<string | null>(null)
+  });
+
+  ngOnInit(): void {
+    this.doctorsSvc.list().subscribe(ds => (this.doctors = ds));
+
+    this.resultsSvc.getById(this.resultId).subscribe(r => {
+      this.result = r ?? undefined;
+      if (!r) { this.loading = false; return; }
+
+      this.paramsSvc.getById(r.parameterId).subscribe(p => this.param = p ?? undefined);
+
+      this.form.reset({
+        numValue: r.numValue ?? null,
+        textValue: r.textValue ?? null,
+        dateResult: r.dateResult ? new Date(r.dateResult) : new Date(),
+        resultState: r.resultState,
+        validatedForId: r.validatedForId ?? null,
+        comment: r.comment ?? null
+      });
+
+      // validadores dinámicos
+      if (this.param?.typeValue === 'NUMERICO') this.form.controls.numValue.addValidators([Validators.required]);
+      else this.form.controls.textValue.addValidators([Validators.required, Validators.maxLength(200)]);
+
+      this.loading = false;
     });
   }
 
-  get rows(): FormArray<FormGroup<RowForm>> {
-    return this.form.get('items') as any;
+  private computeFueraRango(valor?: number | null): boolean | null {
+    if (this.param?.typeValue !== 'NUMERICO') return null;
+    if (valor == null) return null;
+    const min = this.param.refMin ?? null;
+    const max = this.param.refMax ?? null;
+    if (min == null && max == null) return null;
+    if (min != null && valor < min) return true;
+    if (max != null && valor > max) return true;
+    return false;
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['items']) this.rebuild(this.items);
-    if (!this.visible && (this.items?.length ?? 0) > 0) {
-      this.visible = true;
-      this.visibleChange.emit(true);
-    }
-  }
+  save(): void {
+    if (!this.result?.id) return;
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
-  private rebuild(items: ResultItem[]) {
-    this.rows.clear();
-    (items || []).forEach(r => {
-      this.rows.push(this.fb.group<RowForm>({
-        id:            new FormControl<string>(r.id ?? '', { nonNullable: true }),
-        ordenExamenId: new FormControl<string>(r.ordenExamenId ?? '', { nonNullable: true }),
-        parametroId:   new FormControl<string>(r.parametroId ?? '', { nonNullable: true }),
-        tipo:          new FormControl<ParamTipo>(r.tipo ?? 'num', { nonNullable: true }),
+    const v = this.form.getRawValue();
+    const doc = this.doctors.find(d => d.id === (v.validatedForId ?? undefined));
 
-        valorNum:      new FormControl<number | null>(r.valorNum ?? null),
-        valorTexto:    new FormControl<string | null>(r.valorTexto ?? null),
-        valorBool:     new FormControl<boolean | null>(r.valorBool ?? null),
-        unidad:        new FormControl<string | null>(r.unidad ?? null),
-        refMin:        new FormControl<number | null>(r.refMin ?? null),
-        refMax:        new FormControl<number | null>(r.refMax ?? null),
-        observacion:   new FormControl<string | null>(r.observacion ?? null),
+    const patch: Partial<ResultI> = {
+      numValue: this.param?.typeValue === 'NUMERICO' ? (v.numValue ?? null) : null,
+      textValue: this.param?.typeValue === 'NUMERICO' ? null : (v.textValue ?? null),
+      dateResult: v.dateResult ? v.dateResult.toISOString() : undefined,
+      resultState: v.resultState,
+      validatedForId: v.validatedForId ?? null,
+      validatedFor: doc?.name ?? null,
+      comment: v.comment ?? null,
+      outRange: this.computeFueraRango(v.numValue ?? null)
+    };
 
-        validado:      new FormControl<boolean>(!!r.validado, { nonNullable: true }),
-      }));
+    this.resultsSvc.update(this.result.id, patch).subscribe(updated => {
+      if (updated) this.saved.emit(updated);
     });
   }
 
-  onHide() {
-    this.visible = false;
-    this.visibleChange.emit(false);
-    this.cancel.emit();
-  }
-
-  submit() {
-    const out: ResultItem[] = this.rows.controls.map(g => {
-      const v = g.getRawValue();
-      return {
-        id: v.id,
-        ordenExamenId: v.ordenExamenId,
-        parametroId: v.parametroId,
-        tipo: v.tipo,
-        valorNum:   v.tipo === 'num'   ? (v.valorNum ?? null)   : null,
-        valorTexto: v.tipo === 'texto' ? (v.valorTexto ?? null) : null,
-        valorBool:  v.tipo === 'bool'  ? (v.valorBool ?? null)  : null,
-        unidad: v.unidad ?? null,
-        refMin: v.refMin ?? null,
-        refMax: v.refMax ?? null,
-        observacion: v.observacion ?? null,
-        validado: v.validado,
-      } as ResultItem;
-    });
-
-    this.update.emit(out);
-    this.onHide();
-  }
-
-  onRemove(i: number) {
-    const id = this.rows.at(i).get('id')?.value as string;
-    if (id) this.removeRow.emit(id);
-    this.rows.removeAt(i);
-  }
+  cancel(): void { this.cancelled.emit(); }
 }
-
-/** Typed forms */
-type RowForm = {
-  id: FormControl<string>;
-  ordenExamenId: FormControl<string>;
-  parametroId: FormControl<string>;
-  tipo: FormControl<ParamTipo>;
-
-  valorNum: FormControl<number | null>;
-  valorTexto: FormControl<string | null>;
-  valorBool: FormControl<boolean | null>;
-  unidad: FormControl<string | null>;
-  refMin: FormControl<number | null>;
-  refMax: FormControl<number | null>;
-  observacion: FormControl<string | null>;
-
-  validado: FormControl<boolean>;
-};

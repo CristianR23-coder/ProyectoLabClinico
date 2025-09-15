@@ -1,0 +1,28 @@
+<div class="min-w-[320px]">
+  @if (loading) {
+  <div class="p-4 text-center text-color-secondary">Cargando…</div>
+  } @else if (!item) {
+  <div class="p-4 text-center text-red-500">No encontrado</div>
+  } @else {
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-3">
+      <h3 class="text-xl font-semibold">{{ item.name }}</h3>
+      <p-tag [value]="item.status" [severity]="severity(item.status)"></p-tag>
+    </div>
+    <div class="flex items-center gap-2">
+      <button pButton label="Editar" icon="pi pi-pencil" (click)="onEdit()"></button>
+      <button pButton label="Eliminar" icon="pi pi-trash" severity="danger" (click)="onDelete()"></button>
+    </div>
+  </div>
+
+  <p-card>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+      <div><span class="text-color-secondary">ID:</span> {{ item.id }}</div>
+      <div><span class="text-color-secondary">NIT:</span> {{ item.nit || '—' }}</div>
+      <div><span class="text-color-secondary">Email:</span> {{ item.email || '—' }}</div>
+      <div><span class="text-color-secondary">Teléfono:</span> {{ item.phone || '—' }}</div>
+      <span class="text-color-secondary">Dirección:</span> {{ item.address || '—' }}
+    </div>
+  </p-card>
+  }
+</div>

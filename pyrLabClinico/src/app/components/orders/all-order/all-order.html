@@ -1,102 +1,140 @@
-<section class="max-w-[1200px] mx-auto p-4">
-  <!-- Toolbar -->
+<div class="card p-5">
   <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
     <h2 class="text-2xl font-bold">Órdenes</h2>
 
     <div class="flex items-center gap-2 flex-wrap">
       <span class="p-input-icon-left">
         <i class="pi pi-search text-gray-400 p-3"></i>
-        <input pInputText type="text" placeholder="Buscar por número, paciente, médico…" [(ngModel)]="globalQuery"
-          (input)="dt.filterGlobal(globalQuery, 'contains')" class="w-64 max-w-full" aria-label="Buscar órdenes" />
+        <input #q pInputText type="text" class="w-64 max-w-full" placeholder="Buscar por código, paciente, documento…"
+          aria-label="Buscar órdenes" (input)="dt.filterGlobal(($any($event.target).value || ''), 'contains')" />
       </span>
 
       <button pButton type="button" label="Limpiar" class="p-button-text !text-red-500 hover:!bg-red-50"
-        (click)="clearSearch()" [disabled]="!globalQuery">
-      </button>
+        (click)="q.value = ''; dt.reset(); clear()" [disabled]="!(q.value.length)"></button>
 
-      <button pButton type="button" label="Agregar orden" icon="pi pi-plus" class="p-button-primary" (click)="onAdd()"
-        [routerLink]="['/ordenes/nueva']">
-      </button>
+      <button pButton type="button" label="Agregar orden" icon="pi pi-plus" class="p-button-primary" severity="success"
+        (click)="openCreate()"></button>
     </div>
   </header>
 
-  <!-- Tabs por estado (v20): Tabs sin panels, solo tablist; usamos [(value)] -->
-  <p-tabs [(value)]="estadoValue" (valueChange)="onEstadoChange($event)" scrollable class="mb-3">
-    <p-tablist>
-      <p-tab *ngFor="let t of estadoTabs" [value]="t.value">
-        <i [class]="t.icon" class="mr-2"></i>{{ t.label }}
-      </p-tab>
-    </p-tablist>
-  </p-tabs>
+  <div class="h-0.5 w-16 bg-emerald-500 mb-3"></div>
+
+  <div class="flex flex-wrap items-center gap-2 mb-3">
+    <!-- Filtros por estado -->
+    <button pButton type="button" label="Todas" icon="pi pi-list"
+      [severity]="form.value.state === undefined ? 'primary' : 'secondary'"
+      (click)="form.patchValue({ state: undefined })"></button>
+
+    <button pButton type="button" label="Creadas" icon="pi pi-plus-circle"
+      [severity]="form.value.state === 'CREADA' ? 'primary' : 'secondary'"
+      (click)="form.patchValue({ state: 'CREADA' })"></button>
+
+    <button pButton type="button" label="Tomadas" icon="pi pi-check"
+      [severity]="form.value.state === 'TOMADA' ? 'primary' : 'secondary'"
+      (click)="form.patchValue({ state: 'TOMADA' })"></button>
+
+    <button pButton type="button" label="Anuladas" icon="pi pi-times"
+      [severity]="form.value.state === 'ANULADA' ? 'danger' : 'secondary'"
+      (click)="form.patchValue({ state: 'ANULADA' })"></button>
+
+    <button pButton type="button" label="En proceso" icon="pi pi-spinner"
+      [severity]="form.value.state === 'EN_PROCESO' ? 'warn' : 'secondary'"
+      (click)="form.patchValue({ state: 'EN_PROCESO' })"></button>
+
+    <button pButton type="button" label="Entregadas" icon="pi pi-send"
+      [severity]="form.value.state === 'ENTREGADA' ? 'help' : 'secondary'"
+      (click)="form.patchValue({ state: 'ENTREGADA' })"></button>
+
+    <button pButton type="button" label="Validadas" icon="pi pi-shield"
+      [severity]="form.value.state === 'VALIDADA' ? 'success' : 'secondary'"
+      (click)="form.patchValue({ state: 'VALIDADA' })"></button>
+  </div>
 
   <!-- Tabla -->
-  <p-table #dt [value]="orders" dataKey="id" [paginator]="true" [rows]="pageSize" [rowsPerPageOptions]="[5,10,20,50]"
-    [responsiveLayout]="'scroll'" [globalFilterFields]="globalFields" sortMode="multiple" [showCurrentPageReport]="true"
-    currentPageReportTemplate="Mostrando {first}–{last} de {totalRecords}" class="rounded-xl overflow-hidden shadow-sm">
+  <p-table #dt [value]="(rows$ | async) ?? []" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10,20,50]"
+    dataKey="id" sortMode="single" [tableStyle]="{'min-width':'72rem'}" [globalFilterFields]="[
+    'id',
+    'patient.firstName',
+    'patient.lastName',
+    'patient.docNumber',
+    'state'
+  ]">
+
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="numero" class="whitespace-nowrap">
-          Número <p-sortIcon field="numero"></p-sortIcon>
-        </th>
-        <th pSortableColumn="paciente" class="whitespace-nowrap">
-          Paciente <p-sortIcon field="paciente"></p-sortIcon>
-        </th>
-        <th pSortableColumn="medico" class="whitespace-nowrap">
-          Médico <p-sortIcon field="medico"></p-sortIcon>
-        </th>
-        <th pSortableColumn="fechaCreacion" class="whitespace-nowrap">
-          Fecha <p-sortIcon field="fechaCreacion"></p-sortIcon>
-        </th>
-        <th pSortableColumn="estado" class="whitespace-nowrap">
-          Estado <p-sortIcon field="estado"></p-sortIcon>
-        </th>
-        <th pSortableColumn="pruebas" class="text-center whitespace-nowrap">
-          Pruebas <p-sortIcon field="pruebas"></p-sortIcon>
-        </th>
-        <th pSortableColumn="total" class="text-right whitespace-nowrap">
-          Total <p-sortIcon field="total"></p-sortIcon>
-        </th>
-        <th class="whitespace-nowrap">Acciones</th>
+        <th pSortableColumn="id">Código <p-sortIcon field="id"></p-sortIcon></th>
+        <th pSortableColumn="patient.lastName">Paciente <p-sortIcon field="patient.lastName"></p-sortIcon></th>
+        <th pSortableColumn="orderDate">Fecha <p-sortIcon field="orderDate"></p-sortIcon></th>
+        <th pSortableColumn="state">Estado <p-sortIcon field="state"></p-sortIcon></th>
+        <th class="text-right" pSortableColumn="netTotal">Total <p-sortIcon field="netTotal"></p-sortIcon></th>
+        <th class="w-44">Acciones</th>
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-o>
+    <ng-template pTemplate="body" let-row>
       <tr>
-        <td class="font-mono">{{ o.numero }}</td>
-        <td>{{ o.paciente }}</td>
-        <td>{{ o.medico }}</td>
-        <td>{{ o.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td>ORD-{{ row.id }}</td>
         <td>
-          <p-tag [severity]="getStatusSeverity(o.estado)" [value]="o.estado" styleClass="capitalize"></p-tag>
+          {{ row.patient?.firstName }} {{ row.patient?.lastName }}
+          <small class="text-color-secondary" *ngIf="row.patient?.docNumber">
+            ({{ row.patient.docNumber }})
+          </small>
         </td>
-        <td class="text-center">{{ o.pruebas }}</td>
-        <td class="text-right">{{ o.total | currency: currencyCode:'symbol-narrow':'1.0-0' }}</td>
-        <td class="flex gap-2 flex-wrap">
-          <button pButton pTooltip="Ver" class="p-button-sm" icon="pi pi-eye" (click)="onView(o)"
-            [routerLink]="['/ordenes/ver', o.id]"></button>
-          <button pButton pTooltip="Editar" class="p-button-sm p-button-text" icon="pi pi-pencil"
-            (click)="onEdit(o)"></button>
-          <button pButton pTooltip="Eliminar" class="p-button-sm p-button-danger p-button-text" icon="pi pi-trash"
-            (click)="onDelete(o)"></button>
+        <td>{{ row.orderDate | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td><p-tag [value]="row.state" [severity]="tagSeverity(row.state)"></p-tag></td>
+        <td class="text-right">{{ row.netTotal || 0 | number:'1.0-0' }}</td>
+        <td class="flex gap-2">
+          <button pButton icon="pi pi-eye" [text]="true" [rounded]="true" severity="info" (click)="openView(row.id)"
+            pTooltip="Ver"></button>
+
+          <!-- Editar abre diálogo -->
+          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" severity="success"
+            (click)="openEdit(row.id)" pTooltip="Editar"></button>
+
+          <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+            (click)="onViewDelete(row.id)" pTooltip="Eliminar"></button>
         </td>
       </tr>
     </ng-template>
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="8" class="text-center italic text-gray-500 py-6">
-          No hay resultados que coincidan con “{{ globalQuery }}”.
-        </td>
+        <td colspan="6" class="text-center py-6">Sin resultados</td>
       </tr>
     </ng-template>
   </p-table>
-</section>
-<!-- Visor de detalles -->
-<app-view-order [(visible)]="showView" [order]="selectedDetail" [currencyCode]="currencyCode" [appendToBody]="true"
-  (close)="showView=false">
-</app-view-order>
 
-<!-- 👇 Diálogo de edición -->
-<app-edit-order-dialog [(visible)]="showEdit" [order]="orderToEdit" [examCatalog]="examCatalog"
-  [currencyCode]="currencyCode" (update)="onUpdated($event)" (remove)="onRemoveOrder($event)" (cancel)="showEdit=false">
-</app-edit-order-dialog>
+  <!-- Modal: Create Order -->
+  <p-dialog [(visible)]="showCreate" [modal]="true" [draggable]="false" [resizable]="false"
+    [style]="{ width: '1000px' }" (onHide)="closeCreate()">
+    <ng-template pTemplate="header">
+      <span class="font-bold text-xl md:text-2xl">Nueva orden</span>
+    </ng-template>
+    <app-create-order (created)="onCreatedOrder($event)" (cancelled)="closeCreate()"></app-create-order>
+  </p-dialog>
+
+  <!-- Modal: Edit Order -->
+  <p-dialog [(visible)]="showEdit" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '1200px' }"
+    (onHide)="closeEdit()">
+    <ng-template pTemplate="header">
+      <span class="font-bold text-xl md:text-2xl">Editar orden</span>
+    </ng-template>
+
+    <app-edit-order *ngIf="selectedOrderId != null" [orderId]="selectedOrderId" (saved)="onEditedOrder($event)"
+      (cancelled)="closeEdit()">
+    </app-edit-order>
+  </p-dialog>
+
+  <!-- Modal: Detalle -->
+  <p-dialog [(visible)]="showView" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '1000px' }"
+    (onHide)="closeView()">
+    <ng-template pTemplate="header">
+      <span class="font-bold text-xl md:text-2xl">Detalle de orden</span>
+    </ng-template>
+
+    <app-view-order *ngIf="viewedOrderId != null" [orderId]="viewedOrderId" (editRequested)="onViewEdit($event)"
+      (deleteRequested)="onViewDelete($event)">
+    </app-view-order>
+  </p-dialog>
+
+</div>

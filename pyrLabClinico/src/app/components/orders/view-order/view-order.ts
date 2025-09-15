@@ -1,126 +1,75 @@
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 
-/* PrimeNG v20 */
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
-import { TableModule } from 'primeng/table';
-import { TooltipModule } from 'primeng/tooltip';
+import { ButtonModule } from 'primeng/button';
 
-/* ====== Tipos compatibles con tus componentes previos ====== */
-export type OrderStatus =
-  'pendiente' | 'en-proceso' | 'completada' | 'reportada' | 'cancelada';
-
-export interface OrderBase {
-  id: string;
-  numero: string;
-  paciente: string;
-  medico: string;
-  fechaCreacion: string | Date;
-  estado: OrderStatus;
-  pruebas: number;
-  total: number;
-}
-
-export interface Sample {
-  tipo: string;
-  codigoBarra?: string | null;
-  fechaToma?: string | Date | null;
-  observacion?: string | null;
-}
-
-export interface OrderExam {
-  examenId: string;
-  codigo?: string;         // ej. GLU
-  nombre: string;          // ej. Glucosa
-  precio?: number;
-  panelId?: string | null;
-  estado?: 'pendiente' | 'en-proceso' | 'listo';
-}
-
-export interface ResultItem {
-  examen?: string;         // ej. Glucosa
-  parametro: string;       // ej. Valor
-  resultado: string | number;
-  unidad?: string;
-  referencia?: string;
-  flag?: 'H' | 'L' | 'N';  // Alto/Bajo/Normal
-}
-
-/** Orden con detalle (lo que visualizará el componente) */
-export interface OrderDetail extends OrderBase {
-  pacienteDoc?: string;
-  pacienteEdad?: number;
-  aseguradora?: string | null;
-  observaciones?: string;
-  muestras?: Sample[];
-  examenes?: OrderExam[];
-  resultados?: ResultItem[];
-}
+import { OrdersService } from '../../../services/order-service';
+import { OrderI, OrderState } from '../../../models/order-model';
 
 @Component({
   selector: 'app-view-order',
   standalone: true,
-  imports: [
-    CommonModule,
-    DialogModule, ButtonModule, TagModule, DividerModule, TableModule, TooltipModule,
-  ],
-  templateUrl: './view-order.html',
-  styleUrls: ['./view-order.css'],
+  imports: [CommonModule, RouterModule, CardModule, TagModule, DividerModule, ButtonModule],
+  templateUrl: './view-order.html'
 })
-export class ViewOrder {
-  /* ====== Inputs / Outputs ====== */
-  @Input() visible = false;
-  @Output() visibleChange = new EventEmitter<boolean>();
+export class ViewOrder implements OnInit, OnDestroy {
+  @Input() orderId?: number;              // si se usa en diálogo
+  @Output() editRequested = new EventEmitter<number>();
+  @Output() deleteRequested = new EventEmitter<number>();
+  order?: OrderI;
+  loading = true;
 
-  /** Orden a mostrar */
-  @Input() order: OrderDetail | null = null;
+  private route = inject(ActivatedRoute);
+  private ordersSvc = inject(OrdersService);
 
-  /** Moneda para totales */
-  @Input() currencyCode = 'COP';
+  ngOnInit(): void {
+    if (this.orderId == null) {
+      const idParam = this.route.snapshot.paramMap.get('id');
+      this.orderId = idParam ? Number(idParam) : undefined;
+    }
+    if (!this.orderId || Number.isNaN(this.orderId)) {
+      this.loading = false;
+      return;
+    }
+    this.ordersSvc.getById(this.orderId).subscribe(ord => {
+      this.order = ord;
+      this.loading = false;
+    });
+  }
 
-  /** Para evitar problemas de overlay en contenedores: */
-  @Input() appendToBody = true;
+  ngOnDestroy(): void {}
 
-  /** Acciones opcionales */
-  @Output() edit = new EventEmitter<OrderDetail>();
-  @Output() print = new EventEmitter<OrderDetail>();
-  @Output() close = new EventEmitter<void>();
-
-  /* ====== Helpers ====== */
-  getStatusSeverity(s: OrderStatus): 'success' | 'info' | 'warn' | 'danger' {
+  tagSeverity(s?: OrderState): 'info'|'warning'|'success'|'danger'|'help'|'warn'|undefined {
     switch (s) {
-      case 'completada':
-      case 'reportada':  return 'success';
-      case 'en-proceso': return 'info';
-      case 'pendiente':  return 'warn';
-      case 'cancelada':  return 'danger';
+      case 'CREADA': return 'info';
+      case 'TOMADA':
+      case 'EN_PROCESO': return 'warn';
+      case 'VALIDADA':
+      case 'ENTREGADA': return 'success';
+      case 'ANULADA': return 'danger';
+      default: return undefined;
     }
   }
 
-  onHide() {
-    this.visible = false;
-    this.visibleChange.emit(false);
-    this.close.emit();
+  fullName(o?: OrderI): string {
+    const p = o?.patient;
+    return p ? `${p.lastName ?? ''}, ${p.firstName ?? ''}`.trim() : '—';
   }
 
   onEdit() {
-    if (this.order) this.edit.emit(this.order);
+    if (this.order?.id) this.editRequested.emit(this.order.id);
+  }
+  onDelete() {
+    if (this.order?.id) this.deleteRequested.emit(this.order.id);
   }
 
-  onPrint() {
-    if (this.order) this.print.emit(this.order);
-  }
-
-  /** Sumas por si vienen sin calcular */
-  get totalPruebas(): number {
-    if (this.order?.examenes?.length) return this.order.examenes.length;
-    return this.order?.pruebas ?? 0;
-  }
-  get totalValor(): number {
-    if (!this.order?.examenes?.length) return this.order?.total ?? 0;
-    return this.order.examenes.reduce((acc, e) => acc + (e.precio ?? 0), 0);
+  // Conveniencia para deshabilitar "Editar" según negocio
+  get disableEdit(): boolean {
+    const s = this.order?.state;
+    return s === 'ENTREGADA' || s === 'ANULADA' /* || s === 'VALIDADA' */;
   }
 }

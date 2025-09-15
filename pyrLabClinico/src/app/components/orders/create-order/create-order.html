@@ -1,174 +1,182 @@
-<p-dialog header="Nueva orden" [modal]="true" [draggable]="false" [resizable]="false" [closable]="true" appendTo="body"
-    [style]="{ width: '1000px', maxWidth: '98vw' }" [breakpoints]="{ '960px': '95vw', '640px': '98vw' }"
-    [(visible)]="visible" (onHide)="onHide()">
-    <form [formGroup]="form" class="space-y-4">
-        <!-- Paciente / Médico / Aseguradora -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">
-                    Paciente <span class="text-red-500">*</span>
-                </label>
-                <input pInputText type="text" formControlName="pacienteId" placeholder="ID/Nº historia o buscar…"
-                    class="w-full" />
-                <small class="text-red-500" *ngIf="form.get('pacienteId')?.touched && form.get('pacienteId')?.invalid">
-                    Requerido
-                </small>
+<form [formGroup]="form" class="space-y-5">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <!-- Paciente -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">
+        Paciente <span class="text-red-500">*</span>
+      </label>
+      <p-select formControlName="patientId"
+                [options]="patients"
+                optionLabel="lastName"
+                optionValue="id"
+                [filter]="true"
+                filterBy="lastName,firstName,docNumber"
+                placeholder="Selecciona paciente">
+        <ng-template pTemplate="item" let-p>
+          <div class="flex flex-col">
+            <span>{{ p.lastName }}, {{ p.firstName }}</span>
+            <small class="text-color-secondary">{{ p.docType }} {{ p.docNumber }}</small>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="selectedItem" let-p>
+          <span *ngIf="p">{{ p.lastName }}, {{ p.firstName }}</span>
+        </ng-template>
+      </p-select>
+      <small class="p-error" *ngIf="form.get('patientId')?.invalid && form.get('patientId')?.touched">
+        Requerido.
+      </small>
+    </div>
+
+    <!-- Prioridad -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Prioridad</label>
+      <p-select formControlName="priority"
+                [options]="priorityOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Selecciona prioridad">
+      </p-select>
+    </div>
+
+    <!-- Estado fijo -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Estado</label>
+      <input pInputText [value]="fixedState" readonly />
+    </div>
+
+    <!-- Médico (opcional) -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Médico (opcional)</label>
+      <p-select formControlName="doctorId"
+                [options]="doctors"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,docNumber"
+                placeholder="Selecciona médico">
+        <ng-template pTemplate="item" let-d>
+          <div class="flex flex-col">
+            <span>{{ d.name }}</span>
+            <small class="text-color-secondary">{{ d.docNumber }}</small>
+          </div>
+        </ng-template>
+      </p-select>
+    </div>
+
+    <!-- Aseguradora (opcional) -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Aseguradora (opcional)</label>
+      <p-select formControlName="insuranceId"
+                [options]="insurances"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,nit"
+                placeholder="Selecciona aseguradora">
+      </p-select>
+    </div>
+
+    <!-- Fecha de orden -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Fecha de orden</label>
+      <p-datepicker formControlName="orderDate" [showIcon]="true" inputId="orderDate" appendTo="body"></p-datepicker>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="md:col-span-3">
+      <label class="block mb-1 text-sm font-semibold">Observación</label>
+      <textarea pTextarea formControlName="observations"
+                rows="3"
+                placeholder="Observación (opcional)"
+                class="w-full"></textarea>
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <!-- Sección: Exámenes a realizar -->
+  <div>
+    <div class="flex items-end flex-wrap gap-3 mb-3" [formGroup]="itemForm">
+      <div class="min-w-[340px]">
+        <label class="block mb-1 text-sm font-semibold">Examen</label>
+        <p-select formControlName="examId"
+                  [options]="exams"
+                  optionLabel="name"
+                  optionValue="id"
+                  [filter]="true"
+                  filterBy="code,name,specimenType"
+                  placeholder="Selecciona un examen">
+          <ng-template pTemplate="item" let-e>
+            <div class="flex items-center justify-between gap-3">
+              <span>{{ e.code }} — {{ e.name }}</span>
             </div>
+          </ng-template>
+          <ng-template pTemplate="selectedItem" let-e>
+            <span *ngIf="e">{{ e.code }} — {{ e.name }}</span>
+          </ng-template>
+        </p-select>
+        <small class="p-error" *ngIf="itemForm.get('examId')?.invalid && itemForm.get('examId')?.touched">Requerido.</small>
+      </div>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">
-                    Médico <span class="text-red-500">*</span>
-                </label>
-                <input pInputText type="text" formControlName="medicoId" placeholder="ID/Nombres" class="w-full" />
-                <small class="text-red-500" *ngIf="form.get('medicoId')?.touched && form.get('medicoId')?.invalid">
-                    Requerido
-                </small>
-            </div>
+      <div>
+        <button pButton type="button" label="Agregar examen" icon="pi pi-plus"
+                (click)="addExam()" [disabled]="itemForm.invalid"></button>
+      </div>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">Aseguradora</label>
-                <input pInputText type="text" formControlName="aseguradoraId" placeholder="Opcional" class="w-full" />
-            </div>
-        </div>
+      <div class="ml-auto text-right">
+        <div class="text-sm text-color-secondary">Total exámenes</div>
+        <div class="text-xl font-semibold">{{ form.controls.netTotal.value || 0 | number:'1.0-0' }}</div>
+      </div>
+    </div>
 
-        <!-- Fecha / Estado -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Fecha de creación</label>
-                <!-- DatePicker v20 (hourFormat como string) -->
-                <p-datepicker formControlName="fechaCreacion" [showIcon]="true" iconDisplay="input" [showTime]="true"
-                    hourFormat="24" class="w-full"></p-datepicker>
-            </div>
+    <p-table [value]="items" [tableStyle]="{ 'min-width':'60rem' }" dataKey="examId">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:10rem">Código</th>
+          <th>Nombre</th>
+          <th style="width:10rem" class="text-right">Precio</th>
+          <th style="width:12rem">Estado examen</th>
+          <th style="width:6rem" class="text-center">Acciones</th>
+        </tr>
+      </ng-template>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">Estado</label>
-                <!-- Select v20 -->
-                <p-select formControlName="estado" [options]="estados" optionLabel="label" optionValue="value"
-                    placeholder="Selecciona estado" class="w-full"></p-select>
-            </div>
-        </div>
+      <ng-template pTemplate="body" let-it>
+        <tr>
+          <td>{{ it.code }}</td>
+          <td>{{ it.name }}</td>
+          <td class="text-right">{{ it.price | number:'1.0-0' }}</td>
+          <td>
+            <ng-container *ngIf="examStatus(it) as st; else noSt">
+              <p-tag [value]="st" [severity]="examStatusSeverity(st)"></p-tag>
+            </ng-container>
+            <ng-template #noSt>—</ng-template>
+          </td>
+          <td class="text-center">
+            <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+                    (click)="removeItem(it)" pTooltip="Quitar"></button>
+          </td>
+        </tr>
+      </ng-template>
 
-        <p-divider></p-divider>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center py-3 text-color-secondary">
+            No has agregado exámenes a esta orden.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
 
-        <!-- Muestras -->
-        <div>
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-semibold">Muestras</h3>
-                <button pButton type="button" icon="pi pi-plus" label="Agregar muestra" class="p-button-text"
-                    (click)="addMuestra()"></button>
-            </div>
+  <p-divider></p-divider>
 
-            <div class="space-y-3">
-                <div class="grid grid-cols-12 gap-2 items-end" *ngFor="let g of muestras.controls; let i = index">
-                    <div class="col-span-12 md:col-span-3">
-                        <label class="block text-sm font-medium mb-1">Tipo</label>
-                        <p-select [formControl]="g.controls.tipo" [options]="tiposMuestra" optionLabel="label"
-                            optionValue="value" placeholder="Tipo de muestra" class="w-full"></p-select>
-                    </div>
-
-                    <div class="col-span-12 md:col-span-3">
-                        <label class="block text-sm font-medium mb-1">Código de barra</label>
-                        <input pInputText type="text" [formControl]="g.controls.codigoBarra" class="w-full"
-                            placeholder="Opcional" />
-                    </div>
-
-                    <div class="col-span-12 md:col-span-4">
-                        <label class="block text-sm font-medium mb-1">Fecha de toma</label>
-                        <p-datepicker [formControl]="g.controls.fechaToma" [showIcon]="true" iconDisplay="input"
-                            [showTime]="true" hourFormat="24" class="w-full"></p-datepicker>
-                    </div>
-
-                    <div class="col-span-12 md:col-span-2 text-right">
-                        <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-danger"
-                            (click)="removeMuestra(i)" [disabled]="muestras.length === 1"></button>
-                    </div>
-
-                    <div class="col-span-12">
-                        <textarea pTextarea rows="2" [formControl]="g.controls.observacion"
-                            placeholder="Observación (opcional)" class="w-full"></textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <p-divider></p-divider>
-
-        <!-- Exámenes -->
-        <div>
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-semibold">Exámenes</h3>
-                <button pButton type="button" icon="pi pi-plus" label="Agregar examen" class="p-button-text"
-                    (click)="addExamen()"></button>
-            </div>
-
-            <div class="space-y-3">
-                <div class="grid grid-cols-12 gap-2 items-center" *ngFor="let g of examenes.controls; let i = index">
-                    <div class="col-span-12 md:col-span-6">
-                        <label class="block text-sm font-medium mb-1">Examen</label>
-                        <p-autoComplete [formControl]="g.controls.examCtrl" [suggestions]="filteredExams" field="nombre"
-                            (completeMethod)="filterExam($event)" (onSelect)="onExamSelect($event.value, i)"
-                            [dropdown]="true" [forceSelection]="true" placeholder="Buscar por código o nombre"
-                            class="w-full">
-                            <ng-template let-ex pTemplate="item">
-                                <div class="flex justify-between w-full">
-                                    <span class="font-mono text-sm">{{ ex.codigo }}</span>
-                                    <span class="ml-2">{{ ex.nombre }}</span>
-                                    <span class="ml-auto">{{ ex.precio | currency: currencyCode:'symbol-narrow':'1.0-0'
-                                        }}</span>
-                                </div>
-                            </ng-template>
-                        </p-autoComplete>
-                    </div>
-
-                    <div class="col-span-6 md:col-span-3">
-                        <label class="block text-sm font-medium mb-1">Precio</label>
-                        <p-inputNumber [formControl]="g.controls.precio" mode="currency" [currency]="currencyCode"
-                            class="w-full"></p-inputNumber>
-                    </div>
-
-                    <div class="col-span-6 md:col-span-2">
-                        <label class="block text-sm font-medium mb-1">Panel (opcional)</label>
-                        <input pInputText type="text" [formControl]="g.controls.panelId" placeholder="panelId"
-                            class="w-full" />
-                    </div>
-
-                    <div class="col-span-12 md:col-span-1 text-right">
-                        <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-danger"
-                            (click)="removeExamen(i)" [disabled]="examenes.length === 1"></button>
-                    </div>
-
-                    <div class="col-span-12 text-sm text-gray-500">
-                        Seleccionado: {{ g.controls.examNombre.value || '—' }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Observaciones -->
-        <div>
-            <label class="block text-sm font-medium mb-1">Observaciones</label>
-            <textarea pTextarea formControlName="observaciones" rows="3" class="w-full"
-                placeholder="Indicaciones, notas clínicas, etc."></textarea>
-        </div>
-
-        <!-- Resumen -->
-        <div class="border-t pt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="text-sm text-gray-500">
-                Pruebas totales:
-                <span class="font-semibold text-gray-700">{{ totalPruebas }}</span>
-            </div>
-            <div class="text-right text-lg">
-                Total:
-                <span class="font-bold">{{ total | currency: currencyCode:'symbol-narrow':'1.0-0' }}</span>
-            </div>
-        </div>
-    </form>
-
-    <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-2">
-            <button pButton type="button" label="Cancelar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="onHide()"></button>
-            <button pButton type="button" label="Guardar" icon="pi pi-check" class="p-button-success"
-                (click)="submit()"></button>
-        </div>
-    </ng-template>
-</p-dialog>
+  <!-- Footer -->
+  <div class="flex items-center justify-end gap-3">
+    <button pButton type="button"
+            class="p-button-text !text-red-500 hover:!bg-red-50"
+            label="Cancelar" (click)="cancel()"></button>
+    <button pButton type="button" label="Guardar"
+            icon="pi pi-check" severity="success"
+            (click)="save()" [disabled]="!canSave"></button>
+  </div>
+</form>

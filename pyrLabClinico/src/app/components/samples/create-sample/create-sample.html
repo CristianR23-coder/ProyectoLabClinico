@@ -1,109 +1,63 @@
-<p-dialog
-  header="Nueva muestra"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [closable]="true"
-  appendTo="body"
-  [style]="{ width: '720px', maxWidth: '98vw' }"
-  [breakpoints]="{ '960px': '95vw', '640px': '98vw' }"
-  [(visible)]="visible"
-  (onHide)="onHide()">
+<!-- src/app/components/samples/create-sample/create-sample.html -->
+<form [formGroup]="form" class="space-y-5">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 
-  <form [formGroup]="form" class="space-y-4">
-    <!-- Orden / Tipo / Estado -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">
-          Orden ID <span class="text-red-500">*</span>
-        </label>
-        <input pInputText type="text" formControlName="ordenId" placeholder="ID de la orden" class="w-full" />
-        <small class="text-red-500" *ngIf="form.get('ordenId')?.touched && form.get('ordenId')?.invalid">
-          Requerido
-        </small>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1">Tipo</label>
-        <p-select
-          formControlName="tipo"
-          [options]="tiposMuestra"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Tipo de muestra"
-          class="w-full">
-        </p-select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1">Estado</label>
-        <p-select
-          formControlName="estado"
-          [options]="estados"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Selecciona estado"
-          class="w-full">
-        </p-select>
-      </div>
-    </div>
-
-    <!-- Código de barra / Fecha de toma -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Código de barra</label>
-        <input pInputText type="text" formControlName="codigoBarra" placeholder="Opcional" class="w-full" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1">Fecha de toma</label>
-        <!-- DatePicker v20 -->
-        <p-datepicker
-          formControlName="fechaToma"
-          [showIcon]="true"
-          iconDisplay="input"
-          [showTime]="true"
-          hourFormat="24"
-          class="w-full">
-        </p-datepicker>
-      </div>
-    </div>
-
-    <!-- Observación -->
+    <!-- Orden -->
     <div>
-      <label class="block text-sm font-medium mb-1">Observación</label>
-      <textarea
-        pTextarea
-        formControlName="observacion"
-        rows="3"
-        class="w-full"
-        placeholder="Observación (opcional)"></textarea>
+      <label class="block mb-1 text-sm font-semibold">Orden <span class="text-red-500">*</span></label>
+      <p-select formControlName="orderId"
+                [options]="ordersOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Selecciona una orden">
+      </p-select>
+      <small class="p-error" *ngIf="form.controls.orderId.invalid && form.controls.orderId.touched">
+        Requerido.
+      </small>
     </div>
 
-    <p-divider></p-divider>
-
-    <div class="text-sm text-gray-500">
-      Revisa los datos antes de guardar. La muestra quedará asociada a la orden indicada.
+    <!-- Tipo de muestra (derivado de los exámenes de la orden) -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Tipo de muestra <span class="text-red-500">*</span></label>
+      <p-select formControlName="type"
+                [options]="allowedTipos"
+                optionLabel="label" optionValue="value"
+                placeholder="Selecciona el tipo"
+                [disabled]="!form.controls.orderId.value">
+      </p-select>
+      <small class="p-error" *ngIf="form.controls.type.invalid && form.controls.type.touched">
+        Requerido.
+      </small>
     </div>
-  </form>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2">
-      <button
-        pButton
-        type="button"
-        label="Cancelar"
-        class="p-button-text !text-red-500 hover:!bg-red-50"
-        (click)="onHide()">
-      </button>
-      <button
-        pButton
-        type="button"
-        label="Guardar"
-        icon="pi pi-check"
-        class="p-button-success"
-        (click)="submit()">
-      </button>
+    <!-- Código de barras (opcional) -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Código de barras</label>
+      <input pInputText formControlName="barcode" placeholder="Opcional" />
     </div>
-  </ng-template>
-</p-dialog>
+
+    <!-- Fecha de toma -->
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Fecha de toma</label>
+      <p-datepicker formControlName="drawDate" [showIcon]="true" appendTo="body"></p-datepicker>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-semibold">Estado</label>
+      <input pInputText [value]="fixedState" readonly />
+    </div>
+
+    <!-- Observaciones -->
+    <div class="md:col-span-3">
+      <label class="block mb-1 text-sm font-semibold">Observaciones</label>
+      <textarea pTextarea rows="3" formControlName="observations" class="w-full" placeholder="Opcional"></textarea>
+    </div>
+  </div>
+
+  <p-divider></p-divider>
+
+  <div class="flex items-center justify-end gap-3">
+    <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50"
+            label="Cancelar" (click)="cancel()"></button>
+    <button pButton type="button" label="Guardar" icon="pi pi-check" (click)="save()"></button>
+  </div>
+</form>

@@ -1,0 +1,62 @@
+<div class="card p-5 min-w-[320px]">
+  @if (loading) {
+    <div class="p-6 text-center text-color-secondary">Cargando…</div>
+  } @else if (!exam) {
+    <div class="p-6 text-center text-red-500">Examen no encontrado.</div>
+  } @else {
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+      <div>
+        <div class="flex items-center justify-between"> 
+            <h1 class="text-xl font-bold">{{ exam.name }}</h1>
+        </div>
+        <div class="mt-1">
+          <p-tag [value]="exam.status" [severity]="tagSeverity(exam.status)"></p-tag>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button pButton type="button" label="Editar" icon="pi pi-pencil"
+                class="p-button-primary" (click)="requestEdit()"></button>
+        <button pButton type="button" label="Eliminar" icon="pi pi-trash"
+                severity="danger" (click)="requestDelete()"></button>
+      </div>
+    </header>
+
+    <div class="h-0.5 w-16 bg-emerald-500 mb-4"></div>
+
+    <!-- Detalles -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="space-y-1">
+        <div class="text-sm text-color-secondary">Código</div>
+        <div class="font-medium">{{ exam.code }}</div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-sm text-color-secondary">Método</div>
+        <div class="font-medium">{{ exam.method || '—' }}</div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-sm text-color-secondary">Tipo de muestra</div>
+        <div class="font-medium">{{ exam.specimenType || '—' }}</div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-sm text-color-secondary">Tiempo de proceso (min)</div>
+        <div class="font-medium">{{ exam.processingTimeMin ?? '—' }}</div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-sm text-color-secondary">Precio base</div>
+        <div class="font-medium">{{ exam.priceBase | number:'1.0-0' }}</div>
+      </div>
+    </div>
+
+    <p-divider class="my-5"></p-divider>
+
+    <div class="text-sm text-color-secondary">
+      * Los valores y métodos pueden variar según protocolo interno.
+    </div>
+  }
+</div>

@@ -1,0 +1,76 @@
+<!-- src/app/parameters/create-parameter/create-parameter.html -->
+<form [formGroup]="form" class="space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+        <!-- 👇 SOLO se muestra si NO llegó examenId por @Input (modo global) -->
+        <ng-container *ngIf="!examenId">
+            <div class="md:col-span-3">
+                <label class="block mb-1 text-sm font-semibold">Examen <span class="text-red-500">*</span></label>
+                <p-select formControlName="examenId" [options]="(exams$ | async) ?? []" optionLabel="name"
+                    optionValue="id" [showClear]="true" placeholder="Selecciona examen" appendTo="body">
+                </p-select>
+                <small class="p-error" *ngIf="form.controls.examenId.invalid && form.controls.examenId.touched">
+                    Requerido.
+                </small>
+            </div>
+        </ng-container>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Código</label>
+            <input pInputText formControlName="code" placeholder="Ej: GLU" />
+        </div>
+
+        <div class="md:col-span-2">
+            <label class="block mb-1 text-sm font-semibold">Nombre <span class="text-red-500">*</span></label>
+            <input pInputText formControlName="name" placeholder="Nombre del parámetro" />
+            <small class="p-error" *ngIf="form.controls.name.invalid && form.controls.name.touched">
+                Requerido (máx. 150).
+            </small>
+        </div>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Unidad</label>
+            <input pInputText formControlName="unit" placeholder="mg/dL, %, etc." />
+        </div>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Tipo de valor</label>
+            <p-select formControlName="typeValue" [options]="[
+                  {label:'Numérico', value:'NUMERICO'},
+                  {label:'Texto', value:'TEXTO'},
+                  {label:'CUALITATIVO', value:'CUALITATIVO'},
+                  {label:'BOOLEAN', value:'BOOLEAN'}
+                ]" appendTo="body">
+            </p-select>
+        </div>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Decimales</label>
+            <p-inputNumber formControlName="decimals" [useGrouping]="false" [min]="0" [max]="6"></p-inputNumber>
+            <small class="text-color-secondary">Solo aplica a NUMERICO</small>
+        </div>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Ref. Mín</label>
+            <p-inputNumber formControlName="refMin" [useGrouping]="false"></p-inputNumber>
+        </div>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Ref. Máx</label>
+            <p-inputNumber formControlName="refMax" [useGrouping]="false"></p-inputNumber>
+        </div>
+
+        <div>
+            <label class="block mb-1 text-sm font-semibold">Orden visual</label>
+            <p-inputNumber formControlName="visualOrder" [useGrouping]="false" [min]="1"></p-inputNumber>
+        </div>
+    </div>
+
+    <p-divider></p-divider>
+    <div class="flex items-center justify-end gap-3">
+        <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cancelar"
+            (click)="cancel()"></button>
+        <button pButton type="button" label="Guardar" icon="pi pi-check" severity="success" (click)="save()"
+            [disabled]="form.invalid"></button>
+    </div>
+</form>

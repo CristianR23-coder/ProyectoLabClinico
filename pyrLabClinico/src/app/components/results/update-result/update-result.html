@@ -1,76 +1,63 @@
-<!-- update-result.html -->
-<p-dialog header="Editar resultados" [modal]="true" [draggable]="false" [resizable]="false"
-          appendTo="body" [(visible)]="visible" (onHide)="onHide()"
-          [style]="{ width: '900px', maxWidth: '98vw' }"
-          [breakpoints]="{ '960px': '95vw', '640px': '98vw' }">
-  <form [formGroup]="form" class="space-y-4">
-    <div formArrayName="items" class="space-y-4">
-      <div *ngFor="let g of rows.controls; let i = index" [formGroupName]="i" class="border rounded p-3">
-        <div class="flex items-center justify-between mb-2">
-          <div class="font-semibold">
-            Parámetro: <span class="font-mono">{{ g.value.parametroId }}</span>
-          </div>
-          <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-danger"
-                  (click)="onRemove(i)"></button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <ng-container [ngSwitch]="g.value.tipo">
-            <div *ngSwitchCase="'num'">
-              <label class="block text-sm">Valor numérico</label>
-              <p-inputNumber formControlName="valorNum" class="w-full"></p-inputNumber>
-            </div>
-            <div *ngSwitchCase="'texto'">
-              <label class="block text-sm">Valor texto</label>
-              <input pInputText formControlName="valorTexto" class="w-full" />
-            </div>
-            <div *ngSwitchCase="'bool'">
-              <label class="block text-sm">Resultado</label>
-              <p-select formControlName="valorBool"
-                        [options]="[{label:'Negativo',value:false},{label:'Positivo',value:true}]"
-                        optionLabel="label" optionValue="value" class="w-full"></p-select>
-            </div>
-          </ng-container>
-
-          <div>
-            <label class="block text-sm">Unidad</label>
-            <input pInputText formControlName="unidad" class="w-full" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-sm">Ref. mín</label>
-              <p-inputNumber formControlName="refMin" class="w-full"></p-inputNumber>
-            </div>
-            <div>
-              <label class="block text-sm">Ref. máx</label>
-              <p-inputNumber formControlName="refMax" class="w-full"></p-inputNumber>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-          <div>
-            <label class="block text-sm">Observación</label>
-            <textarea pTextarea rows="2" formControlName="observacion" class="w-full"></textarea>
-          </div>
-          <div>
-            <label class="block text-sm">Validado</label>
-            <p-select formControlName="validado"
-                      [options]="[{label:'No',value:false},{label:'Sí',value:true}]"
-                      optionLabel="label" optionValue="value" class="w-full"></p-select>
-          </div>
-        </div>
+<div class="min-w-[320px]">
+  @if (loading) {
+    <div class="p-4 text-center text-color-secondary">Cargando…</div>
+  } @else if (!result) {
+    <div class="p-4 text-center text-red-500">Resultado no encontrado.</div>
+  } @else {
+    <div class="mb-3 text-sm text-color-secondary">
+      <div><span class="font-semibold">Parámetro:</span> #{{ result.parameterId }} — {{ param?.name || '—' }}</div>
+      <div><span class="font-semibold">Unidad:</span> {{ result.units || param?.unit || '—' }}</div>
+      <div *ngIf="param?.typeValue==='NUMERICO'">
+        <span class="font-semibold">Ref.:</span> {{ param?.refMin ?? '—' }} – {{ param?.refMax ?? '—' }} {{ param?.unit || '' }}
       </div>
     </div>
-  </form>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2">
-      <button pButton type="button" label="Cancelar" class="p-button-text !text-red-500 hover:!bg-red-50"
-              (click)="onHide()"></button>
-      <button pButton type="button" label="Guardar cambios" icon="pi pi-check" class="p-button-success"
-              (click)="submit()"></button>
-    </div>
-  </ng-template>
-</p-dialog>
+    <form [formGroup]="form" class="space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <ng-container [ngSwitch]="param?.typeValue">
+          <div *ngSwitchCase="'NUMERICO'">
+            <label class="block mb-1 text-sm font-semibold">Valor ({{ param?.unit || '—' }})</label>
+            <p-inputNumber formControlName="valorNumerico" [useGrouping]="false"></p-inputNumber>
+          </div>
+          <div *ngSwitchDefault class="md:col-span-3">
+            <label class="block mb-1 text-sm font-semibold">Valor</label>
+            <input pInputText formControlName="valorTexto" maxlength="200" />
+          </div>
+        </ng-container>
+
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Fecha</label>
+          <p-datepicker formControlName="fechaResultado" [showIcon]="true" appendTo="body"></p-datepicker>
+        </div>
+
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Estado</label>
+          <p-select formControlName="resultState" [options]="stateOptions"></p-select>
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block mb-1 text-sm font-semibold">Validado por</label>
+          <p-select formControlName="validadoPorId"
+                    [options]="doctors"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="true"
+                    placeholder="Selecciona médico">
+          </p-select>
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block mb-1 text-sm font-semibold">Comentario</label>
+          <textarea pTextarea rows="2" formControlName="comentario" class="w-full"></textarea>
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex items-center justify-end gap-3">
+        <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50" label="Cancelar" (click)="cancel()"></button>
+        <button pButton type="button" label="Guardar" icon="pi pi-check" severity="success" (click)="save()" [disabled]="form.invalid"></button>
+      </div>
+    </form>
+  }
+</div>

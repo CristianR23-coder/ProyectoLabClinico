@@ -1,0 +1,105 @@
+<div class="min-w-[320px]">
+  @if (loading) {
+    <div class="p-4 text-center text-color-secondary">Cargando…</div>
+  } @else if (!panel) {
+    <div class="p-4 text-center text-red-500">Panel no encontrado.</div>
+  } @else {
+    <form [formGroup]="form" class="space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Nombre</label>
+          <input pInputText formControlName="name" />
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-semibold">Estado</label>
+          <p-select formControlName="state" [options]="stateOptions"></p-select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block mb-1 text-sm font-semibold">Descripción</label>
+          <textarea pTextarea rows="2" formControlName="description" class="w-full"></textarea>
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-semibold">Ítems del panel</h4>
+          <button pButton type="button" label="Agregar ítem" icon="pi pi-plus" (click)="addItem()"></button>
+        </div>
+
+        <!-- Cada fila es un FormGroup; sin trackBy/rowTrackBy -->
+        <p-table [value]="itemsFA.controls" [tableStyle]="{'min-width':'64rem'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Tipo</th>
+              <th class="w-64">Examen / Parámetro</th>
+              <th>Obligatorio</th>
+              <th>Orden</th>
+              <th>Notas</th>
+              <th class="w-24">Acciones</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row let-i="rowIndex">
+            <tr [formGroup]="row">
+              <td>
+                <p-select formControlName="kind" [options]="kindOptions"></p-select>
+              </td>
+
+              <td>
+                <ng-container *ngIf="row.get('kind')?.value === 'EXAM'; else paramSel">
+                  <p-select formControlName="examId"
+                            [options]="exams"
+                            optionLabel="name"
+                            optionValue="id"
+                            [showClear]="true"
+                            placeholder="Selecciona examen">
+                  </p-select>
+                </ng-container>
+                <ng-template #paramSel>
+                  <p-select formControlName="parameterId"
+                            [options]="params"
+                            optionLabel="name"
+                            optionValue="id"
+                            [showClear]="true"
+                            placeholder="Selecciona parámetro">
+                  </p-select>
+                </ng-template>
+              </td>
+
+              <td class="text-center">
+                <p-checkbox formControlName="required" binary="true"></p-checkbox>
+              </td>
+
+              <td>
+                <input pInputText type="number" formControlName="order" placeholder="auto" />
+              </td>
+
+              <td>
+                <input pInputText formControlName="notes" placeholder="opcional" />
+              </td>
+
+              <td class="flex gap-2">
+                <button pButton type="button" icon="pi pi-trash" [text]="true" severity="danger" (click)="removeItem(i)"></button>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr><td colspan="6" class="text-center py-6">Sin ítems</td></tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex items-center justify-end gap-3">
+        <button pButton type="button" class="p-button-text !text-red-500 hover:!bg-red-50"
+                label="Cancelar" (click)="cancel()"></button>
+        <button pButton type="button" label="Guardar cambios" icon="pi pi-check" severity="success"
+                (click)="save()" [disabled]="form.invalid"></button>
+      </div>
+    </form>
+  }
+</div>

@@ -1,0 +1,123 @@
+<div class="card p-5">
+  <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
+    <h2 class="text-2xl font-bold">Aseguradoras</h2>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search text-gray-400 p-3"></i>
+        <!-- Búsqueda con FormGroup (q) -->
+        <input pInputText type="text" class="w-64 max-w-full"
+          placeholder="Buscar por nombre, NIT, email, teléfono o dirección…" [formControl]="form.controls.q" />
+      </span>
+
+      <button pButton type="button" label="Limpiar" class="p-button-text !text-red-500 hover:!bg-red-50"
+        (click)="form.reset({ q: '', status: undefined })" [disabled]="!(form.controls.q.value?.length)">
+      </button>
+
+      <button pButton type="button" label="Agregar" icon="pi pi-plus" class="p-button-primary" (click)="openCreate()">
+      </button>
+    </div>
+  </header>
+
+  <div class="h-0.5 w-16 bg-emerald-500 mb-3"></div>
+
+  <!-- Filtros por estado -->
+  <div class="flex items-center gap-2 mb-3">
+    <button pButton type="button" label="Todas" icon="pi pi-list"
+      [severity]="form.value.status === undefined ? 'primary' : 'secondary'"
+      (click)="form.patchValue({ status: undefined })">
+    </button>
+
+    <button pButton type="button" label="Activas" icon="pi pi-check-circle"
+      [severity]="form.value.status === 'ACTIVE' ? 'primary' : 'secondary'"
+      (click)="form.patchValue({ status: 'ACTIVE' })">
+    </button>
+
+    <button pButton type="button" label="Inactivas" icon="pi pi-minus-circle"
+      [severity]="form.value.status === 'INACTIVE' ? 'danger' : 'secondary'"
+      (click)="form.patchValue({ status: 'INACTIVE' })">
+    </button>
+  </div>
+
+  <p-table #dt [value]="(rows$ | async) ?? []" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10,20,50]"
+    dataKey="id" [tableStyle]="{ 'min-width':'78rem' }">
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="id">ID <p-sortIcon field="id" /></th>
+        <th pSortableColumn="name">Nombre <p-sortIcon field="name" /></th>
+        <th pSortableColumn="nit">NIT <p-sortIcon field="nit" /></th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th>Dirección</th>
+        <th pSortableColumn="status">Estado <p-sortIcon field="status" /></th>
+        <th class="w-40">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>{{ row.id }}</td>
+        <td>{{ row.name }}</td>
+        <td>{{ row.nit || '—' }}</td>
+        <td>{{ row.email || '—' }}</td>
+        <td>{{ row.phone || '—' }}</td>
+        <td>{{ row.address || '—' }}</td>
+        <td>
+          <p-tag [value]="row.status" [severity]="tagSeverity(row.status)">
+          </p-tag>
+        </td>
+        <td class="flex gap-2">
+          <button pButton icon="pi pi-eye" [text]="true" [rounded]="true" severity="info" (click)="openView(row.id)"
+            pTooltip="Ver"></button>
+
+          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" severity="success"
+            (click)="openEdit(row.id)" pTooltip="Editar"></button>
+
+          <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger"
+            (click)="onViewDelete(row.id)" pTooltip="Eliminar"></button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="text-center py-6">Sin resultados</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Modal: Crear -->
+  <p-dialog [(visible)]="showCreate" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '800px' }"
+    (onHide)="closeCreate()">
+    <ng-template pTemplate="header">
+      <span class="font-bold text-xl">Nueva aseguradora</span>
+    </ng-template>
+
+    <app-create-insurance (created)="onCreated($event)" (cancelled)="closeCreate()">
+    </app-create-insurance>
+  </p-dialog>
+
+  <!-- Modal: Editar -->
+  <p-dialog [(visible)]="showEdit" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '800px' }"
+    (onHide)="closeEdit()">
+    <ng-template pTemplate="header">
+      <span class="font-bold text-xl">Editar aseguradora</span>
+    </ng-template>
+
+    <app-update-insurance *ngIf="selectedId != null" [insuranceId]="selectedId" (saved)="onEdited($event)"
+      (cancelled)="closeEdit()">
+    </app-update-insurance>
+  </p-dialog>
+
+  <!-- Modal: Ver -->
+  <p-dialog [(visible)]="showView" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '720px' }"
+    (onHide)="closeView()">
+    <ng-template pTemplate="header">
+      <span class="font-bold text-xl">Detalle</span>
+    </ng-template>
+
+    <app-view-insurance *ngIf="viewedId != null" [insuranceId]="viewedId" (editRequested)="onViewEdit($event)"
+      (deleteRequested)="onViewDelete($event)">
+    </app-view-insurance>
+  </p-dialog>
+</div>

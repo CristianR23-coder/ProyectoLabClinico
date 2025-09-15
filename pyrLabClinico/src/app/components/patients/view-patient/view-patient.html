@@ -1,0 +1,44 @@
+<div class="min-w-[320px]">
+  @if (loading) {
+    <div class="p-6 text-center text-color-secondary">Cargando…</div>
+  } @else if (!item) {
+    <div class="p-6 text-center text-red-500">Paciente no encontrado.</div>
+  } @else {
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <div class="flex items-center gap-3">
+        <h2 class="text-2xl font-bold">Paciente <span class="text-gray-500">#{{ item.id }}</span></h2>
+        <p-tag [value]="item.status" [severity]="severity(item.status)"></p-tag>
+      </div>
+      <div class="flex items-center gap-2">
+        <button pButton type="button" label="Editar" icon="pi pi-pencil" (click)="onEdit()"></button>
+        <button pButton type="button" label="Eliminar" icon="pi pi-trash" severity="danger" (click)="onDelete()"></button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <p-card>
+        <ng-template pTemplate="title">Identificación</ng-template>
+        <div class="text-sm">
+          <div class="font-medium">{{ fullName() }}</div>
+          <div><span class="text-color-secondary">Documento:</span> {{ item.docType || '—' }} {{ item.docNumber }}</div>
+        </div>
+      </p-card>
+
+      <p-card>
+        <ng-template pTemplate="title">Contacto</ng-template>
+        <div class="text-sm">
+          <div><span class="text-color-secondary">Tel:</span> {{ item.phone || '—' }}</div>
+          <div><span class="text-color-secondary">Email:</span> {{ item.email || '—' }}</div>
+        </div>
+      </p-card>
+
+      <p-card>
+        <ng-template pTemplate="title">Aseguradora</ng-template>
+        <div class="text-sm">
+          <div class="font-medium">{{ item.insurance?.name || '—' }}</div>
+          <div *ngIf="item.insurance?.nit" class="text-color-secondary">NIT {{ item.insurance?.nit }}</div>
+        </div>
+      </p-card>
+    </div>
+  }
+</div>

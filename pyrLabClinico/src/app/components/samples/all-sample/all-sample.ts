@@ -1,187 +1,148 @@
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Observable, combineLatest, map, startWith } from 'rxjs';
 
-/* PrimeNG */
-import { Table, TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
+import { SelectModule } from 'primeng/select';
+import { DialogModule } from 'primeng/dialog';
 import { TabsModule } from 'primeng/tabs';
 
-/* Componentes de detalle y edición (ajusta rutas/nombres si difieren) */
-import { ViewSample, SampleDetail } from '../view-sample/view-sample';
-import { UpdateSample, SampleForEdit, SampleUpdatePayload } from '../update-sample/update-sample';
+import { SamplesService } from '../../../services/sample-service';   // ajusta si difiere
+import { SampleI, SampleState } from '../../../models/sample-model';
+import { SpecimenType } from '../../../models/exam-model';
 
-/* ================= Tipos ================= */
-export type SampleStatus = 'pendiente' | 'tomada' | 'rechazada' | 'enviada' | 'archivada';
+// Diálogos
+import { CreateSample } from '../create-sample/create-sample';
+import { UpdateSample } from '../update-sample/update-sample';
+import { ViewSample } from '../view-sample/view-sample';
 
-export interface Sample {
-  id: string;
-  codigoBarra: string | null;
-  tipo: string;             // sangre, suero, orina, etc.
-  ordenId: string;          // FK de la orden
-  fechaToma: string | Date | null;
-  estado: SampleStatus;
-  observacion?: string | null;
-}
-
-type TabValue = 'all' | SampleStatus;
-
-/* =============== MOCKS para la tabla =============== */
-const MOCK_SAMPLES: Sample[] = [
-  { id: 'm1', codigoBarra: 'BRC-0001', tipo: 'Sangre', ordenId: '1', fechaToma: '2025-09-01T09:40:00', estado: 'pendiente' },
-  { id: 'm2', codigoBarra: 'BRC-0002', tipo: 'Suero',  ordenId: '2', fechaToma: '2025-09-01T15:55:00', estado: 'tomada'    },
-  { id: 'm3', codigoBarra: 'BRC-0003', tipo: 'Orina',  ordenId: '3', fechaToma: '2025-08-30T10:10:00', estado: 'rechazada' },
-];
+type Filters = { q?: string; state?: SampleState; type?: SpecimenType };
 
 @Component({
-  selector: 'app-all-sample',
+  selector: 'app-all-samples',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, RouterModule,
-    TableModule, ButtonModule, InputTextModule, TagModule, TooltipModule, TabsModule,
-    ViewSample, UpdateSample,
+    CommonModule, ReactiveFormsModule,
+    TableModule, InputTextModule, ButtonModule, TagModule, SelectModule,
+    DialogModule, TabsModule,
+    CreateSample, UpdateSample, FormsModule, ViewSample
   ],
-  templateUrl: './all-sample.html',
-  styleUrls: ['./all-sample.css'],
+  templateUrl: './all-sample.html'
 })
-export class AllSample implements OnInit {
-  /** Fuente de datos (mock por defecto). Si luego recibes [samples] desde un padre, se reemplaza. */
-  @Input() samples: Sample[] = MOCK_SAMPLES;
+export class AllSample {
+  private fb = inject(FormBuilder);
+  private svc = inject(SamplesService);
 
-  @Input() pageSize = 10;
-
-  /** Eventos si usas un contenedor/host */
-  @Output() addSample = new EventEmitter<void>();
-  @Output() viewSample = new EventEmitter<Sample>();
-  @Output() editSample = new EventEmitter<Sample>();
-  @Output() deleteSample = new EventEmitter<Sample>();
-
-  @ViewChild('dt') dt!: Table;
-
-  /* --------- Filtros/Búsqueda --------- */
-  globalQuery = '';
-  globalFields: string[] = ['codigoBarra', 'tipo', 'ordenId', 'estado'];
-
-  estadoTabs: { label: string; value: TabValue; icon: string }[] = [
-    { label: 'Todas',       value: 'all',       icon: 'pi pi-list' },
-    { label: 'Pendientes',  value: 'pendiente', icon: 'pi pi-clock' },
-    { label: 'Tomadas',     value: 'tomada',    icon: 'pi pi-check' },
-    { label: 'Rechazadas',  value: 'rechazada', icon: 'pi pi-times' },
-    { label: 'Enviadas',    value: 'enviada',   icon: 'pi pi-send' },
-    { label: 'Archivadas',  value: 'archivada', icon: 'pi pi-archive' },
-  ];
-  estadoValue: TabValue = 'all';
-
-  /* --------- Estado del visor (Ver) --------- */
-  showView = false;
-  selectedDetail: SampleDetail | null = null;
-
-  /* --------- Estado del editor (Editar) --------- */
+  // diálogos
+  showCreate = false;
   showEdit = false;
-  sampleToEdit: SampleForEdit | null = null;
+  selectedId?: number;
 
-  ngOnInit(): void {}
+  // opciones (usa las que tengas en tu SampleState)
+  readonly stateOptions: SampleState[] = ['RECOLECTADA', 'ENVIADA', 'EN_PROCESO', 'RECHAZADA'] as SampleState[];
+  readonly typeOptions: SpecimenType[] = ['SANGRE', 'SUERO', 'PLASMA', 'ORINA', 'SALIVA', 'HECES', 'TEJIDO', 'OTRA'] as SpecimenType[];
 
-  /* --------- Tabs de estado --------- */
-  onEstadoChange(val: unknown) {
-    const v = String(val) as TabValue;
-    this.estadoValue = v;
-    if (!this.dt) return;
-    this.dt.filter(null, 'estado', 'equals');
-    if (v !== 'all') this.dt.filter(v, 'estado', 'equals');
-    if (this.globalQuery) this.dt.filterGlobal(this.globalQuery, 'contains');
-  }
+  // filtros
+  form = this.fb.group({
+    q: this.fb.control<string>(''),
+    state: this.fb.control<SampleState | undefined>(undefined),
+    type: this.fb.control<SpecimenType | undefined>(undefined),
+  });
 
-  getStatusSeverity(status: SampleStatus): 'success' | 'info' | 'warn' | 'danger' {
-    switch (status) {
-      case 'tomada':     return 'success';
-      case 'enviada':    return 'info';
-      case 'pendiente':  return 'warn';
-      case 'rechazada':
-      case 'archivada':  return 'danger';
+  // Fuente de datos: soporta services con `samples$` o `items$`
+  private readonly source$: Observable<SampleI[]> = (() => {
+    const s = this.svc as any;
+    if (s.samples$) return s.samples$ as Observable<SampleI[]>;
+    if (s.items$) return s.items$ as Observable<SampleI[]>;
+    throw new Error('SamplesService debe exponer `samples$` o `items$` (Observable<SampleI[]>)');
+  })();
+
+  private readonly filters$ = this.form.valueChanges.pipe(
+    startWith(this.form.getRawValue()),
+    map(v => ({
+      q: v?.q || undefined,
+      state: v?.state || undefined,
+      type: v?.type || undefined
+    } as Filters))
+  );
+
+  readonly rows$ = combineLatest([this.source$, this.filters$]).pipe(
+    map(([items, f]) => this.applyFilters(items, f))
+  );
+
+  // Helpers UI
+  tagSeverity(s?: SampleState): 'info' | 'warning' | 'success' | 'danger' | 'help' | undefined {
+    switch (s) {
+      case 'RECOLECTADA': return 'info';
+      case 'ENVIADA': return 'help';
+      case 'EN_PROCESO': return 'warning';
+      case 'RECHAZADA': return 'danger';
+      default: return undefined;
     }
   }
 
-  clearSearch() {
-    this.globalQuery = '';
-    if (this.dt) {
-      this.dt.clear();
-      if (this.estadoValue !== 'all') this.dt.filter(this.estadoValue, 'estado', 'equals');
-    }
+  clear() { this.form.reset({ q: '', state: undefined, type: undefined }); }
+
+  openCreate() { this.showCreate = true; }
+  closeCreate() { this.showCreate = false; }
+  onCreated(_: SampleI) { this.closeCreate(); }
+
+  openEdit(id: number) { this.selectedId = id; this.showEdit = true; }
+  closeEdit() { this.showEdit = false; this.selectedId = undefined; }
+  onEdited(_: SampleI) { this.closeEdit(); }
+
+  onDelete(rowOrId: SampleI | number) {
+    const id = typeof rowOrId === 'number' ? rowOrId : rowOrId.id;
+    if (!id) return;
+    const ok = confirm(`Delete sample #${id}? This cannot be undone.`);
+    if (!ok) return;
+    this.svc.remove(id).subscribe(() => {
+      this.closeView();
+    });
   }
 
-  /* ================= Acciones ================= */
-  onAdd() { this.addSample.emit(); }
+  showView = false;
+  selectedDetail?: SampleI;
 
-  /* ---- Ver: abre ViewSample con detalle (mock por ahora) ---- */
-  onView(sample: Sample) {
-    this.viewSample.emit(sample); // por si usas contenedor
-
-    this.selectedDetail = {
-      id: sample.id,
-      codigoBarra: sample.codigoBarra,
-      tipo: sample.tipo,
-      ordenId: sample.ordenId,
-      fechaToma: sample.fechaToma ? new Date(sample.fechaToma) : null,
-      estado: sample.estado,
-      observacion: sample.observacion ?? null,
-      // datos extra de ejemplo:
-      paciente: 'Paciente Demo',
-      medico: 'Médico Demo',
-      ordenNumero: 'ORD-XXXX',
-    };
-
+  // --- view dialog
+  onView(s: SampleI) {
+    this.selectedDetail = s;
     this.showView = true;
   }
-
-  /* ---- Editar: abre UpdateSample ---- */
-  onEdit(sample: Sample) {
-    this.editSample.emit(sample);
-    this.sampleToEdit = this.mapToSampleForEdit(sample);
-    this.showEdit = true;
+  closeView() {
+    this.showView = false;
+    this.selectedDetail = undefined;
   }
 
-  /* Recibe cambios guardados desde el diálogo de edición */
-  onUpdated(payload: SampleUpdatePayload) {
-    // En real: PUT /muestras/:id y recargar
-    this.samples = this.samples.map(s =>
-      s.id === payload.id
-        ? {
-            ...s,
-            estado: payload.estado,
-            codigoBarra: payload.codigoBarra ?? s.codigoBarra,
-            tipo: payload.tipo ?? s.tipo,
-            fechaToma: payload.fechaToma ?? s.fechaToma,
-            observacion: payload.observacion ?? s.observacion,
-          }
-        : s
+
+  // Filtros
+  private applyFilters(items: SampleI[], p: Filters): SampleI[] {
+    let out = items;
+
+    if (p.state) out = out.filter(s => s.state === p.state);
+    if (p.type) out = out.filter(s => s.type === p.type);
+
+    const q = p.q?.trim().toLowerCase();
+    if (q) {
+      out = out.filter(s => {
+        const idStr = String(s.id ?? '');
+        const ordStr = String(s.orderId ?? '');
+        const bc = (s.barcode ?? '').toLowerCase();
+        const t = (s.type as string | undefined)?.toLowerCase?.() ?? '';
+        const st = (s.state as string | undefined)?.toLowerCase?.() ?? '';
+        const obs = (s.observations ?? '').toLowerCase();
+        return idStr.includes(q) || ordStr.includes(q) || bc.includes(q) || t.includes(q) || st.includes(q) || obs.includes(q);
+      });
+    }
+
+    // Ordena por drawDate desc y luego id desc
+    return [...out].sort((a, b) =>
+      (b.drawDate ?? '').localeCompare(a.drawDate ?? '') || (b.id ?? 0) - (a.id ?? 0)
     );
-    this.showEdit = false;
-  }
-
-  /* Eliminar desde el diálogo */
-  onRemoveSample(id: string) {
-    // En real: DELETE /muestras/:id y recargar
-    this.samples = this.samples.filter(s => s.id !== id);
-    this.showEdit = false;
-  }
-
-  onDelete(sample: Sample) { this.deleteSample.emit(sample); }
-
-  /* ===== Helper: Sample -> SampleForEdit ===== */
-  private mapToSampleForEdit(s: Sample): SampleForEdit {
-    return {
-      id: s.id,
-      ordenId: s.ordenId,
-      tipo: s.tipo,
-      codigoBarra: s.codigoBarra,
-      fechaToma: s.fechaToma ? new Date(s.fechaToma) : null,
-      estado: s.estado,
-      observacion: s.observacion ?? null,
-    };
   }
 }
