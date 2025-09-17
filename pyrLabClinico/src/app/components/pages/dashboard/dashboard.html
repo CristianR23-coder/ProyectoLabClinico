@@ -1,0 +1,112 @@
+<div class="space-y-6 p-5">
+  <!-- Encabezado -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-2xl font-bold">Dashboard</h2>
+      <div class="text-sm text-color-secondary">
+        Resumen operativo del laboratorio
+      </div>
+    </div>
+    <button pButton icon="pi pi-sliders-h" class="p-button-text" label="Filtros (próximamente)"></button>
+  </div>
+
+  <!-- KPIs -->
+  <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card p-4">
+      <div class="text-sm text-color-secondary">Pendientes</div>
+      <div class="mt-1 text-2xl font-bold">{{ (totals$ | async)?.pendientes ?? 0 }}</div>
+      <p-tag value="por validar" severity="warn" class="mt-2"></p-tag>
+    </div>
+
+    <div class="card p-4">
+      <div class="text-sm text-color-secondary">Validados</div>
+      <div class="mt-1 text-2xl font-bold">{{ (totals$ | async)?.validados ?? 0 }}</div>
+      <p-tag value="OK" severity="success" class="mt-2"></p-tag>
+    </div>
+
+    <div class="card p-4">
+      <div class="text-sm text-color-secondary">Rechazados</div>
+      <div class="mt-1 text-2xl font-bold">{{ (totals$ | async)?.rechazados ?? 0 }}</div>
+      <p-tag value="Revisar" severity="danger" class="mt-2"></p-tag>
+    </div>
+
+    <div class="card p-4">
+      <div class="text-sm text-color-secondary">Fuera de rango</div>
+      <div class="mt-1 text-2xl font-bold">{{ (totals$ | async)?.fueraRango ?? 0 }}</div>
+      <p-tag value="Clínico" severity="info" class="mt-2"></p-tag>
+    </div>
+  </section>
+
+  <!-- Gráficas -->
+  <section class="grid lg:grid-cols-3 gap-4">
+    <!-- Línea: últimos 10 días -->
+    <div class="card p-4 lg:col-span-2">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold">Resultados por día (10 días)</h3>
+        <button pButton icon="pi pi-refresh" class="p-button-text p-button-sm" pTooltip="Refrescar"></button>
+      </div>
+      <div class="h-64">
+        <p-chart type="line" [data]="lineData$ | async" [options]="lineOptions"></p-chart>
+      </div>
+    </div>
+
+    <!-- Doughnut: distribución por estado -->
+    <div class="card p-4">
+      <h3 class="text-lg font-semibold mb-3">Distribución por estado</h3>
+      <div class="h-64">
+        <p-chart type="doughnut" [data]="doughnutData$ | async" [options]="doughnutOptions"></p-chart>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lista de pendientes -->
+  <section class="card p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-lg font-semibold">Por validar</h3>
+      <button pButton icon="pi pi-arrow-right" label="Ir a resultados" (click)="goResultados()"></button>
+    </div>
+
+    <p-table [value]="(pendientes$ | async) ?? []" [tableStyle]="{'min-width':'56rem'}">
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="w-28">ID</th>
+          <th>Orden</th>
+          <th>Muestra</th>
+          <th>Parámetro</th>
+          <th>Valor</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>#{{ r.orderId }}</td>
+          <td>#{{ r.sampleId }}</td>
+          <td>#{{ r.parameterId }}</td>
+          <td>
+            <ng-container *ngIf="r.numValue != null; else tv">
+              {{ r.numValue }} {{ r.units || '' }}
+            </ng-container>
+            <ng-template #tv>{{ r.textValue || '—' }}</ng-template>
+          </td>
+          <td>{{ r.dateResult | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td><p-tag [value]="r.resultState" severity="warn"></p-tag></td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-4 text-color-secondary">No hay resultados pendientes</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  <!-- Pie -->
+  <footer class="text-xs text-color-secondary">
+    Última actualización:
+    <span class="font-medium">{{ (totals$ | async)?.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+  </footer>
+</div>

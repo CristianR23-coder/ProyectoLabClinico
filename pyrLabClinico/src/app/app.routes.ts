@@ -14,8 +14,11 @@ import { AllDoctors } from './components/doctors/all-doctors/all-doctors';
 import { AllPatients } from './components/patients/all-patients/all-patients';
 import { TrackSamples } from './components/samples/track-samples/track-samples';
 import { AllParameters } from './components/parameters/all-parameters/all-parameters';
-import { ValidatedResult } from './components/results/validated-result/validated-result';
 import { AllPanel } from './components/panel/all-panels/all-panels';
+import { RepositoryPage } from './components/pages/repository/repository';
+import { Dashboard } from './components/pages/dashboard/dashboard';
+import { NotFound } from './components/pages/not-found/not-found';
+import { SoonPage } from './components/pages/soon-page/soon-page';
 
 export const routes: Routes = [
     {
@@ -23,11 +26,15 @@ export const routes: Routes = [
         component: Home
     },
     {
+        path: 'dashboard',
+        component: Dashboard
+    },
+    {
         path: 'ordenes',
         component: AllOrder
     },
     {
-        path:'ordenes/nueva',
+        path: 'ordenes/nueva',
         component: CreateOrder
     },
     {
@@ -59,8 +66,23 @@ export const routes: Routes = [
         component: CreateResult
     },
     {
-        path: 'resultados/validar',
-        component: ValidatedResult
+        path: 'resultados/entrega',
+        component: SoonPage,
+        data: {
+            title: 'Entrega / impresión de resultados',
+            subtitle: 'Previsualiza, genera y entrega reportes de laboratorio.',
+            icon: 'pi pi-print',
+            notice: 'Esta página no está operativa todavía.',
+            eta: 'Próximamente',
+            features: [
+                'Búsqueda por paciente, orden o rango de fechas',
+                'Previsualización PDF del informe',
+                'Descarga e impresión directa',
+                'Envío por correo al paciente/médico',
+                'Historial de entregas y reimpresiones',
+                'Firmas digitales y código QR en el reporte'
+            ],
+        }
     },
     {
         path: 'configuracion/examenes',
@@ -85,5 +107,13 @@ export const routes: Routes = [
     {
         path: 'administracion/pacientes',
         component: AllPatients
-    }
+    },
+    {
+        path: 'administracion/repositorio',
+        component: RepositoryPage
+    },
+    {
+        path: '**',
+        component: NotFound
+    },
 ];

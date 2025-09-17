@@ -2,34 +2,39 @@
   <!-- HEADER -->
   <div class="h-14 px-4 flex items-center gap-2 border-b border-white/15">
     @if (isAsideOpen) {
-    <a [routerLink]="['/']"><img src="logo.png" alt="Laboratorio" class="h-8" /></a>
-    <span class="font-bold tracking-wide">
-      Lab<span class="text-emerald-400">PRO</span>
-    </span>
-    <!-- Izquierda: botón hamburguesa -->
-    <div class="flex items-center gap-3">
-      <button pButton type="button" (click)="onToggle()"
-        class="grid place-items-center h-10 w-10 rounded-md hover:bg-white/10 transition" pTooltip="Menú"
-        tooltipPosition="bottom">
-        <i class="pi pi-bars text-[18px]"></i>
-      </button>
-    </div>
+      <a [routerLink]="['/']" class="shrink-0">
+        <!-- Misma ALTURA, ancho automático: NO se deforma -->
+        <img src="logo.png" alt="Laboratorio"
+             class="h-8 w-auto max-w-[9rem] object-contain block" />
+      </a>
+      <span class="font-bold tracking-wide">
+        Lab<span class="text-emerald-400">PRO</span>
+      </span>
+
+      <!-- Izquierda: botón hamburguesa -->
+      <div class="flex items-center gap-3">
+        <button pButton type="button" (click)="onToggle()"
+          class="grid place-items-center h-10 w-10 rounded-md hover:bg-white/10 transition"
+          pTooltip="Menú" tooltipPosition="bottom">
+          <i class="pi pi-bars text-[18px]"></i>
+        </button>
+      </div>
 
     } @else {
-    <a [routerLink]="['/']">
-      <img src="logo_collapsed.png" alt="Laboratorio" class="h-8" />
-      <!-- 👈 altura fija, ancho auto -->
-    </a>
+      <a [routerLink]="['/']" class="shrink-0">
+        <!-- Mismo ALTO que el expandido -->
+        <img src="logo_collapsed.png" alt="Laboratorio"
+             class="h-8 w-auto object-contain block" />
+      </a>
 
-
-    <!-- Izquierda: botón hamburguesa -->
-    <div class="flex items-center gap-3">
-      <button pButton type="button" (click)="onToggle()"
-        class="hamburguer_btn grid place-items-center h-10 w-10 rounded-md hover:bg-white/10 transition" pTooltip="Menú"
-        tooltipPosition="bottom">
-        <i class="pi pi-bars text-[18px]"></i>
-      </button>
-    </div>
+      <!-- Izquierda: botón hamburguesa -->
+      <div class="flex items-center gap-3">
+        <button pButton type="button" (click)="onToggle()"
+          class="hamburguer_btn grid place-items-center h-10 w-10 rounded-md hover:bg-white/10 transition"
+          pTooltip="Menú" tooltipPosition="bottom">
+          <i class="pi pi-bars text-[18px]"></i>
+        </button>
+      </div>
     }
   </div>
 
@@ -37,5 +42,6 @@
     <p-panelMenu [model]="items" styleClass="sidebar-menu"></p-panelMenu>
   </div>
   <div class="h-10 px-4 flex items-center text-[11px] text-white/70 border-t border-white/10">
-    v1.2.0
+    v1.3.0
   </div>
+</div>

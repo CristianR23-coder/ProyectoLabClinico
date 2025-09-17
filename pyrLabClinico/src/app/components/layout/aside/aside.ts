@@ -23,6 +23,16 @@ export class Aside implements OnInit {
   ngOnInit(): void {
     this.items = [
       {
+        label: 'Inicio',
+        icon: 'pi pi-home',
+        routerLink: ['/'],
+      },
+      {
+        label: 'Dashboard',
+        icon: 'pi pi-chart-line',
+        routerLink: ['/dashboard']
+      },
+      {
         label: 'Órdenes',
         icon: 'pi pi-folder',
         items: [

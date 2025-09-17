@@ -1,0 +1,156 @@
+<div class="p-5">
+    <!-- HERO -->
+    <section
+        class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white shadow-xl">
+        <div class="absolute -top-24 -right-24 w-72 h-72 bg-white/10 blur-3xl rounded-full"></div>
+        <div class="absolute -bottom-20 -left-20 w-80 h-80 bg-black/10 blur-3xl rounded-full"></div>
+
+        <div class="p-8 md:p-10 flex flex-col gap-6">
+            <div class="flex items-start md:items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <!-- Logo/Iniciales -->
+                    <div
+                        class="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold">
+                        L
+                    </div>
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">{{ app.nombre }}</h1>
+                        <div class="mt-1 text-sm/relaxed text-white/80">
+                            v{{ app.version }} · Licencia {{ app.licencia }} · {{ app.fecha }}
+                        </div>
+                    </div>
+                </div>
+
+                <p-tag [value]="app.estado" [severity]="estadoSeverity()"
+                    styleClass="!bg-white/15 !text-white !border-0"></p-tag>
+            </div>
+
+            <p class="max-w-3xl text-white/90">
+                {{ app.descripcion }}
+            </p>
+
+            <div class="flex flex-wrap gap-3">
+                <button pButton type="button" label="Ver repositorio" icon="pi pi-github"
+                    (click)="abrir(repoUrl)"></button>
+                <button pButton type="button" class="p-button-outlined" label="Documentación" icon="pi pi-book"
+                    (click)="abrir(docsUrl)"></button>
+                <button pButton type="button" class="p-button-text !text-white/90 hover:!bg-white/10"
+                    label="Reportar un issue" icon="pi pi-external-link" (click)="abrir(issuesUrl)"></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- CARDS -->
+    <section class="grid md:grid-cols-3 gap-5 mt-6">
+        <!-- Info app -->
+        <article class="rounded-2xl border surface-border bg-white/60 dark:bg-white/5 backdrop-blur p-5 shadow-sm">
+            <div class="flex items-center gap-3">
+                <i class="pi pi-info-circle text-xl text-blue-600 dark:text-blue-400"></i>
+                <h3 class="text-lg font-semibold">Información del software</h3>
+            </div>
+            <ul class="mt-3 text-sm text-color-secondary space-y-1.5">
+                <li><span class="font-medium text-color">Nombre:</span> {{ app.nombre }}</li>
+                <li><span class="font-medium text-color">Versión:</span> v{{ app.version }}</li>
+                <li><span class="font-medium text-color">Estado:</span> {{ app.estado }}</li>
+                <li><span class="font-medium text-color">Licencia:</span> {{ app.licencia }}</li>
+                <li><span class="font-medium text-color">Actualización:</span> {{ app.fecha }}</li>
+            </ul>
+
+            <div class="mt-4 flex gap-2">
+                <button pButton type="button" class="p-button-text" icon="pi pi-github" label="GitHub"
+                    (click)="abrir(repoUrl)"></button>
+                <button pButton type="button" class="p-button-text" icon="pi pi-book" label="Docs"
+                    (click)="abrir(docsUrl)"></button>
+            </div>
+        </article>
+
+        <!-- Desarrollador -->
+        <article class="rounded-2xl border surface-border bg-white/60 dark:bg-white/5 backdrop-blur p-5 shadow-sm">
+            <div class="flex items-center gap-3">
+                <i class="pi pi-user text-xl text-emerald-600 dark:text-emerald-400"></i>
+                <h3 class="text-lg font-semibold">Desarrollador</h3>
+            </div>
+
+            <div class="mt-3 flex items-center gap-3">
+                <div
+                    class="h-11 w-11 rounded-xl bg-emerald-600/10 flex items-center justify-center font-bold text-emerald-700 dark:text-emerald-300">
+                    {{ dev.nombre[0] || 'D' }}
+                </div>
+                <div>
+                    <div class="font-medium">{{ dev.nombre }}</div>
+                    <div class="text-sm text-color-secondary">{{ dev.rol }}</div>
+                </div>
+            </div>
+
+            <div class="mt-3 flex flex-col gap-2 text-sm">
+                <a class="hover:underline flex items-center gap-2" [href]="'mailto:'+dev.email">
+                    <i class="pi pi-envelope"></i> {{ dev.email }}
+                </a>
+                <a class="hover:underline flex items-center gap-2" [href]="dev.github" target="_blank" rel="noopener">
+                    <i class="pi pi-github"></i> GitHub
+                </a>
+                <a class="hover:underline flex items-center gap-2" [href]="dev.linkedin" target="_blank" rel="noopener">
+                    <i class="pi pi-linkedin"></i> LinkedIn
+                </a>
+            </div>
+        </article>
+
+        <!-- Stack -->
+        <article class="rounded-2xl border surface-border bg-white/60 dark:bg-white/5 backdrop-blur p-5 shadow-sm">
+            <div class="flex items-center gap-3">
+                <i class="pi pi-cog text-xl text-fuchsia-600 dark:text-fuchsia-400"></i>
+                <h3 class="text-lg font-semibold">Tecnologías</h3>
+            </div>
+
+            <div class="mt-3 space-y-3">
+                <div *ngFor="let s of stack">
+                    <div class="text-sm font-medium mb-1">{{ s.titulo }}</div>
+                    <div class="flex flex-wrap gap-2">
+                        <p-tag *ngFor="let it of s.items" [value]="it" severity="info"></p-tag>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <p-divider></p-divider>
+
+    <!-- FEATURES GRID -->
+    <section>
+        <h3 class="text-lg font-semibold mb-3">Características principales</h3>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div *ngFor="let f of caracteristicas"
+                class="rounded-xl border surface-border bg-white/60 dark:bg-white/5 backdrop-blur p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-start gap-3">
+                    <div class="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                        <i class="{{ f.icon }} text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <div>
+                        <div class="font-medium">{{ f.titulo }}</div>
+                        <div class="text-sm text-color-secondary mt-0.5">{{ f.detalle }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <p-divider></p-divider>
+
+    <!-- CTA final -->
+    <section
+        class="rounded-2xl border surface-border bg-white/70 dark:bg-white/5 backdrop-blur p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <div class="text-lg font-semibold">¿Te gustaría revisar el código o contribuir?</div>
+            <div class="text-sm text-color-secondary">Haz un fork, crea tu rama y envía un Pull Request con tu mejora.
+            </div>
+        </div>
+
+        <div class="flex gap-2">
+            <button pButton type="button" icon="pi pi-github" label="Abrir repositorio"
+                (click)="abrir(repoUrl)"></button>
+            <button pButton type="button" class="p-button-outlined" icon="pi pi-external-link" label="Reportar issue"
+                (click)="abrir(issuesUrl)"></button>
+        </div>
+    </section>
+</div>

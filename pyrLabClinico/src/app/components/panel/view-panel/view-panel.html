@@ -18,7 +18,7 @@
 
     <p-divider></p-divider>
 
-    <h4 class="font-semibold mb-2">Ítems ({{ panel.items?.length || 0 }})</h4>
+    <h4 class="font-semibold mb-2">Ítems ({{ panel.items.length || 0 }})</h4>
     <p-table [value]="panel.items || []" [tableStyle]="{'min-width':'60rem'}">
       <ng-template pTemplate="header">
         <tr>
@@ -44,7 +44,7 @@
     </p-table>
 
     <div class="flex justify-end mt-4">
-      <button pButton type="button" label="Cerrar" class="p-button-text" (click)="closed.emit()"></button>
+      <button pButton type="button" label="Cerrar" class="p-button-text !text-red-500 hover:!bg-red-50" (click)="closed.emit()"></button>
     </div>
   }
 </div>

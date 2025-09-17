@@ -1,24 +1,111 @@
-<div class="home-container">
-    <h1 class="welcome">Bienvenido al Laboratorio Clínico</h1>
-    <p class="subtitle">Seleccione una opción para comenzar:</p>
+<div class="home">
 
-    <div class="cards">
-      <p-card header="Órdenes" subheader="Gestión de órdenes médicas" styleClass="card">
-        <ng-template pTemplate="footer">
-          <button pButton label="Ver órdenes" icon="pi pi-folder" routerLink="/ordenes"></button>
-        </ng-template>
-      </p-card>
-
-      <p-card header="Muestras" subheader="Registro y control de muestras" styleClass="card">
-        <ng-template pTemplate="footer">
-          <button pButton label="Ver muestras" icon="pi pi-inbox" routerLink="/muestras"></button>
-        </ng-template>
-      </p-card>
-
-      <p-card header="Resultados" subheader="Consulta de resultados" styleClass="card">
-        <ng-template pTemplate="footer">
-          <button pButton label="Ver resultados" icon="pi pi-chart-line" routerLink="/resultados"></button>
-        </ng-template>
-      </p-card>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__left">
+      <div class="hero__icon"><i class="pi pi-home"></i></div>
+      <div>
+        <h1 class="hero__title">Bienvenido al Laboratorio Clínico</h1>
+        <p class="hero__subtitle">Selecciona una opción para comenzar</p>
+      </div>
     </div>
-  </div>
+    <div class="hero__actions">
+      <a pButton class="p-button-rounded p-button-outlined" routerLink="/administracion/repositorio" icon="pi pi-github"
+        label="Repositorio"></a>
+      <a pButton class="p-button-rounded p-button-text" routerLink="/resultados" icon="pi pi-arrow-right"
+        label="Ir a resultados"></a>
+    </div>
+  </section>
+
+  <!-- ===== KPIs (sin depender del CSS) ===== -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
+    <div class="rounded-xl bg-white shadow p-4 flex flex-col gap-2">
+      <div class="text-sm text-color-secondary">Pendientes</div>
+      <div class="text-3xl font-extrabold leading-none">{{ (kpis$ | async)?.pendientes ?? 0 }}</div>
+      <div class="flex items-center gap-2">
+        <p-tag value="por validar" severity="warn"></p-tag>
+        <button pButton class="p-button-text p-button-sm" (click)="goResultados()" icon="pi pi-arrow-right"
+          label="Ver"></button>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white shadow p-4 flex flex-col gap-2">
+      <div class="text-sm text-color-secondary">Validados</div>
+      <div class="text-3xl font-extrabold leading-none">{{ (kpis$ | async)?.validados ?? 0 }}</div>
+      <div class="flex items-center gap-2">
+        <p-tag value="OK" severity="success"></p-tag>
+        <button pButton class="p-button-text p-button-sm" (click)="goResultados()" icon="pi pi-arrow-right"
+          label="Ver"></button>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white shadow p-4 flex flex-col gap-2">
+      <div class="text-sm text-color-secondary">Rechazados</div>
+      <div class="text-3xl font-extrabold leading-none">{{ (kpis$ | async)?.rechazados ?? 0 }}</div>
+      <div class="flex items-center gap-2">
+        <p-tag value="Revisar" severity="danger"></p-tag>
+        <button pButton class="p-button-text p-button-sm" (click)="goResultados()" icon="pi pi-arrow-right"
+          label="Ver"></button>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white shadow p-4 flex flex-col gap-2">
+      <div class="text-sm text-color-secondary">Fuera de rango</div>
+      <div class="text-3xl font-extrabold leading-none">{{ (kpis$ | async)?.fueraRango ?? 0 }}</div>
+      <div class="flex items-center gap-2">
+        <p-tag value="Clínico" severity="info"></p-tag>
+        <button pButton class="p-button-text p-button-sm" (click)="goResultados()" icon="pi pi-arrow-right"
+          label="Ver"></button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CARDS -->
+  <section class="cards">
+    <p-card *ngFor="let c of cards" styleClass="card">
+      <ng-template pTemplate="header">
+        <div class="card__hdr">
+          <div class="card__icon"><i class="{{ c.icon }}"></i></div>
+          <div class="card__titles">
+            <div class="card__title">{{ c.title }}</div>
+            <div class="card__sub">{{ c.sub }}</div>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="card__body">{{ c.desc }}</div>
+
+      <ng-template pTemplate="footer">
+        <a pButton [routerLink]="c.link" icon="pi pi-arrow-right" [label]="c.cta"></a>
+      </ng-template>
+    </p-card>
+  </section>
+
+  <!-- QUICK LINKS -->
+  <section class="quick">
+    <div class="quick__title">Accesos rápidos</div>
+    <div class="quick__grid">
+      <a *ngFor="let q of quick" [routerLink]="q.link" class="quick__item" pTooltip="{{q.label}}" tooltipPosition="top">
+        <i class="{{ q.icon }}"></i>
+        <span>{{ q.label }}</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- HELP / INFO -->
+  <section class="help card">
+    <div class="help__left">
+      <div class="help__title">¿Necesitas ayuda?</div>
+      <div class="help__text">
+        Revisa la documentación del proyecto o contacta al administrador para soporte.
+      </div>
+    </div>
+    <div class="help__actions">
+      <a pButton routerLink="/administracion/repositorio" icon="pi pi-book" label="Documentación"></a>
+      <a pButton class="p-button-text" routerLink="/administracion/aseguradoras" icon="pi pi-envelope"
+        label="Contacto"></a>
+    </div>
+  </section>
+
+</div>

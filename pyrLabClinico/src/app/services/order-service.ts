@@ -47,8 +47,8 @@ export class OrdersService {
       status: 'ACTIVE',
       // Ítems (Orden–Examen)
       items: [
-        { id: 9001, orderId: 1001, examId: 1, code: 'GLU', name: 'Glucosa',           price: 15000, state: 'VALIDADO' },
-        { id: 9002, orderId: 1001, examId: 2, code: 'COL', name: 'Colesterol Total',  price: 30000, state: 'VALIDADO' }
+        { id: 9001, orderId: 1001, examId: 1, code: 'GLU', name: 'Glucosa', price: 15000, state: 'VALIDADO' },
+        { id: 9002, orderId: 1001, examId: 2, code: 'COL', name: 'Colesterol Total', price: 30000, state: 'VALIDADO' }
       ],
       netTotal: 45000
     },
@@ -74,7 +74,7 @@ export class OrdersService {
       observations: '',
       status: 'ACTIVE',
       items: [
-        { id: 9001, orderId: 1001, examId: 1, code: 'GLU', name: 'Glucosa',           price: 15000, state: 'VALIDADO' },
+        { id: 9001, orderId: 1001, examId: 1, code: 'GLU', name: 'Glucosa', price: 15000, state: 'VALIDADO' },
       ],
       netTotal: 0
     }
@@ -143,10 +143,6 @@ export class OrdersService {
   // ÍTEMS (Orden–Examen)
   // ──────────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Agrega un examen a la orden (evita duplicados por examId).
-   * priceOverride: si viene, reemplaza el precio_base del examen.
-   */
   addItem(orderId: number, exam: ExamI, priceOverride?: number, state: OrderItemState = 'PENDIENTE'): Observable<OrderI | undefined> {
     const arr = this._orders$.value;
     const idx = arr.findIndex(o => o.id === orderId);
@@ -180,9 +176,6 @@ export class OrdersService {
     return of(order).pipe(delay(80));
   }
 
-  /**
-   * Actualiza un ítem puntual de la orden (precio, estado, etc.)
-   */
   updateItem(orderId: number, itemId: number, patch: Partial<OrderItemI>): Observable<OrderI | undefined> {
     const arr = this._orders$.value;
     const idx = arr.findIndex(o => o.id === orderId);
