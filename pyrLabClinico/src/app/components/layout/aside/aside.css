@@ -128,3 +128,38 @@
 :host ::ng-deep .sidebar-menu .p-menuitem-link:hover .p-menuitem-icon {
   color: #0f172a !important; /* azul oscuro visible */
 }
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+/* PanelMenu en tema oscuro */
+.sidebar-menu .p-panelmenu-panel {
+  background: transparent;
+  border: none;
+}
+
+.sidebar-menu .p-panelmenu-header > a {
+  color: #fff;
+  background: transparent;
+  border: none;
+}
+
+.sidebar-menu .p-panelmenu-header > a:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.sidebar-menu .p-panelmenu-content {
+  background: rgba(255,255,255,0.04);
+  border: none;
+  color: #e5e7eb; /* zinc-200 */
+}
+
+.sidebar-menu .p-menuitem-link {
+  color: #e5e7eb;
+}
+
+.sidebar-menu .p-menuitem-link:hover {
+  background: rgba(255,255,255,0.06);
+}

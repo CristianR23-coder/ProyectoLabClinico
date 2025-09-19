@@ -3,11 +3,12 @@ import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { TooltipModule } from 'primeng/tooltip';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-aside',
   standalone: true,
-  imports: [PanelMenuModule, RouterModule, TooltipModule],
+  imports: [PanelMenuModule, RouterModule, TooltipModule, CommonModule],
   templateUrl: './aside.html',
   styleUrl: './aside.css',
 })
@@ -25,7 +26,7 @@ export class Aside implements OnInit {
       {
         label: 'Inicio',
         icon: 'pi pi-home',
-        routerLink: ['/'],
+        routerLink: ['/home'],
       },
       {
         label: 'Dashboard',
@@ -104,7 +105,7 @@ export class Aside implements OnInit {
       { icon: 'pi pi-inbox',       routerLink: ['/muestras'],       tooltip: 'Muestras' },
       { icon: 'pi pi-chart-line',  routerLink: ['/resultados'],     tooltip: 'Resultados' },
       { icon: 'pi pi-file',        routerLink: ['/reportes'],       tooltip: 'Reportes' },
-      { icon: 'pi pi-wallet',      routerLink: ['/caja'],           tooltip: 'Caja / Pagos', },
+      // { icon: 'pi pi-wallet',      routerLink: ['/caja'],           tooltip: 'Caja / Pagos', },
       { icon: 'pi pi-cog',         routerLink: ['/configuracion'],  tooltip: 'Configuración' },
       { icon: 'pi pi-shield',      routerLink: ['/admin'],          tooltip: 'Administración', },
     ] as MenuItem[];

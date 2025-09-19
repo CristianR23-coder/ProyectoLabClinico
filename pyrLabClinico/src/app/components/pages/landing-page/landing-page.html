@@ -1,0 +1,216 @@
+<!-- Contenedor global (full-page) -->
+<div class="min-h-screen bg-white text-zinc-900">
+
+  <!-- NAVBAR propio de la landing -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur border-b border-zinc-200">
+    <div class="mx-auto max-w-7xl h-16 px-4 flex items-center justify-between">
+      <a routerLink="/" class="flex items-center gap-3">
+        <span class="inline-grid w-10 h-10 rounded-xl bg-sky-600 place-items-center overflow-hidden">
+          <img src="logo_collapsed.png" alt="Logo" class="w-8 h-8 object-contain" />
+        </span>
+
+
+        <span class="font-semibold tracking-wide">Laboratorio Clínico</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a *ngFor="let n of nav" [routerLink]="['/']" [fragment]="n.fragment" class="hover:text-sky-700">{{ n.label
+          }}</a>
+
+        <a routerLink="/login"
+          class="inline-flex items-center gap-2 rounded-full bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 transition">
+          Acceder
+          <i class="pi pi-sign-in"></i>
+        </a>
+
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="relative overflow-hidden bg-gradient-to-br from-sky-700 via-sky-800 to-blue-900 text-white">
+    <div class="mx-auto max-w-7xl px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <p class="uppercase tracking-widest text-sky-200/90 text-xs mb-3">Laboratorio Clínico</p>
+        <h1 class="text-4xl md:text-6xl font-extrabold leading-tight">
+          Exámenes confiables <span class="text-sky-300">en menor tiempo</span>.
+        </h1>
+        <p class="mt-5 text-lg text-sky-100/90">
+          Servicio humanizado, resultados oportunos y tecnología de punta.
+        </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="#" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-2 rounded-full bg-white text-sky-700 hover:bg-zinc-100 px-5 py-2 font-medium transition">
+            Escríbenos por WhatsApp <i class="pi pi-whatsapp"></i>
+          </a>
+          <a routerLink="/dashboard"
+            class="inline-flex items-center gap-2 rounded-full border border-white/70 hover:bg-white/10 px-5 py-2 transition">
+            Acceder <i class="pi pi-sign-in"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Hexágono con imagen (sin CSS extra) -->
+      <!-- Contenedor fijo -->
+      <div class="grid justify-around items-center">
+        <div class="w-[360px] h-[420px] relative">
+          <!-- Polígono del mismo tamaño que el contenedor, pero escalado -->
+          <div class="absolute inset-0 bg-white/5
+              [clip-path:polygon(25%_6%,75%_6%,100%_50%,75%_94%,25%_94%,0%_50%)]
+              shadow-xl shadow-sky-900/40
+              origin-center scale-125 will-change-transform">
+            <img src="landing/landing-1.jpg" alt="Equipo de laboratorio" class="w-full h-full object-cover" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- fondo suave de puntos/hex (opcional usando gradientes) -->
+    <div class="absolute -bottom-32 -right-32 w-[520px] h-[520px] rounded-full bg-sky-600/20 blur-3xl"></div>
+  </section>
+
+  <!-- PACIENTES / VIDEO -->
+  <section id="pacientes" class="mx-auto max-w-7xl px-4 py-16 grid md:grid-cols-2 gap-12 items-center">
+    <div>
+      <h2 class="text-4xl font-bold">Cómo prepararte para tu prueba</h2>
+      <p class="mt-4 text-zinc-600">
+        Consejos rápidos para garantizar una toma adecuada y resultados confiables.
+      </p>
+      <div class="mt-6 flex gap-3">
+        <a href="#"
+          class="inline-flex items-center justify-center gap-2 rounded-full bg-green-500 hover:bg-green-600 text-white px-5 py-2 transition">
+          <span>Ver video</span>
+          <i class="pi pi-play"></i>
+        </a>
+        <a routerLink="/resultados" class="rounded-full border border-zinc-300 px-5 py-2 hover:bg-zinc-50 transition">
+          Ir a resultados
+        </a>
+      </div>
+    </div>
+    <div class="relative rounded-3xl overflow-hidden shadow-xl shadow-sky-100 ">
+      <!-- Imagen de fondo -->
+      <img src="landing/video.jpg" alt="Portada video pacientes" class="w-full h-[340px] object-cover ">
+
+      <!-- Ícono play superpuesto -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <span
+          class="w-16 h-16 flex items-center justify-center rounded-full bg-black/50 text-white text-3xl hover:bg-black/70 transition cursor-pointer">
+          <i class="pi pi-play"></i>
+        </span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- EXPERIENCIA -->
+  <section id="experiencia" class="bg-sky-50/70">
+    <div class="mx-auto max-w-7xl px-4 py-16">
+      <div class="mb-8">
+        <p class="uppercase tracking-widest text-sky-600 text-xs mb-2">Nuestra experiencia</p>
+        <h2 class="text-4xl font-bold">Áreas de laboratorio</h2>
+        <p class="mt-2 text-zinc-600">Cobertura integral para el diagnóstico oportuno.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <article *ngFor="let a of areas"
+          class="rounded-2xl bg-white border border-zinc-200 p-5 hover:shadow-lg transition">
+          <div class="mb-4 grid place-items-center">
+            <div class="w-[220px] h-[240px] grid place-items-center bg-sky-100/60
+                        [clip-path:polygon(25%_6%,75%_6%,100%_50%,75%_94%,25%_94%,0%_50%)]">
+              <img [src]="a.img" [alt]="a.name" class="w-[100%] h-[100%] object-cover rounded-2xl" />
+            </div>
+          </div>
+          <h3 class="font-semibold text-lg">{{ a.name }}</h3>
+          <p class="mt-1 text-sm text-zinc-600">{{ a.desc }}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOSOTROS / CULTURA -->
+  <section id="nosotros" class="mx-auto max-w-7xl px-4 py-16">
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+      <div class="order-2 md:order-1">
+        <p class="uppercase tracking-widest text-sky-600 text-xs mb-2">Nosotros</p>
+        <h2 class="text-4xl font-bold">Servicio humanizado y atención segura</h2>
+        <p class="mt-3 text-zinc-600">
+          Nuestras pruebas se realizan con equipos de última tecnología, garantizando tiempos de respuesta
+          competitivos y resultados confiables para la toma de decisiones clínicas.
+        </p>
+      </div>
+      <div class="order-1 md:order-2 grid place-items-center">
+        <div class="w-[420px] h-[460px] grid place-items-center bg-zinc-100
+                    [clip-path:polygon(25%_6%,75%_6%,100%_50%,75%_94%,25%_94%,0%_50%)]">
+          <img src="landing/microscopio.jpg" alt="Microscopio" class="w-[100%] h-[100%] object-cover rounded-2xl" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Ejes / cultura -->
+    <div class="mt-12">
+      <h3 class="text-2xl font-semibold mb-6">Ejes estratégicos</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let f of features" class="rounded-2xl border border-zinc-200 p-5 bg-white">
+          <div class="w-10 h-10 grid place-items-center rounded-full bg-sky-100 text-xl mb-3">{{ f.icon }}</div>
+          <h4 class="font-semibold">{{ f.title }}</h4>
+          <p class="mt-1 text-sm text-zinc-600">{{ f.text }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA CONTACTO -->
+  <section id="contacto" class="bg-sky-700 text-white">
+    <div class="mx-auto max-w-7xl px-4 py-14 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <h3 class="text-3xl md:text-4xl font-bold">¿Necesitas información?</h3>
+        <p class="opacity-90">Escríbenos y te contactaremos.</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="#" target="_blank" rel="noopener"
+          class="inline-flex items-center gap-2 rounded-full bg-white text-sky-700 hover:bg-zinc-100 px-6 py-3 font-semibold transition">
+          Contactar por WhatsApp <i class="pi pi-whatsapp"></i>
+        </a>
+        <a routerLink="/dashboard" class="inline-flex items-center gap-2 rounded-full border border-white/70 hover:bg-white/10 px-6 py-3 transition">
+          Acceder <i class="pi pi-sign-in"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER simple -->
+  <footer class="border-t border-zinc-200">
+    <div class="mx-auto max-w-7xl px-4 py-10 grid md:grid-cols-3 gap-8 text-sm">
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="inline-grid w-10 h-10 rounded-xl bg-sky-600 place-items-center overflow-hidden">
+            <img src="logo_collapsed.png" alt="Logo" class="w-8 h-8 object-contain" />
+          </span>
+          <span class="font-semibold">Laboratorio Clínico</span>
+        </div>
+        <p class="text-zinc-600">Calle 80 # 49C - 32</p>
+        <p class="text-zinc-600">Tel: 317 222 3151</p>
+      </div>
+
+      <div>
+        <h4 class="font-semibold mb-2">Clientes</h4>
+        <ul class="space-y-1 text-zinc-600">
+          <li><a routerLink="/resultados" class="hover:text-sky-700">Resultados</a></li>
+          <li><a routerLink="/pagos" class="hover:text-sky-700">Pagos en línea</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold mb-2">Legal</h4>
+        <ul class="space-y-1 text-zinc-600">
+          <li><a href="#" class="hover:text-sky-700">Política de privacidad</a></li>
+          <li><a href="#" class="hover:text-sky-700">Tratamiento de datos</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="py-4 text-center text-xs text-zinc-500">
+      © 2025 Laboratorio Clínico. Todos los derechos reservados.
+    </div>
+  </footer>
+</div>

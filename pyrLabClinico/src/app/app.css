@@ -33,7 +33,4 @@
   color: #fff;
 }
 
-/* Estados */
-.app-shell.aside-open  { --aside-width: 14rem; }
-.app-shell.aside-closed{ --aside-width: 5.5rem; }
 

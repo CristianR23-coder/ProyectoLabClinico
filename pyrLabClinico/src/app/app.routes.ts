@@ -19,10 +19,17 @@ import { RepositoryPage } from './components/pages/repository/repository';
 import { Dashboard } from './components/pages/dashboard/dashboard';
 import { NotFound } from './components/pages/not-found/not-found';
 import { SoonPage } from './components/pages/soon-page/soon-page';
+import { LandingPageComponent } from './components/pages/landing-page/landing-page';
 
 export const routes: Routes = [
     {
         path: '',
+        component: LandingPageComponent,
+        data: { fullPage: true },
+        pathMatch: 'full'
+    },
+    {
+        path: 'home',
         component: Home
     },
     {
