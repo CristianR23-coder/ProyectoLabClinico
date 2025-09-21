@@ -4,7 +4,12 @@
 
   <!-- Header -->
   <header *ngIf="!fullPage" class="shrink-0 bg-white/95 backdrop-blur border-b border-zinc-200 shadow-sm">
-    <app-header></app-header>
+    <app-header
+      [pending]="pending"          
+      [darkMode]="darkMode"        
+      (darkModeChange)="handleDarkChange($event)"  
+      (logout)="handleLogout()">   
+    </app-header>
   </header>
 
   <!-- Aside fijo -->

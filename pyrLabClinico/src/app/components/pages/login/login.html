@@ -1,0 +1,87 @@
+<!-- Fondo con gradiente -->
+<div class="min-h-screen relative grid place-items-center overflow-hidden">
+  <div
+    class="absolute inset-0 bg-[radial-gradient(1200px_600px_at_80%_-10%,rgba(59,130,246,0.25),transparent),linear-gradient(135deg,#0a74a7_0%,#0b5a8e_55%,#0f3e82_100%)]">
+  </div>
+
+  <!-- Card -->
+  <div class="relative z-10 w-full max-w-md">
+    <div class="rounded-2xl bg-white/92 backdrop-blur-xl shadow-[0_20px_70px_rgba(10,37,64,0.25)]
+                border border-white/60 overflow-hidden">
+
+      <!-- Header -->
+      <div class="px-7 pt-6 pb-4 flex items-center gap-3 border-b border-zinc-200/70">
+        <span
+          class="inline-grid w-12 h-12 rounded-2xl bg-sky-600/90 text-white place-items-center ring-4 ring-sky-100/60">
+          <img src="logo_collapsed.png" alt="Logo" class="w-10 h-10 object-contain" />
+        </span>
+        <div>
+          <h1 class="text-2xl font-extrabold text-sky-900 leading-tight">Iniciar sesión</h1>
+          <p class="text-[13px] text-zinc-500">Accede a tu panel del laboratorio</p>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="px-7 py-6">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+          <!-- Usuario -->
+          <div>
+            <label for="username" class="block text-[13px] text-zinc-600 mb-1.5 font-semibold">Usuario</label>
+
+            <div class="relative w-full">
+              <input id="username" pInputText type="text" formControlName="username"
+                     placeholder="Nombre de usuario" class="w-full pr-10 h-11 rounded-lg" />
+              <i class="pi pi-user absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"></i>
+            </div>
+
+            <small *ngIf="form.get('username')?.invalid && form.get('username')?.touched"
+                   class="text-red-600">Ingresa tu usuario.</small>
+          </div>
+
+          <!-- Contraseña -->
+          <div>
+            <label for="password" class="block text-[13px] font-semibold text-zinc-600 mb-1.5">Contraseña</label>
+
+            <p-password inputId="password"
+                        formControlName="password"
+                        placeholder="Contraseña"
+                        [toggleMask]="true"
+                        [feedback]="false"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                        autocomplete="current-password">
+            </p-password>
+
+            <small *ngIf="form.get('password')?.invalid && form.get('password')?.touched"
+                   class="text-red-600">Ingresa tu contraseña.</small>
+          </div>
+
+          <!-- Extras -->
+          <div class="flex items-center justify-between pt-1">
+            <label class="inline-flex items-center gap-2 text-sm text-zinc-600 select-none">
+              <input type="checkbox" class="rounded border-zinc-300 text-sky-600 focus:ring-sky-500">
+              Recordarme
+            </label>
+            <a routerLink="/" class="text-sm text-sky-700 hover:underline">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <!-- Botón -->
+          <button pButton type="submit" label="Acceder" icon="pi pi-sign-in" class="w-full"
+                  [loading]="loading"
+                  [disabled]="form.invalid || loading">
+          </button>
+
+          <!-- Error -->
+          <p *ngIf="error()" class="text-red-600 text-sm text-center">
+            Usuario o contraseña inválidos.
+          </p>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-7 pb-6 pt-2 text-center">
+        <a routerLink="/" class="text-sm text-sky-700 hover:underline">Volver al inicio</a>
+      </div>
+    </div>
+  </div>
+</div>

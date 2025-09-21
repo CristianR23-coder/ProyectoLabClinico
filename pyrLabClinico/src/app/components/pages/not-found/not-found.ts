@@ -16,7 +16,7 @@ export class NotFound {
   url = this.router.url;
 
   goHome() {
-    this.router.navigateByUrl('/');
+    this.router.navigateByUrl('/home');
   }
 
   goBack() {

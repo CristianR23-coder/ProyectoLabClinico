@@ -50,7 +50,7 @@ export class SoonPage implements OnInit {
     }
   }
 
-  goHome() { this.router.navigateByUrl('/'); }
+  goHome() { this.router.navigateByUrl('/home'); }
 
   isExternal(link?: string): boolean {
     return !!link && /^(http|https):\/\//i.test(link);

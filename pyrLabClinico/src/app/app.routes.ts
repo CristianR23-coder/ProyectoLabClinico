@@ -20,6 +20,8 @@ import { Dashboard } from './components/pages/dashboard/dashboard';
 import { NotFound } from './components/pages/not-found/not-found';
 import { SoonPage } from './components/pages/soon-page/soon-page';
 import { LandingPageComponent } from './components/pages/landing-page/landing-page';
+import { Login } from './components/pages/login/login';
+import { AuthGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
     {
@@ -29,52 +31,69 @@ export const routes: Routes = [
         pathMatch: 'full'
     },
     {
+        path: 'login',
+        component: Login,
+        data: { fullPage: true },
+    },
+    {
         path: 'home',
-        component: Home
+        component: Home,
+        canActivate: [AuthGuard]
     },
     {
         path: 'dashboard',
-        component: Dashboard
+        component: Dashboard,
+        canActivate: [AuthGuard]
     },
     {
         path: 'ordenes',
-        component: AllOrder
+        component: AllOrder,
+        canActivate: [AuthGuard]
     },
     {
         path: 'ordenes/nueva',
-        component: CreateOrder
+        component: CreateOrder,
+        canActivate: [AuthGuard]
     },
     {
         path: 'ordenes/:id/editar',
-        component: UpdateOrder
+        component: UpdateOrder,
+        canActivate: [AuthGuard]
     },
     {
         path: 'ordenes/ordenes-examenes',
-        component: AllOrIt
+        component: AllOrIt,
+        canActivate: [AuthGuard]
     },
     {
         path: 'muestras',
-        component: AllSample
+        component: AllSample,
+        canActivate: [AuthGuard]
     },
     {
         path: 'muestras/nueva',
-        component: CreateSample
+        component: CreateSample,
+        canActivate: [AuthGuard]
     },
     {
         path: 'muestras/seguimiento',
-        component: TrackSamples
+        component: TrackSamples,
+        canActivate: [AuthGuard]
     },
     {
         path: 'resultados',
-        component: AllResult
+        component: AllResult,
+        canActivate: [AuthGuard]
     },
     {
         path: 'resultados/nuevo',
-        component: CreateResult
+        component: CreateResult,
+        canActivate: [AuthGuard]
     },
     {
         path: 'resultados/entrega',
         component: SoonPage,
+        canActivate: [AuthGuard],
         data: {
             title: 'Entrega / impresión de resultados',
             subtitle: 'Previsualiza, genera y entrega reportes de laboratorio.',
@@ -93,31 +112,38 @@ export const routes: Routes = [
     },
     {
         path: 'configuracion/examenes',
-        component: AllExams
+        component: AllExams,
+        canActivate: [AuthGuard]
     },
     {
         path: 'configuracion/parametros',
-        component: AllParameters
+        component: AllParameters,
+        canActivate: [AuthGuard]
     },
     {
         path: 'configuracion/paneles',
-        component: AllPanel
+        component: AllPanel,
+        canActivate: [AuthGuard]
     },
     {
         path: 'administracion/aseguradoras',
-        component: AllInsurances
+        component: AllInsurances,
+        canActivate: [AuthGuard]
     },
     {
         path: 'administracion/doctores',
-        component: AllDoctors
+        component: AllDoctors,
+        canActivate: [AuthGuard]
     },
     {
         path: 'administracion/pacientes',
-        component: AllPatients
+        component: AllPatients,
+        canActivate: [AuthGuard]
     },
     {
         path: 'administracion/repositorio',
-        component: RepositoryPage
+        component: RepositoryPage,
+        canActivate: [AuthGuard]
     },
     {
         path: '**',

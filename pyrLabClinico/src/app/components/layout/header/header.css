@@ -17,3 +17,7 @@
 
 /* Punto naranja de notificaciones: */
 :host .notif-dot { top: -2px; right: 6px; width: 10px; height: 10px; }
+
+.app-tile i { font-size: 18px; }
+.app-tile span { font-size: 12px; }
+

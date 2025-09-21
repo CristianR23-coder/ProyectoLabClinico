@@ -1,8 +1,7 @@
-<header class="h-14 px-3 sm:px-4 flex items-center text-white shadow">
-  <!-- Derecha: acciones -->
+<header class="h-14 px-3 sm:px-4 flex items-center text-white shadow relative">
   <div class="flex items-center gap-3 ml-auto">
-    <!-- Settings con arcos -->
-    <button pButton type="button" (click)="onSettings()"
+    <!-- Ajustes -->
+    <button pButton type="button" (click)="settings.toggle($event)"
       class="relative grid place-items-center h-10 w-10 rounded-full hover:bg-white/10 transition" pTooltip="Ajustes"
       tooltipPosition="bottom">
       <svg class="absolute inset-0 m-auto h-9 w-9 pointer-events-none" viewBox="0 0 40 40" fill="none">
@@ -14,22 +13,84 @@
       <i class="pi pi-cog text-[18px]"></i>
     </button>
 
-    <!-- Campana -->
-    <button pButton type="button" (click)="onNotifs()"
+    <!-- Notificaciones -->
+    <button pButton type="button" (click)="notif.toggle($event)"
       class="relative grid place-items-center h-10 w-10 rounded-md hover:bg-white/10 transition"
       pTooltip="Notificaciones" tooltipPosition="bottom">
       <i class="pi pi-bell text-[18px]"></i>
-      <span class="absolute -top-0.5 right-1 h-2.5 w-2.5 rounded-full bg-orange-400 ring-2 ring-[#334fc3]"></span>
+      <span *ngIf="pendingCount() > 0"
+        class="absolute -top-0.5 right-1 h-2.5 w-2.5 rounded-full bg-orange-400 ring-2 ring-[#334fc3]"></span>
     </button>
 
     <!-- Apps -->
-    <button pButton type="button" (click)="onApps()"
+    <button pButton type="button" (click)="apps.toggle($event)"
       class="grid place-items-center h-10 w-10 rounded-md hover:bg-white/10 transition" pTooltip="Aplicaciones"
       tooltipPosition="bottom">
       <i class="pi pi-th-large text-[18px]"></i>
     </button>
 
-    <!-- Avatar -->
     <p-avatar image="user_icon.png" shape="circle" class="h-9 w-9 overflow-hidden shadow-sm"></p-avatar>
   </div>
+
+  <!-- POPOVER: Ajustes -->
+  <p-popover #settings [dismissable]="true" [style]="{width:'260px'}">
+    <div class="p-2">
+      <h4 class="font-semibold text-zinc-700 mb-2">Ajustes</h4>
+      <button pButton type="button" class="w-full mb-2" (click)="toggleDark()"
+        [label]="darkMode ? 'Tema claro' : 'Tema oscuro'" [icon]="darkMode ? 'pi pi-sun' : 'pi pi-moon'"></button>
+      <button pButton type="button" class="w-full p-button-danger" (click)="doLogout()" label="Cerrar sesión"
+        icon="pi pi-sign-out"></button>
+    </div>
+  </p-popover>
+
+  <!-- POPOVER: Notificaciones (Resultados Pendientes) -->
+  <p-popover #notif [dismissable]="true" [style]="{width:'360px'}">
+    <div class="p-2">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="font-semibold text-zinc-700">Resultados pendientes</h4>
+        <span class="text-xs text-zinc-500">{{ pendingCount() }} items</span>
+      </div>
+
+      <ng-container *ngIf="pendingCount() > 0; else emptyNotifs">
+        <ul class="divide-y divide-zinc-200/70">
+          <li *ngFor="let r of pending" class="py-2 flex items-start gap-3">
+            <span class="pi pi-hourglass mt-1 text-orange-500"></span>
+            <div class="min-w-0">
+              <p class="font-medium text-zinc-800 truncate">
+                {{ r.exam || 'Examen' }} — <span class="text-sky-700">{{ r.orderCode }}</span>
+              </p>
+              <p class="text-sm text-zinc-600 truncate">{{ r.patient }}</p>
+              <p class="text-xs text-zinc-500">{{ r.since || 'pendiente' }}</p>
+            </div>
+          </li>
+        </ul>
+        <a routerLink="/resultados"
+          class="mt-3 inline-flex items-center gap-2 text-sm text-sky-700 hover:underline">
+          Ver todos <i class="pi pi-angle-right"></i>
+        </a>
+      </ng-container>
+
+      <ng-template #emptyNotifs>
+        <p class="text-sm text-zinc-600">No hay resultados pendientes.</p>
+      </ng-template>
+    </div>
+  </p-popover>
+
+  <!-- POPOVER: Apps -->
+  <p-popover #apps [dismissable]="true" [style]="{ width: '360px' }" styleClass="rounded-2xl border border-zinc-200 shadow-xl bg-white/95 backdrop-blur
+              dark:bg-zinc-900/95 dark:border-zinc-700">
+    <div class="space-y-2">
+      <h4 class="font-semibold text-zinc-700">Aplicaciones</h4>
+
+      <div class="grid grid-cols-3 gap-3">
+        <a routerLink="/ordenes" class="app-card"><i class="pi pi-list-check"></i><span>Órdenes</span></a>
+        <a routerLink="/resultados" class="app-card"><i class="pi pi-file"></i><span>Resultados</span></a>
+        <a routerLink="administracion/pacientes" class="app-card"><i class="pi pi-users"></i><span>Pacientes</span></a>
+        <a routerLink="administracionctores" class="app-card"><i class="pi pi-id-card"></i><span>Médicos</span></a>
+        <a routerLink="/billing" class="app-card"><i class="pi pi-wallet"></i><span>Facturación</span></a>
+        <a routerLink="administracion/repositorio" class="app-card"><i class="pi pi-github"></i><span>Repo</span></a>
+      </div>
+    </div>
+  </p-popover>
+
 </header>

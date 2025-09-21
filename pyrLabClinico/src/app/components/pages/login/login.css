@@ -1,0 +1,53 @@
+/* Wrapper del icono (izquierda) */
+:host ::ng-deep .p-input-icon-left {
+  position: relative;
+  display: block;       /* para que respete w-full */
+  width: 100%;
+}
+
+/* Input con padding para no chocar con el icono */
+:host ::ng-deep .p-input-icon-left .p-inputtext {
+  padding-left: 2.5rem !important;  /* espacio para el icono */
+  height: 44px;
+  border-radius: 8px;
+}
+
+/* Wrapper de ícono a la derecha */
+:host ::ng-deep .p-input-icon-right {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+/* Input con espacio a la derecha */
+:host ::ng-deep .p-input-icon-right .p-inputtext {
+  padding-right: 2.5rem !important;
+  height: 44px;
+  border-radius: 8px;
+}
+
+/* Ícono alineado a la derecha */
+:host ::ng-deep .p-input-icon-right > i {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b; /* zinc-500 */
+  pointer-events: none;
+  font-size: 1rem;
+}
+
+
+/* Ajustes del p-password para que el ojo quede bien y mismo alto */
+:host ::ng-deep .p-password .p-inputtext {
+  height: 44px;
+  border-radius: 8px;
+  padding-right: 2.25rem !important; /* deja aire al icono del ojo */
+}
+
+/* Halo de foco sutil (opcional) */
+:host ::ng-deep .p-inputtext:enabled:focus,
+:host ::ng-deep .p-password-input:enabled:focus {
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15) !important; /* sky-500/15 */
+  border-color: rgba(59,130,246,.55) !important;
+}
