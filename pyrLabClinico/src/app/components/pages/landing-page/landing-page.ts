@@ -11,7 +11,7 @@ type Area = { name: string; desc: string; img: string };
   imports: [CommonModule, RouterModule],
   templateUrl: './landing-page.html'
 })
-export class LandingPageComponent {
+export class LandingPage {
   // Navbar simple (ancoras internas)
   nav = [
     { label: 'Nosotros',   fragment: 'nosotros' },

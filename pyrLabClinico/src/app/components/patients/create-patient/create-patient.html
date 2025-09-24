@@ -46,6 +46,7 @@
     <div>
       <label class="block mb-1 text-sm font-semibold">Estado</label>
       <p-select formControlName="status"
+                appendTo="body"
                 [options]="[{label:'Activo', value:'ACTIVE'},{label:'Inactivo', value:'INACTIVE'}]"
                 optionLabel="label" optionValue="value">
       </p-select>
