@@ -1,0 +1,101 @@
+<p-dialog [(visible)]="visible" (onHide)="visibleChange.emit(false)" [modal]="true" [closable]="true"
+    [draggable]="false" [resizable]="false" [style]="{width:'960px', maxWidth: '95vw'}" [appendTo]="appendTo"
+    [baseZIndex]="baseZIndex" header="Detalle" contentStyleClass="!pt-0">
+    <div class="p-4 md:p-6">
+
+        <!-- Encabezado: Título + Estado + Acciones -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl md:text-3xl font-bold">
+                    <ng-container *ngIf="(profile$ | async) as p">
+                        <ng-container *ngIf="isPatient(p); else doctorTitle">
+                            Paciente <span class="text-gray-500">#{{ p.id }}</span>
+                        </ng-container>
+                        <ng-template #doctorTitle>
+                            Médico <span class="text-gray-500">#{{ p.id }}</span>
+                        </ng-template>
+                    </ng-container>
+                </h2>
+
+                <p-tag *ngIf="(profile$ | async) as p" [value]="p.status" [severity]="severity(p.status)"></p-tag>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button *ngIf="(profile$ | async) as p" pButton type="button" label="Editar" icon="pi pi-pencil"
+                    (click)="onEdit(p)"></button>
+                <button *ngIf="(profile$ | async) as p" pButton type="button" label="Eliminar" icon="pi pi-trash"
+                    severity="danger" (click)="onDelete(p)"></button>
+            </div>
+        </div>
+
+        <!-- Grid de tarjetas: Identificación / Contacto / (Aseguradora o Profesional) -->
+        <ng-container *ngIf="(profile$ | async) as p; else noProfile">
+
+            <!-- PACIENTE -->
+            <div *ngIf="isPatient(p)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Identificación -->
+                <p-card>
+                    <ng-template pTemplate="title">Identificación</ng-template>
+                    <div class="text-sm leading-6">
+                        <div class="font-medium">{{ p.lastName || '—' }}, {{ p.firstName || '—' }}</div>
+                        <div *ngIf="p.docType || p.docNumber">Documento: {{ p.docType || '—' }} {{ p.docNumber || '' }}
+                        </div>
+                    </div>
+                </p-card>
+
+                <!-- Contacto -->
+                <p-card>
+                    <ng-template pTemplate="title">Contacto</ng-template>
+                    <div class="text-sm leading-6">
+                        <div>Tel: {{ p.phone || '—' }}</div>
+                        <div>Email: {{ p.email || '—' }}</div>
+                        <div *ngIf="p.address">Dirección: {{ p.address }}</div>
+                    </div>
+                </p-card>
+
+                <!-- Aseguradora -->
+                <p-card>
+                    <ng-template pTemplate="title">Aseguradora</ng-template>
+                    <div class="text-sm leading-6">
+                        <div class="font-medium">{{ p.insurance?.name || '—' }}</div>
+                        <div *ngIf="p.insurance?.nit" class="text-color-secondary">NIT {{ p.insurance?.nit }}</div>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- MÉDICO -->
+            <div *ngIf="isDoctor(p)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Identificación -->
+                <p-card>
+                    <ng-template pTemplate="title">Identificación</ng-template>
+                    <div class="text-sm leading-6">
+                        <div class="font-medium">{{ p.name }}</div>
+                        <div *ngIf="p.docNumber">Registro/Doc.: {{ p.docNumber }}</div>
+                    </div>
+                </p-card>
+
+                <!-- Profesional -->
+                <p-card>
+                    <ng-template pTemplate="title">Profesional</ng-template>
+                    <div class="text-sm leading-6">
+                        <div>Especialidad: {{ p.specialty || '—' }}</div>
+                        <div>Licencia: {{ p.medicalLicense || '—' }}</div>
+                    </div>
+                </p-card>
+
+                <!-- Contacto -->
+                <p-card>
+                    <ng-template pTemplate="title">Contacto</ng-template>
+                    <div class="text-sm leading-6">
+                        <div>Tel: {{ p.phone || '—' }}</div>
+                        <div>Email: {{ p.email || '—' }}</div>
+                    </div>
+                </p-card>
+            </div>
+        </ng-container>
+
+        <ng-template #noProfile>
+            <p class="text-sm text-zinc-600">Este usuario no tiene un perfil vinculado aún.</p>
+        </ng-template>
+    </div>
+</p-dialog>

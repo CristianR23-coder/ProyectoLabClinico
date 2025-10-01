@@ -1,7 +1,10 @@
+// src/app/services/doctors.service.ts  (ajusta la ruta real de tu proyecto)
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, combineLatest } from 'rxjs';
 import { delay, map } from 'rxjs/operators';
 import { DoctorI } from '../models/doctor-model';
+import { UsersService } from '../services/user-service';     // ajusta ruta si difiere
+import { UserI } from '../models/user-model';               // ajusta ruta si difiere
 
 export interface DoctorListParams {
   q?: string;
@@ -11,7 +14,7 @@ export interface DoctorListParams {
 @Injectable({ providedIn: 'root' })
 export class DoctorsService {
   private readonly INITIAL: DoctorI[] = [
-    { id: 80,  docNumber: 'M-998', name: 'Dr. Lopez', specialty: 'Medicina interna', status: 'ACTIVE',  phone: '3001234567', email: 'lopez@demo.com' },
+    { id: 80,  docNumber: 'M-998', name: 'Dr. Lopez', specialty: 'Medicina interna', status: 'ACTIVE',  phone: '3001234567', email: 'lopez@demo.com', userId: 2 /* ← enlaza con un usuario DOCTOR */ },
     { id: 81,  docNumber: 'M-777', name: 'Dr. Ruiz',  specialty: 'Pediatría',        status: 'ACTIVE' },
     { id: 120, docNumber: 'M-555', name: 'Dra. Mora', specialty: 'Cardiología',      status: 'INACTIVE' },
   ];
@@ -19,10 +22,26 @@ export class DoctorsService {
   private readonly _items$ = new BehaviorSubject<DoctorI[]>([...this.INITIAL]);
   readonly items$ = this._items$.asObservable();
 
+  constructor(private users: UsersService) {}
+
+  // ====== Listas ======
   list(params?: DoctorListParams): Observable<DoctorI[]> {
     return this.items$.pipe(delay(120), map(items => this.applyFilters(items, params)));
   }
 
+  /** Lista enriquecida con el objeto `user` (si existe userId). */
+  listWithUsers(params?: DoctorListParams): Observable<DoctorI[]> {
+    return combineLatest([this.list(params), this.users.list()]).pipe(
+      map(([doctors, users]) =>
+        doctors.map(d => ({
+          ...d,
+          user: d.userId ? users.find(u => u.id === d.userId) : undefined
+        }))
+      )
+    );
+  }
+
+  // ====== CRUD ======
   add(partial: Omit<DoctorI,'id'> & { id?: number }): Observable<DoctorI> {
     const nextId = this.generateId();
     const d: DoctorI = { ...partial, id: partial.id ?? nextId };
@@ -52,7 +71,22 @@ export class DoctorsService {
     return this.items$.pipe(map(list => list.find(x => x.id === id)), delay(50));
   }
 
-  // helpers
+  /** 🔎 obtener doctor por userId (para perfilar al entrar con usuario DOCTOR) */
+  getByUserId(userId: number): Observable<DoctorI | undefined> {
+    return this.items$.pipe(map(list => list.find(x => x.userId === userId)), delay(40));
+  }
+
+  /** 🔗 vincular usuario a un doctor */
+  linkUser(doctorId: number, userId: number): Observable<DoctorI | undefined> {
+    return this.update(doctorId, { userId });
+  }
+
+  /** 🔗 desvincular usuario de un doctor */
+  unlinkUser(doctorId: number): Observable<DoctorI | undefined> {
+    return this.update(doctorId, { userId: undefined, user: undefined });
+  }
+
+  // ====== helpers ======
   private applyFilters(items: DoctorI[], params?: DoctorListParams): DoctorI[] {
     let out = items;
     if (params?.status) out = out.filter(r => r.status === params.status);

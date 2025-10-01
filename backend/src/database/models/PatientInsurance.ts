@@ -1,34 +1,86 @@
-import { DataTypes, Model } from 'sequelize';
-import sequelize from '../db';
+// src/models/PatientInsurance.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
+import { Patient } from "./Patient";
+import { Insurance } from "./Insurance";
 
-export type ActiveState = 'ACTIVE' | 'INACTIVE';
-
-export interface PatientInsuranceAttributes {
+export interface PatientInsuranceI {
   patientId: number;
   insuranceId: number;
-  policyNumber?: string | null;
-  plan?: string | null;
-  startDate: Date;
-  endDate?: Date | null;
-  status: ActiveState;
-  createdAt?: Date; updatedAt?: Date; deletedAt?: Date | null;
+  policyNumber?: string;
+  plan?: string;
+  startDate: string;                 // YYYY-MM-DD
+  endDate?: string | null;           // YYYY-MM-DD
+  status: "ACTIVE" | "INACTIVE";     // estado
 }
-export class PatientInsurance extends Model<PatientInsuranceAttributes> implements PatientInsuranceAttributes {
-  public patientId!: number; public insuranceId!: number;
-  public policyNumber!: string | null; public plan!: string | null;
-  public startDate!: Date; public endDate!: Date | null; public status!: ActiveState;
-  public readonly createdAt!: Date; public readonly updatedAt!: Date; public readonly deletedAt!: Date | null;
+
+export class PatientInsurance
+  extends Model<PatientInsuranceI>
+  implements PatientInsuranceI
+{
+  public patientId!: number;
+  public insuranceId!: number;
+  public policyNumber?: string;
+  public plan?: string;
+  public startDate!: string;
+  public endDate?: string | null;
+  public status!: "ACTIVE" | "INACTIVE";
 }
-PatientInsurance.init({
-  patientId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, primaryKey: true, field: 'patient_id' },
-  insuranceId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, primaryKey: true, field: 'insurance_id' },
-  policyNumber: { type: DataTypes.STRING(60), allowNull: true, field: 'policy_number' },
-  plan: { type: DataTypes.STRING(60), allowNull: true },
-  startDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'start_date' },
-  endDate: { type: DataTypes.DATEONLY, allowNull: true, field: 'end_date' },
-  status: { type: DataTypes.ENUM('ACTIVE','INACTIVE'), allowNull: false, defaultValue: 'ACTIVE' },
-}, {
-  sequelize, modelName: 'PatientInsurance', tableName: 'patient_insurances',
-  timestamps: true, paranoid: true, underscored: true,
+
+PatientInsurance.init(
+  {
+    patientId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "patients", key: "id" },
+      primaryKey: true, // clave compuesta junto con insuranceId
+    },
+    insuranceId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "insurances", key: "id" },
+      primaryKey: true,
+    },
+    policyNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    plan: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    startDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    endDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
+    },
+  },
+  {
+    sequelize,
+    modelName: "PatientInsurance",
+    tableName: "patient_insurances",
+    timestamps: false,
+  }
+);
+
+// ────────────────────────────
+// Relaciones
+// ────────────────────────────
+Patient.belongsToMany(Insurance, {
+  through: PatientInsurance,
+  foreignKey: "patientId",
+  otherKey: "insuranceId",
 });
-export default PatientInsurance;
+Insurance.belongsToMany(Patient, {
+  through: PatientInsurance,
+  foreignKey: "insuranceId",
+  otherKey: "patientId",
+});

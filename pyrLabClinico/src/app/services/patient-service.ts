@@ -1,9 +1,12 @@
+// src/app/services/patients.service.ts  (ajusta la ruta real)
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, combineLatest } from 'rxjs';
 import { delay, map } from 'rxjs/operators';
 
 import { PatientI } from '../models/patient-model';
 import { InsuranceI } from '../models/insurance-model';
+import { UsersService } from '../services/user-service';
+import { UserI } from '../models/user-model';
 
 export interface PatientListParams {
   q?: string;
@@ -12,7 +15,6 @@ export interface PatientListParams {
 
 @Injectable({ providedIn: 'root' })
 export class PatientsService {
-  // Mock de aseguradoras para semilla (puedes omitir si ya las inyectas)
   private INS: InsuranceI[] = [
     { id: 7, name: 'Health Plus', nit: '900.123.456', status: 'ACTIVE' },
     { id: 8, name: 'Care One',    nit: '901.777.111', status: 'ACTIVE' }
@@ -24,45 +26,57 @@ export class PatientsService {
       firstName: 'Ana', lastName: 'Perez',
       phone: '3001234567', email: 'ana@demo.com',
       status: 'ACTIVE',
-      insurance: this.INS[0]
+      insurance: this.INS[0],
+      userId: 1 // ← enlaza con UsersService (pac-123456)
     },
     {
       id: 502, docType: 'CC', docNumber: '789012',
       firstName: 'Luis', lastName: 'Gomez',
-      status: 'ACTIVE',
-      insurance: undefined
+      status: 'ACTIVE'
+      // sin usuario aún
     },
     {
       id: 503, docType: 'CE', docNumber: 'A-556677',
       firstName: 'María', lastName: 'Rojas',
       status: 'INACTIVE',
       insurance: this.INS[1]
+      // sin usuario aún
     }
   ];
 
   private readonly _items$ = new BehaviorSubject<PatientI[]>([...this.INITIAL]);
   readonly items$ = this._items$.asObservable();
 
+  constructor(private users: UsersService) {}
+
   list(params?: PatientListParams): Observable<PatientI[]> {
-    return this.items$.pipe(delay(120), map(items => this.applyFilters(items, params)));
+    return this.items$.pipe(delay(80), map(items => this.applyFilters(items, params)));
+  }
+
+  /** Lista "enriquecida" con user (si hay userId) */
+  listWithUsers(params?: PatientListParams): Observable<PatientI[]> {
+    return combineLatest([this.list(params), this.users.list()]).pipe(
+      map(([patients, users]) =>
+        patients.map(p => ({ ...p, user: p.userId ? users.find(u => u.id === p.userId) : undefined }))
+      )
+    );
   }
 
   add(partial: Omit<PatientI, 'id'> & { id?: number }): Observable<PatientI> {
     const nextId = this.generateId();
     const p: PatientI = { ...partial, id: partial.id ?? nextId };
     this._items$.next([p, ...this._items$.value]);
-    return of(p).pipe(delay(80));
+    return of(p).pipe(delay(60));
   }
 
   update(id: number, patch: Partial<PatientI>): Observable<PatientI | undefined> {
     const arr = this._items$.value;
     const idx = arr.findIndex(x => x.id === id);
-    if (idx === -1) return of(undefined).pipe(delay(50));
-
+    if (idx === -1) return of(undefined).pipe(delay(40));
     const updated = { ...arr[idx], ...patch };
     const copy = [...arr]; copy[idx] = updated;
     this._items$.next(copy);
-    return of(updated).pipe(delay(80));
+    return of(updated).pipe(delay(60));
   }
 
   remove(id: number): Observable<boolean> {
@@ -70,14 +84,29 @@ export class PatientsService {
     const filtered = arr.filter(x => x.id !== id);
     const changed = filtered.length !== arr.length;
     if (changed) this._items$.next(filtered);
-    return of(changed).pipe(delay(60));
+    return of(changed).pipe(delay(40));
   }
 
   getById(id: number): Observable<PatientI | undefined> {
-    return this.items$.pipe(map(list => list.find(x => x.id === id)), delay(50));
+    return this.items$.pipe(map(list => list.find(x => x.id === id)), delay(30));
   }
 
-  // ── helpers ─────────────────────────────────────────────────────────────────
+  /** 🔗 buscar paciente por usuario (userId) */
+  getByUserId(userId: number): Observable<PatientI | undefined> {
+    return this.items$.pipe(map(list => list.find(x => x.userId === userId)), delay(30));
+  }
+
+  /** 🔗 vincular usuario a paciente */
+  linkUser(patientId: number, userId: number): Observable<PatientI | undefined> {
+    return this.update(patientId, { userId });
+  }
+
+  /** 🔗 desvincular usuario de paciente */
+  unlinkUser(patientId: number): Observable<PatientI | undefined> {
+    return this.update(patientId, { userId: undefined, user: undefined });
+  }
+
+  // helpers
   private applyFilters(items: PatientI[], params?: PatientListParams): PatientI[] {
     let out = items;
     if (params?.status) out = out.filter(r => r.status === params.status);

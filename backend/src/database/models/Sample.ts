@@ -1,39 +1,108 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db';
+// src/models/Sample.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
+import { Order } from "./Order";
+import { Exam } from "./Exam";
 
-export const SPECIMEN_TYPES = ['SANGRE','SUERO','PLASMA','ORINA','SALIVA','HECES','TEJIDO','OTRA'] as const;
-export type SpecimenType = typeof SPECIMEN_TYPES[number];
-export const SAMPLE_STATES = ['RECOLECTADA','ALMACENADA','ENVIADA','EN_PROCESO','EVALUADA','RECHAZADA','ANULADA'] as const;
-export type SampleState = typeof SAMPLE_STATES[number];
+// Tipo de muestra (coherente con exam-model)
+export type SpecimenType =
+  | "SANGRE"
+  | "ORINA"
+  | "SALIVA"
+  | "TEJIDO"
+  | "LCR"; // ajusta a tu catálogo real
 
-export interface SampleAttributes {
-  id: number;
-  orderId: number;
-  type: SpecimenType;
-  barcode?: string | null;
-  drawDate?: Date | null;
-  state: SampleState;
-  observations?: string | null;
-  createdAt?: Date; updatedAt?: Date; deletedAt?: Date | null;
+export type SampleState =
+  | "RECOLECTADA"
+  | "ALMACENADA"
+  | "ENVIADA"
+  | "EN_PROCESO"
+  | "EVALUADA"
+  | "RECHAZADA"
+  | "ANULADA";
+
+export interface SampleI {
+  id?: number;
+  orderId: number;                 // FK -> orders.id
+  type: SpecimenType;              // tipo de espécimen
+  barcode?: string;                // código de barras
+  drawDate?: Date | null;          // fecha/hora de toma
+  state: SampleState;              // estado de la muestra
+  observations?: string | null;    // observaciones
 }
-type SampleCreation = Optional<SampleAttributes, 'id'|'barcode'|'drawDate'|'observations'|'createdAt'|'updatedAt'|'deletedAt'>;
 
-export class Sample extends Model<SampleAttributes, SampleCreation> implements SampleAttributes {
-  public id!: number; public orderId!: number; public type!: SpecimenType; public barcode!: string | null;
-  public drawDate!: Date | null; public state!: SampleState; public observations!: string | null;
-  public readonly createdAt!: Date; public readonly updatedAt!: Date; public readonly deletedAt!: Date | null;
+export class Sample extends Model<SampleI> implements SampleI {
+  public id!: number;
+  public orderId!: number;
+  public type!: SpecimenType;
+  public barcode?: string;
+  public drawDate?: Date | null;
+  public state!: SampleState;
+  public observations?: string | null;
 }
-Sample.init({
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  orderId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'order_id' },
-  type: { type: DataTypes.ENUM(...SPECIMEN_TYPES), allowNull: false },
-  barcode: { type: DataTypes.STRING(64), allowNull: true, unique: true },
-  drawDate: { type: DataTypes.DATE, allowNull: true, field: 'draw_date' },
-  state: { type: DataTypes.ENUM(...SAMPLE_STATES), allowNull: false, defaultValue: 'RECOLECTADA' },
-  observations: { type: DataTypes.TEXT, allowNull: true },
-}, {
-  sequelize, modelName: 'Sample', tableName: 'samples',
-  timestamps: true, paranoid: true, underscored: true,
-  indexes: [{ fields: ['order_id'] }, { unique: true, fields: ['barcode'] }],
-});
-export default Sample;
+
+Sample.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+
+    orderId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "orders", key: "id" },
+    },
+
+    type: {
+      type: DataTypes.STRING, // o ENUM si quieres restringir a valores concretos
+      allowNull: false,
+    },
+
+    barcode: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    drawDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    state: {
+      type: DataTypes.ENUM(
+        "RECOLECTADA",
+        "ALMACENADA",
+        "ENVIADA",
+        "EN_PROCESO",
+        "EVALUADA",
+        "RECHAZADA",
+        "ANULADA"
+      ),
+      allowNull: false,
+      defaultValue: "RECOLECTADA",
+    },
+
+    observations: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+  },
+  {
+    sequelize,
+    modelName: "Sample",
+    tableName: "samples",
+    timestamps: false,
+  }
+);
+
+// ────────────────────────────
+// Relaciones
+// ────────────────────────────
+Order.hasMany(Sample, { foreignKey: "orderId", sourceKey: "id" });
+Sample.belongsTo(Order, { foreignKey: "orderId", targetKey: "id" });
+
+// Si en algún momento quieres asociar Sample con Exam directamente:
+// Exam.hasMany(Sample, { foreignKey: "type", sourceKey: "specimenType" });
+// Sample.belongsTo(Exam, { foreignKey: "type", targetKey: "specimenType" });

@@ -1,23 +1,28 @@
-import { InsuranceI } from "./insurance-model";
+// src/app/models/patient-model.ts
+import { InsuranceI } from './insurance-model';
+import { UserI } from './user-model';
 
-// src/app/patients/model.ts
 export interface PatientI {
-  id?: number;                 // paciente_id (PK)
+  id?: number;
 
-  docType: string;             // doc_tipo
-  docNumber: string;           // doc_numero (unique)
+  docType: string;
+  docNumber: string;
 
-  firstName: string;           // nombres
-  lastName: string;            // apellidos
+  firstName: string;
+  lastName: string;
 
-  birthDate?: string;          // fecha_nac (ISO date string: 'YYYY-MM-DD')
-  gender?: string;             // sexo
+  birthDate?: string;
+  gender?: string;
 
-  phone?: string;              // telefono
-  email?: string;              // email
-  address?: string;            // direccion
+  phone?: string;
+  email?: string;
+  address?: string;
 
   insurance?: InsuranceI;
 
-  status: "ACTIVE" | "INACTIVE"; // estado (ACTIVO / INACTIVO)
+  // NUEVO (opcionales)
+  userId?: number;
+  user?: UserI;
+
+  status: 'ACTIVE' | 'INACTIVE';
 }

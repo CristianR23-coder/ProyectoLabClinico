@@ -1,58 +1,101 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db';
+// src/models/Doctor.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
+import { User } from "./User";
 
-export type ActiveState = 'ACTIVE' | 'INACTIVE';
-
-export interface DoctorAttributes {
-  id: number;
-  docType?: string | null;
+export interface DoctorI {
+  id?: number;
+  docType?: string;
   docNumber: string;
   name: string;
-  specialty?: string | null;
-  medicalLicense?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  status: ActiveState;
-  createdAt?: Date;
-  updatedAt?: Date;
-  deletedAt?: Date | null;
+  specialty?: string;
+  medicalLicense?: string;
+  phone?: string;
+  email?: string;
+  user_id?: number; // foreign key
+  status: "ACTIVE" | "INACTIVE";
 }
-type DoctorCreation = Optional<
-  DoctorAttributes,
-  'id' | 'docType' | 'specialty' | 'medicalLicense' | 'phone' | 'email' | 'status' | 'createdAt' | 'updatedAt' | 'deletedAt'
->;
 
-export class Doctor extends Model<DoctorAttributes, DoctorCreation> implements DoctorAttributes {
+export class Doctor extends Model<DoctorI> implements DoctorI {
   public id!: number;
-  public docType!: string | null;
+  public docType?: string;
   public docNumber!: string;
   public name!: string;
-  public specialty!: string | null;
-  public medicalLicense!: string | null;
-  public phone!: string | null;
-  public email!: string | null;
-  public status!: ActiveState;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-  public readonly deletedAt!: Date | null;
+  public specialty?: string;
+  public medicalLicense?: string;
+  public phone?: string;
+  public email?: string;
+  public user_id?: number;
+  public status!: "ACTIVE" | "INACTIVE";
 }
-Doctor.init({
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  docType: { type: DataTypes.STRING(20), allowNull: true, field: 'doc_type' },
-  docNumber: { type: DataTypes.STRING(40), allowNull: false, unique: true, field: 'doc_number' },
-  name: { type: DataTypes.STRING(160), allowNull: false },
-  specialty: { type: DataTypes.STRING(120), allowNull: true },
-  medicalLicense: { type: DataTypes.STRING(60), allowNull: true, field: 'medical_license' },
-  phone: { type: DataTypes.STRING(40), allowNull: true },
-  email: { type: DataTypes.STRING(160), allowNull: true },
-  status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), allowNull: false, defaultValue: 'ACTIVE' },
-}, {
-  sequelize,
-  modelName: 'Doctor',
-  tableName: 'doctors',
-  timestamps: true,
-  paranoid: true,
-  underscored: true,
-  indexes: [{ unique: true, fields: ['doc_number'] }],
+
+Doctor.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    docType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    docNumber: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    specialty: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    medicalLicense: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        isEmail: { msg: "Must be a valid email" },
+      },
+    },
+    user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "users", // nombre de la tabla User
+        key: "id",
+      },
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      defaultValue: "ACTIVE",
+    },
+  },
+  {
+    sequelize,
+    modelName: "Doctor",
+    tableName: "doctors",
+    timestamps: false,
+  }
+);
+
+// Relaciones
+User.hasOne(Doctor, {
+  foreignKey: "user_id",
+  sourceKey: "id",
 });
-export default Doctor;
+
+Doctor.belongsTo(User, {
+  foreignKey: "user_id",
+  targetKey: "id",
+});

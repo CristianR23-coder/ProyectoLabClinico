@@ -1,55 +1,155 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db';
+// src/models/Result.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
+import { Order } from "./Order";
+import { Sample } from "./Sample";
+import { Exam } from "./Exam";
+import { Parameter } from "./Parameter";
+import { Doctor } from "./Doctor";
 
-export const RESULT_STATES = ['PENDIENTE','VALIDADO','RECHAZADO'] as const;
-export type ResultState = typeof RESULT_STATES[number];
+export type ResultState = "PENDIENTE" | "VALIDADO" | "RECHAZADO";
 
-export interface ResultAttributes {
-  id: number;
-  orderId: number;
-  sampleId: number;
-  examId: number;
-  parameterId: number;
+export interface ResultI {
+  id?: number;
+  orderId: number;               // FK -> orders.id
+  sampleId: number;              // FK -> samples.id
+  examId: number;                // FK -> exams.id
+  parameterId: number;           // FK -> parameters.id
+
   numValue?: number | null;
   textValue?: string | null;
   outRange?: boolean | null;
   dateResult?: Date | null;
-  validatedForId?: number | null;
-  validatedFor?: string | null;
-  method?: string | null;
-  units?: string | null;
-  comment?: string | null;
-  resultState: ResultState;
-  createdAt?: Date; updatedAt?: Date; deletedAt?: Date | null;
-}
-type ResultCreation = Optional<ResultAttributes, 'id'|'numValue'|'textValue'|'outRange'|'dateResult'|'validatedForId'|'validatedFor'|'method'|'units'|'comment'|'createdAt'|'updatedAt'|'deletedAt'>;
 
-export class Result extends Model<ResultAttributes, ResultCreation> implements ResultAttributes {
-  public id!: number; public orderId!: number; public sampleId!: number; public examId!: number; public parameterId!: number;
-  public numValue!: number | null; public textValue!: string | null; public outRange!: boolean | null;
-  public dateResult!: Date | null; public validatedForId!: number | null; public validatedFor!: string | null;
-  public method!: string | null; public units!: string | null; public comment!: string | null; public resultState!: ResultState;
-  public readonly createdAt!: Date; public readonly updatedAt!: Date; public readonly deletedAt!: Date | null;
+  validatedForId?: number | null; // FK -> doctors.id
+  validatedFor?: string | null;   // nombre del validador (snapshot)
+
+  method?: string | null;         // snapshot desde exam.method
+  units?: string | null;          // snapshot desde parameter.unit
+  comment?: string | null;
+
+  resultState: ResultState;
 }
-Result.init({
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  orderId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'order_id' },
-  sampleId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'sample_id' },
-  examId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'exam_id' },
-  parameterId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'parameter_id' },
-  numValue: { type: DataTypes.DECIMAL(18,6), allowNull: true, field: 'num_value' },
-  textValue: { type: DataTypes.STRING(200), allowNull: true, field: 'text_value' },
-  outRange: { type: DataTypes.BOOLEAN, allowNull: true, field: 'out_range' },
-  dateResult: { type: DataTypes.DATE, allowNull: true, field: 'date_result' },
-  validatedForId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true, field: 'validated_for_id' },
-  validatedFor: { type: DataTypes.STRING(160), allowNull: true, field: 'validated_for' },
-  method: { type: DataTypes.STRING(160), allowNull: true },
-  units: { type: DataTypes.STRING(40), allowNull: true },
-  comment: { type: DataTypes.TEXT, allowNull: true },
-  resultState: { type: DataTypes.ENUM(...RESULT_STATES), allowNull: false, defaultValue: 'PENDIENTE', field: 'result_state' },
-}, {
-  sequelize, modelName: 'Result', tableName: 'results',
-  timestamps: true, paranoid: true, underscored: true,
-  indexes: [{ fields: ['order_id','sample_id','exam_id','parameter_id'] }],
-});
-export default Result;
+
+export class Result extends Model<ResultI> implements ResultI {
+  public id!: number;
+  public orderId!: number;
+  public sampleId!: number;
+  public examId!: number;
+  public parameterId!: number;
+
+  public numValue?: number | null;
+  public textValue?: string | null;
+  public outRange?: boolean | null;
+  public dateResult?: Date | null;
+
+  public validatedForId?: number | null;
+  public validatedFor?: string | null;
+
+  public method?: string | null;
+  public units?: string | null;
+  public comment?: string | null;
+
+  public resultState!: ResultState;
+}
+
+Result.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+
+    orderId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "orders", key: "id" },
+    },
+    sampleId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "samples", key: "id" },
+    },
+    examId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "exams", key: "id" },
+    },
+    parameterId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "parameters", key: "id" },
+    },
+
+    numValue: {
+      type: DataTypes.DECIMAL(18, 6),
+      allowNull: true,
+    },
+    textValue: {
+      type: DataTypes.STRING(200),
+      allowNull: true,
+    },
+    outRange: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+    dateResult: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    validatedForId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: "doctors", key: "id" },
+    },
+    validatedFor: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    method: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    units: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    comment: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    resultState: {
+      type: DataTypes.ENUM("PENDIENTE", "VALIDADO", "RECHAZADO"),
+      allowNull: false,
+      defaultValue: "PENDIENTE",
+    },
+  },
+  {
+    sequelize,
+    modelName: "Result",
+    tableName: "results",
+    timestamps: false,
+  }
+);
+
+// ────────────────────────────
+// Relaciones
+// ────────────────────────────
+Order.hasMany(Result, { foreignKey: "orderId", sourceKey: "id" });
+Result.belongsTo(Order, { foreignKey: "orderId", targetKey: "id" });
+
+Sample.hasMany(Result, { foreignKey: "sampleId", sourceKey: "id" });
+Result.belongsTo(Sample, { foreignKey: "sampleId", targetKey: "id" });
+
+Exam.hasMany(Result, { foreignKey: "examId", sourceKey: "id" });
+Result.belongsTo(Exam, { foreignKey: "examId", targetKey: "id" });
+
+Parameter.hasMany(Result, { foreignKey: "parameterId", sourceKey: "id" });
+Result.belongsTo(Parameter, { foreignKey: "parameterId", targetKey: "id" });
+
+Doctor.hasMany(Result, { foreignKey: "validatedForId", sourceKey: "id" });
+Result.belongsTo(Doctor, { foreignKey: "validatedForId", targetKey: "id" });

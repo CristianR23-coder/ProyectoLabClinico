@@ -5,6 +5,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { RouterModule, Router } from '@angular/router';
+import { UsersService } from '../../../services/user-service'; // ajusta la ruta si difiere
+import { SessionService } from '../../../auth/session-service';  // nuevo import
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -22,36 +25,54 @@ import { RouterModule, Router } from '@angular/router';
 })
 export class Login {
   form: FormGroup;
-  loading = false;          // ← boolean, no es función
+  loading = false;
   errorMsg = '';
 
-  // Credenciales fijas (demo)
-  private readonly FIXED_USER = 'admin';
-  private readonly FIXED_PASS = '1234';
-
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private users: UsersService,
+    private session: SessionService   // inyectamos SessionService
+  ) {
     this.form = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required]
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.form.invalid) return;
 
     this.loading = true;
     this.errorMsg = '';
 
-    const { username, password } = this.form.value;
+    const { username, password } = this.form.value as {
+      username: string;
+      password: string;
+    };
 
-    if (username === this.FIXED_USER && password === this.FIXED_PASS) {
-      localStorage.setItem('isLoggedIn', 'true');
-      this.router.navigate(['/home']);   // cambia la ruta si necesitas
-    } else {
-      this.errorMsg = 'Usuario o contraseña inválidos.';
+    try {
+      const user = await firstValueFrom(this.users.findByUsername(username));
+
+      if (!user || user.status !== 'ACTIVE' || (user.password && user.password !== password)) {
+        this.errorMsg = 'Usuario o contraseña inválidos.';
+        this.loading = false;
+        return;
+      }
+
+      // Guardamos la sesión usando SessionService
+      this.session.setSession(null, {
+        id: user.id!,
+        role: user.role,
+        username: user.username
+      });
+
+      this.router.navigate(['/home']);
+    } catch {
+      this.errorMsg = 'Error de autenticación.';
+    } finally {
+      this.loading = false;
     }
-
-    this.loading = false;
   }
 
   error() {

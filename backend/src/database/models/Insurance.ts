@@ -1,35 +1,67 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db';
+// src/models/Insurance.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
 
-export type ActiveState = 'ACTIVE' | 'INACTIVE';
-
-export interface InsuranceAttributes {
-  id: number;
-  name: string;
-  nit?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  address?: string | null;
-  status: ActiveState;
-  createdAt?: Date; updatedAt?: Date; deletedAt?: Date | null;
+export interface InsuranceI {
+  id?: number;                           // PK
+  name: string;                          // nombre
+  nit?: string;                          // NIT
+  phone?: string;                        // teléfono
+  email?: string;                        // email
+  address?: string;                      // dirección
+  status: "ACTIVE" | "INACTIVE";         // estado
 }
-type InsuranceCreation = Optional<InsuranceAttributes, 'id'|'nit'|'phone'|'email'|'address'|'status'|'createdAt'|'updatedAt'|'deletedAt'>;
 
-export class Insurance extends Model<InsuranceAttributes, InsuranceCreation> implements InsuranceAttributes {
-  public id!: number; public name!: string; public nit!: string | null;
-  public phone!: string | null; public email!: string | null; public address!: string | null;
-  public status!: ActiveState; public readonly createdAt!: Date; public readonly updatedAt!: Date; public readonly deletedAt!: Date | null;
+export class Insurance extends Model<InsuranceI> implements InsuranceI {
+  public id!: number;
+  public name!: string;
+  public nit?: string;
+  public phone?: string;
+  public email?: string;
+  public address?: string;
+  public status!: "ACTIVE" | "INACTIVE";
 }
-Insurance.init({
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  name: { type: DataTypes.STRING(160), allowNull: false },
-  nit: { type: DataTypes.STRING(40), allowNull: true },
-  phone: { type: DataTypes.STRING(40), allowNull: true },
-  email: { type: DataTypes.STRING(160), allowNull: true },
-  address: { type: DataTypes.STRING(180), allowNull: true },
-  status: { type: DataTypes.ENUM('ACTIVE','INACTIVE'), allowNull: false, defaultValue: 'ACTIVE' },
-}, {
-  sequelize, modelName: 'Insurance', tableName: 'insurances',
-  timestamps: true, paranoid: true, underscored: true,
-});
-export default Insurance;
+
+Insurance.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true, // en muchas BD de salud, el nombre de la aseguradora se maneja único
+    },
+    nit: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        isEmail: { msg: "Must be a valid email" },
+      },
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      defaultValue: "ACTIVE",
+    },
+  },
+  {
+    sequelize,
+    modelName: "Insurance",
+    tableName: "insurances",
+    timestamps: false,
+  }
+);

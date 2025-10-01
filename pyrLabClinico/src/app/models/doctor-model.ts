@@ -1,16 +1,22 @@
-// src/app/doctors/model.ts
+// src/app/models/doctor-model.ts
+import { UserI } from './user-model';
+
 export interface DoctorI {
-  id?: number;               // medico_id (PK)
+  id?: number;
 
-  docType?: string;          // tipo_doc
-  docNumber: string;         // num_doc (unique)
+  docType?: string;
+  docNumber: string;
 
-  name: string;              // nombre
-  specialty?: string;        // especialidad
-  medicalLicense?: string;   // registro_medico
+  name: string;
+  specialty?: string;
+  medicalLicense?: string;
 
-  phone?: string;            // telefono
-  email?: string;            // email
+  phone?: string;
+  email?: string;
 
-  status: "ACTIVE" | "INACTIVE"; // estado (ACTIVO / INACTIVO)
+  // NUEVO
+  userId?: number;
+  user?: UserI;
+
+  status: 'ACTIVE' | 'INACTIVE';
 }

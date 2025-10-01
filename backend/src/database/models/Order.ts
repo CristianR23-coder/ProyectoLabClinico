@@ -1,45 +1,160 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db';
+// src/models/Order.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
 
-export type OrderPriority = 'RUTINA' | 'URGENTE';
-export type OrderState = 'CREADA' | 'TOMADA' | 'EN_PROCESO' | 'VALIDADA' | 'ENTREGADA' | 'ANULADA';
-export type ActiveState = 'ACTIVE' | 'INACTIVE';
+import { Patient } from "./Patient";
+import { Doctor } from "./Doctor";
+import { Insurance } from "./Insurance";
+import { OrderItem } from "./OrderItem";
 
-export interface OrderAttributes {
-  id: number;
-  orderDate: Date;
-  state: OrderState;
-  priority: OrderPriority;
-  patientId: number;
-  doctorId?: number | null;
-  insuranceId?: number | null;
-  netTotal: number;
-  observations?: string | null;
-  status: ActiveState;
-  createdAt?: Date; updatedAt?: Date; deletedAt?: Date | null;
+// Estados del ciclo de la orden
+export type OrderState =
+  | "CREADA"
+  | "TOMADA"
+  | "EN_PROCESO"
+  | "VALIDADA"
+  | "ENTREGADA"
+  | "ANULADA";
+
+export interface OrderI {
+  id?: number;
+  orderDate: Date;                       // fecha/hora creación
+  state: OrderState;                     // estado de proceso
+  priority: "RUTINA" | "URGENTE";        // prioridad
+
+  patientId: number;                     // FK -> patients.id
+  doctorId?: number;                     // FK -> doctors.id (nullable)
+  insuranceId?: number;                  // FK -> insurances.id (nullable)
+
+  netTotal: number;                      // total de la orden
+  observations?: string;                 // notas
+  status: "ACTIVE" | "INACTIVE";         // estado lógico del registro
 }
-type OrderCreation = Optional<OrderAttributes, 'id'|'doctorId'|'insuranceId'|'observations'|'status'|'createdAt'|'updatedAt'|'deletedAt'>;
 
-export class Order extends Model<OrderAttributes, OrderCreation> implements OrderAttributes {
-  public id!: number; public orderDate!: Date; public state!: OrderState; public priority!: OrderPriority;
-  public patientId!: number; public doctorId!: number | null; public insuranceId!: number | null;
-  public netTotal!: number; public observations!: string | null; public status!: ActiveState;
-  public readonly createdAt!: Date; public readonly updatedAt!: Date; public readonly deletedAt!: Date | null;
+export class Order extends Model<OrderI> implements OrderI {
+  public id!: number;
+  public orderDate!: Date;
+  public state!: OrderState;
+  public priority!: "RUTINA" | "URGENTE";
+
+  public patientId!: number;
+  public doctorId?: number;
+  public insuranceId?: number;
+
+  public netTotal!: number;
+  public observations?: string;
+  public status!: "ACTIVE" | "INACTIVE";
 }
-Order.init({
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  orderDate: { type: DataTypes.DATE, allowNull: false, field: 'order_date' },
-  state: { type: DataTypes.ENUM('CREADA','TOMADA','EN_PROCESO','VALIDADA','ENTREGADA','ANULADA'), allowNull: false, defaultValue: 'CREADA' },
-  priority: { type: DataTypes.ENUM('RUTINA','URGENTE'), allowNull: false, defaultValue: 'RUTINA' },
-  patientId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'patient_id' },
-  doctorId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true, field: 'doctor_id' },
-  insuranceId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true, field: 'insurance_id' },
-  netTotal: { type: DataTypes.DECIMAL(12,2), allowNull: false, field: 'net_total' },
-  observations: { type: DataTypes.TEXT, allowNull: true },
-  status: { type: DataTypes.ENUM('ACTIVE','INACTIVE'), allowNull: false, defaultValue: 'ACTIVE' },
-}, {
-  sequelize, modelName: 'Order', tableName: 'orders',
-  timestamps: true, paranoid: true, underscored: true,
-  indexes: [{ fields: ['patient_id'] }, { fields: ['doctor_id'] }, { fields: ['insurance_id'] }],
+
+Order.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+
+    orderDate: {
+      type: DataTypes.DATE,              // guarda fecha y hora
+      allowNull: false,
+    },
+
+    state: {
+      type: DataTypes.ENUM(
+        "CREADA",
+        "TOMADA",
+        "EN_PROCESO",
+        "VALIDADA",
+        "ENTREGADA",
+        "ANULADA"
+      ),
+      allowNull: false,
+      defaultValue: "CREADA",
+    },
+
+    priority: {
+      type: DataTypes.ENUM("RUTINA", "URGENTE"),
+      allowNull: false,
+      defaultValue: "RUTINA",
+    },
+
+    // ───── FKs (según tu patrón: references con nombre de tabla en duro) ─────
+    patientId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: "patients", key: "id" },
+    },
+    doctorId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: "doctors", key: "id" },
+    },
+    insuranceId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: "insurances", key: "id" },
+    },
+
+    netTotal: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+    },
+
+    observations: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
+    },
+  },
+  {
+    sequelize,
+    modelName: "Order",
+    tableName: "orders",
+    timestamps: false,                    // igual que tus otros modelos
+  }
+);
+
+// ────────────────────────────
+// Relaciones
+// ────────────────────────────
+Patient.hasMany(Order, {
+  foreignKey: "patientId",
+  sourceKey: "id",
 });
-export default Order;
+Order.belongsTo(Patient, {
+  foreignKey: "patientId",
+  targetKey: "id",
+});
+
+Doctor.hasMany(Order, {
+  foreignKey: "doctorId",
+  sourceKey: "id",
+});
+Order.belongsTo(Doctor, {
+  foreignKey: "doctorId",
+  targetKey: "id",
+});
+
+Insurance.hasMany(Order, {
+  foreignKey: "insuranceId",
+  sourceKey: "id",
+});
+Order.belongsTo(Insurance, {
+  foreignKey: "insuranceId",
+  targetKey: "id",
+});
+
+// Relación con ítems (compatible con OrderItem.orderId como definiste)
+Order.hasMany(OrderItem, {
+  foreignKey: "orderId",
+  sourceKey: "id",
+});
+OrderItem.belongsTo(Order, {
+  foreignKey: "orderId",
+  targetKey: "id",
+});

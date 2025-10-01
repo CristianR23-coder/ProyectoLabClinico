@@ -29,7 +29,9 @@
       <i class="pi pi-th-large text-[18px]"></i>
     </button>
 
-    <p-avatar image="user_icon.png" shape="circle" class="h-9 w-9 overflow-hidden shadow-sm"></p-avatar>
+    <!-- Avatar Usuario -->
+    <p-avatar image="user_icon.png" shape="circle" class="h-9 w-9 overflow-hidden shadow-sm"
+      (click)="userPopover.toggle($event)"></p-avatar>
   </div>
 
   <!-- POPOVER: Ajustes -->
@@ -43,7 +45,7 @@
     </div>
   </p-popover>
 
-  <!-- POPOVER: Notificaciones (Resultados Pendientes) -->
+  <!-- POPOVER: Notificaciones -->
   <p-popover #notif [dismissable]="true" [style]="{width:'360px'}">
     <div class="p-2">
       <div class="flex items-center justify-between mb-2">
@@ -64,8 +66,7 @@
             </div>
           </li>
         </ul>
-        <a routerLink="/resultados"
-          class="mt-3 inline-flex items-center gap-2 text-sm text-sky-700 hover:underline">
+        <a routerLink="/resultados" class="mt-3 inline-flex items-center gap-2 text-sm text-sky-700 hover:underline">
           Ver todos <i class="pi pi-angle-right"></i>
         </a>
       </ng-container>
@@ -77,20 +78,36 @@
   </p-popover>
 
   <!-- POPOVER: Apps -->
-  <p-popover #apps [dismissable]="true" [style]="{ width: '360px' }" styleClass="rounded-2xl border border-zinc-200 shadow-xl bg-white/95 backdrop-blur
-              dark:bg-zinc-900/95 dark:border-zinc-700">
+  <p-popover #apps [dismissable]="true" [style]="{ width: '360px' }"
+    styleClass="rounded-2xl border border-zinc-200 shadow-xl bg-white/95 backdrop-blur dark:bg-zinc-900/95 dark:border-zinc-700">
     <div class="space-y-2">
       <h4 class="font-semibold text-zinc-700">Aplicaciones</h4>
-
       <div class="grid grid-cols-3 gap-3">
         <a routerLink="/ordenes" class="app-card"><i class="pi pi-list-check"></i><span>Órdenes</span></a>
         <a routerLink="/resultados" class="app-card"><i class="pi pi-file"></i><span>Resultados</span></a>
-        <a routerLink="administracion/pacientes" class="app-card"><i class="pi pi-users"></i><span>Pacientes</span></a>
-        <a routerLink="administracionctores" class="app-card"><i class="pi pi-id-card"></i><span>Médicos</span></a>
+        <a routerLink="/administracion/pacientes" class="app-card"><i class="pi pi-users"></i><span>Pacientes</span></a>
+        <a routerLink="/administracion/doctores" class="app-card"><i class="pi pi-id-card"></i><span>Médicos</span></a>
         <a routerLink="/billing" class="app-card"><i class="pi pi-wallet"></i><span>Facturación</span></a>
-        <a routerLink="administracion/repositorio" class="app-card"><i class="pi pi-github"></i><span>Repo</span></a>
+        <a routerLink="/administracion/repositorio" class="app-card"><i class="pi pi-github"></i><span>Repo</span></a>
       </div>
     </div>
   </p-popover>
+
+  <!-- header.html (fragmento de usuario) -->
+  <p-popover #userPopover [dismissable]="true" [style]="{width:'240px'}" [appendTo]="'body'">
+    <div class="p-3 text-zinc-700">
+      <h4 class="font-semibold mb-1">{{ (name$ | async) }}</h4>
+      <p class="text-sm text-zinc-500 mb-3">{{ (role$ | async) }}</p>
+
+      <button pButton type="button" class="w-full mb-2 p-button-outlined" (click)="openProfile(userPopover)"
+        label="Perfil" icon="pi pi-user"></button>
+
+      <button pButton type="button" class="w-full p-button-danger" (click)="doLogout()" label="Cerrar sesión"
+        icon="pi pi-sign-out"></button>
+    </div>
+  </p-popover>
+
+  <app-profile [(visible)]="profileVisible" [appendTo]="'body'" [baseZIndex]="11000">
+  </app-profile>
 
 </header>

@@ -1,36 +1,109 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../db';
+// src/models/OrderItem.ts
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../db";
+import { Order } from "./Order";
+import { Exam } from "./Exam";
 
-export type OrderItemState = 'PENDIENTE'|'TOMADO'|'EN_PROCESO'|'VALIDADO'|'ENTREGADO'|'ANULADO';
+// Estados posibles de un ítem de orden
+export type OrderItemState =
+  | "PENDIENTE"
+  | "TOMADO"
+  | "EN_PROCESO"
+  | "VALIDADO"
+  | "ENTREGADO"
+  | "ANULADO";
 
-export interface OrderItemAttributes {
-  id: number;
-  orderId: number;
-  examId: number;
-  code: string;
-  name: string;
-  price: number;
-  state: OrderItemState;
-  createdAt?: Date; updatedAt?: Date; deletedAt?: Date | null;
+export interface OrderItemI {
+  id?: number;          // PK
+  orderId: number;      // FK -> orders.id
+  examId: number;       // FK -> exams.id
+  code: string;         // examen.codigo (denormalizado)
+  name: string;         // examen.nombre (denormalizado)
+  price: number;        // precio (puede ajustarse)
+  state: OrderItemState;// estado del ítem
 }
-type OrderItemCreation = Optional<OrderItemAttributes, 'id'|'createdAt'|'updatedAt'|'deletedAt'>;
 
-export class OrderItem extends Model<OrderItemAttributes, OrderItemCreation> implements OrderItemAttributes {
-  public id!: number; public orderId!: number; public examId!: number;
-  public code!: string; public name!: string; public price!: number; public state!: OrderItemState;
-  public readonly createdAt!: Date; public readonly updatedAt!: Date; public readonly deletedAt!: Date | null;
+export class OrderItem extends Model<OrderItemI> implements OrderItemI {
+  public id!: number;
+  public orderId!: number;
+  public examId!: number;
+  public code!: string;
+  public name!: string;
+  public price!: number;
+  public state!: OrderItemState;
 }
-OrderItem.init({
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  orderId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'order_id' },
-  examId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, field: 'exam_id' },
-  code: { type: DataTypes.STRING(40), allowNull: false },
-  name: { type: DataTypes.STRING(160), allowNull: false },
-  price: { type: DataTypes.DECIMAL(12,2), allowNull: false },
-  state: { type: DataTypes.ENUM('PENDIENTE','TOMADO','EN_PROCESO','VALIDADO','ENTREGADO','ANULADO'), allowNull: false, defaultValue: 'PENDIENTE' },
-}, {
-  sequelize, modelName: 'OrderItem', tableName: 'order_items',
-  timestamps: true, paranoid: true, underscored: true,
-  indexes: [{ fields: ['order_id'] }, { fields: ['exam_id'] }],
+
+OrderItem.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    orderId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "orders", // nombre de la tabla de Order
+        key: "id",
+      },
+    },
+    examId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "exams", // nombre de la tabla de Exam
+        key: "id",
+      },
+    },
+    code: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    state: {
+      type: DataTypes.ENUM(
+        "PENDIENTE",
+        "TOMADO",
+        "EN_PROCESO",
+        "VALIDADO",
+        "ENTREGADO",
+        "ANULADO"
+      ),
+      allowNull: false,
+      defaultValue: "PENDIENTE",
+    },
+  },
+  {
+    sequelize,
+    modelName: "OrderItem",
+    tableName: "order_items",
+    timestamps: false,
+  }
+);
+
+// Relaciones
+Order.hasMany(OrderItem, {
+  foreignKey: "orderId",
+  sourceKey: "id",
 });
-export default OrderItem;
+OrderItem.belongsTo(Order, {
+  foreignKey: "orderId",
+  targetKey: "id",
+});
+
+Exam.hasMany(OrderItem, {
+  foreignKey: "examId",
+  sourceKey: "id",
+});
+OrderItem.belongsTo(Exam, {
+  foreignKey: "examId",
+  targetKey: "id",
+});
