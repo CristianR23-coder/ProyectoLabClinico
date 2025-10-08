@@ -51,6 +51,18 @@ export class App {
     // Root opcional:
     this.app.get('/', (_req, res) => res.json({ message: 'API running 🚀' }));
     this.routePrv.userRoutes.routes(this.app);
+    this.routePrv.doctorRoutes.routes(this.app);
+    this.routePrv.examRoutes.routes(this.app);
+    this.routePrv.insuranceRoutes.routes(this.app);
+    this.routePrv.orderItemRoutes.routes(this.app);
+    this.routePrv.patientRoutes.routes(this.app);
+    this.routePrv.sampleRoutes.routes(this.app);
+    this.routePrv.resultRoutes.routes(this.app);
+    this.routePrv.parameterRoutes.routes(this.app);
+    this.routePrv.panelRoutes.routes(this.app);
+    this.routePrv.patientInsuranceRoutes.routes(this.app);
+    this.routePrv.orderRoutes.routes(this.app);
+    this.routePrv.panelItemRoutes.routes(this.app);
 
     // Monta las rutas como en el código “anterior”
 

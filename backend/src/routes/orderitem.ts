@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { OrderItemController } from "../controllers/orderitem-controller";
+import { OrderItemController } from "../controllers/orderitem-controller";
 
-const router = Router();
+export class OrderItemRoutes {
+	public orderItemController: OrderItemController = new OrderItemController();
 
-// router.get("/", OrderItemController.getAllOrderItems);
-// router.get(":id", OrderItemController.getOrderItemById);
-
-export = router;
+	public routes(app: Router): void {
+		app.route("/orderitems").get(this.orderItemController.getAllOrderItems);
+		// app.route("/orderitem/:id").get(this.orderItemController.getOrderItemById);
+	}
+}

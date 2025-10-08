@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { DoctorController } from "../controllers/doctor-controller";
+import { DoctorController } from "../controllers/doctor-controller";
 
-const router = Router();
+export class DoctorRoutes {
+  public doctorController: DoctorController = new DoctorController();
 
-// router.get("/", DoctorController.getAllDoctors);
-// router.get(":id", DoctorController.getDoctorById);
-
-export = router;
+  public routes(app: Router): void {
+    app.route("/doctores").get(this.doctorController.getAllDoctors);
+    // app.route("/doctor/:id").get(this.doctorController.getDoctorById);
+  }
+}

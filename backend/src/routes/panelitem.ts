@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { PanelItemController } from "../controllers/panelitem-controller";
+import { PanelItemController } from "../controllers/panelitem-controller";
 
-const router = Router();
+export class PanelItemRoutes {
+	public panelItemController: PanelItemController = new PanelItemController();
 
-// router.get("/", PanelItemController.getAllPanelItems);
-// router.get(":id", PanelItemController.getPanelItemById);
-
-export = router;
+	public routes(app: Router): void {
+		app.route("/panelitems").get(this.panelItemController.getAllPanelItems);
+		// app.route("/panelitem/:id").get(this.panelItemController.getPanelItemById);
+	}
+}

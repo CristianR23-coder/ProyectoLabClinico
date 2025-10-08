@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { PatientInsuranceController } from "../controllers/patientinsurance-controller";
+import { PatientInsuranceController } from "../controllers/patientinsurance-controller";
 
-const router = Router();
+export class PatientInsuranceRoutes {
+	public patientInsuranceController: PatientInsuranceController = new PatientInsuranceController();
 
-// router.get("/", PatientInsuranceController.getAllPatientInsurances);
-// router.get(":patientId/:insuranceId", PatientInsuranceController.getPatientInsuranceById);
-
-export = router;
+	public routes(app: Router): void {
+		app.route("/patientinsurances").get(this.patientInsuranceController.getAllPatientInsurances);
+		// app.route("/patientinsurance/:patientId/:insuranceId").get(this.patientInsuranceController.getPatientInsuranceById);
+	}
+}

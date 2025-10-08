@@ -22,8 +22,6 @@ export interface PatientI {
   email?: string | null;
   address?: string | null;
 
-  // FKs (en backend) para poder incluir/relacionar
-  insuranceId?: number | null;
   userId?: number | null;
 
   status: ActiveState;
@@ -44,8 +42,6 @@ export class Patient extends Model<PatientI> implements PatientI {
   public phone?: string | null;
   public email?: string | null;
   public address?: string | null;
-
-  public insuranceId?: number | null;
   public userId?: number | null;
 
   public status!: ActiveState;
@@ -103,12 +99,6 @@ Patient.init(
       allowNull: true,
     },
 
-    // FKs
-    insuranceId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: { model: "insurances", key: "id" },
-    },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -132,15 +122,6 @@ Patient.init(
 // ────────────────────────────
 // Relaciones
 // ────────────────────────────
-Insurance.hasMany(Patient, {
-  foreignKey: "insuranceId",
-  sourceKey: "id",
-});
-Patient.belongsTo(Insurance, {
-  foreignKey: "insuranceId",
-  targetKey: "id",
-});
-
 User.hasMany(Patient, {
   foreignKey: "userId",
   sourceKey: "id",

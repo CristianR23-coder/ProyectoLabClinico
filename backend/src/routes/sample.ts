@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { SampleController } from "../controllers/sample-controller";
+import { SampleController } from "../controllers/sample-controller";
 
-const router = Router();
+export class SampleRoutes {
+	public sampleController: SampleController = new SampleController();
 
-// router.get("/", SampleController.getAllSamples);
-// router.get(":id", SampleController.getSampleById);
-
-export = router;
+	public routes(app: Router): void {
+		app.route("/muestras").get(this.sampleController.getAllSamples);
+		// app.route("/muestra/:id").get(this.sampleController.getSampleById);
+	}
+}

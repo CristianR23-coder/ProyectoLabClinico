@@ -149,12 +149,3 @@ Order.belongsTo(Insurance, {
   targetKey: "id",
 });
 
-// Relación con ítems (compatible con OrderItem.orderId como definiste)
-Order.hasMany(OrderItem, {
-  foreignKey: "orderId",
-  sourceKey: "id",
-});
-OrderItem.belongsTo(Order, {
-  foreignKey: "orderId",
-  targetKey: "id",
-});

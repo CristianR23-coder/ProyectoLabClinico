@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { ParameterController } from "../controllers/parameter-controller";
+import { ParameterController } from "../controllers/parameter-controller";
 
-const router = Router();
+export class ParameterRoutes {
+	public parameterController: ParameterController = new ParameterController();
 
-// router.get("/", ParameterController.getAllParameters);
-// router.get(":id", ParameterController.getParameterById);
-
-export = router;
+	public routes(app: Router): void {
+		app.route("/parametros").get(this.parameterController.getAllParameters);
+		// app.route("/parametro/:id").get(this.parameterController.getParameterById);
+	}
+}

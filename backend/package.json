@@ -17,6 +17,7 @@
   },
   "type": "commonjs",
   "dependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@types/cors": "^2.8.19",
     "@types/morgan": "^1.9.10",
     "@types/sequelize": "^4.28.20",

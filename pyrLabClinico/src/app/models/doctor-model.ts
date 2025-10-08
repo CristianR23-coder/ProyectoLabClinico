@@ -3,20 +3,13 @@ import { UserI } from './user-model';
 
 export interface DoctorI {
   id?: number;
-
+  userId?: number;                    // <── NUEVO
   docType?: string;
   docNumber: string;
-
-  name: string;
+  name: string;                       // ej "Juan Perez"
   specialty?: string;
   medicalLicense?: string;
-
   phone?: string;
   email?: string;
-
-  // NUEVO
-  userId?: number;
-  user?: UserI;
-
   status: 'ACTIVE' | 'INACTIVE';
 }

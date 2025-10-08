@@ -1,9 +1,11 @@
 import { Router } from "express";
-// import { PanelController } from "../controllers/panel-controller";
+import { PanelController } from "../controllers/panel-controller";
 
-const router = Router();
+export class PanelRoutes {
+	public panelController: PanelController = new PanelController();
 
-// router.get("/", PanelController.getAllPanels);
-// router.get(":id", PanelController.getPanelById);
-
-export = router;
+	public routes(app: Router): void {
+		app.route("/paneles").get(this.panelController.getAllPanels);
+		// app.route("/panel/:id").get(this.panelController.getPanelById);
+	}
+}
