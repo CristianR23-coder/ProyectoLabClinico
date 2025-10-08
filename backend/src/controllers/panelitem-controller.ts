@@ -5,7 +5,9 @@ export class PanelItemController {
   // Obtener todos los items de panel
   public async getAllPanelItems(req: Request, res: Response) {
     try {
-      const panelItems: PanelItemI[] = await PanelItem.findAll();
+      const panelItems: PanelItemI[] = await PanelItem.findAll({
+        where: { status: "ACTIVE" },
+      });
       res.status(200).json({ panelItems });
     } catch (error) {
       res.status(500).json({ error: "Error fetching panel items" });
@@ -17,7 +19,7 @@ export class PanelItemController {
     try {
       const { id: pk } = req.params;
       const panelItem = await PanelItem.findOne({
-        where: { id: pk },
+        where: { id: pk, status: "ACTIVE" },
       });
       if (panelItem) {
         res.status(200).json(panelItem);

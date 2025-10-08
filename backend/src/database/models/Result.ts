@@ -29,6 +29,7 @@ export interface ResultI {
   comment?: string | null;
 
   resultState: ResultState;
+  status: "ACTIVE" | "INACTIVE";  // estado lógico
 }
 
 export class Result extends Model<ResultI> implements ResultI {
@@ -51,6 +52,7 @@ export class Result extends Model<ResultI> implements ResultI {
   public comment?: string | null;
 
   public resultState!: ResultState;
+  public status!: "ACTIVE" | "INACTIVE";
 }
 
 Result.init(
@@ -126,6 +128,11 @@ Result.init(
       type: DataTypes.ENUM("PENDIENTE", "VALIDADO", "RECHAZADO"),
       allowNull: false,
       defaultValue: "PENDIENTE",
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
     },
   },
   {

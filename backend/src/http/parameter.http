@@ -1,0 +1,24 @@
+# Parameters - endpoints de ejemplo
+
+### Obtener todos los parámetros
+GET http://localhost:4000/api/parametros
+Accept: application/json
+
+### Obtener parámetro por id
+GET http://localhost:4000/api/parametro/1
+Accept: application/json
+
+### Crear parámetro (ejemplo)
+POST http://localhost:4000/api/parametros
+Content-Type: application/json
+
+{
+  "examenId": 2,
+  "code": "P001",
+  "name": "Hemoglobina",
+  "unit": "g/dL",
+  "refMin": 12.0,
+  "refMax": 17.0,
+  "typeValue": "NUMERICO",
+  "decimals": 2
+}

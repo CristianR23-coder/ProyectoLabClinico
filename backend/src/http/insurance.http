@@ -1,0 +1,22 @@
+# Seguros - endpoints de ejemplo
+
+### Obtener todos los seguros
+GET http://localhost:4000/api/seguros
+Accept: application/json
+
+### Obtener seguro por id
+GET http://localhost:4000/api/seguro/1
+Accept: application/json
+
+### Crear seguro (ejemplo)
+POST http://localhost:4000/api/seguros
+Content-Type: application/json
+
+{
+  "name": "Aseguradora X",
+  "nit": "800123456",
+  "phone": "3001234567",
+  "email": "contact@aseguradora.com",
+  "address": "Av. Principal 100",
+  "status": "ACTIVE"
+}

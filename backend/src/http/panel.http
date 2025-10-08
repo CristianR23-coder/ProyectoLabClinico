@@ -1,0 +1,19 @@
+# Panels - endpoints de ejemplo
+
+### Obtener todos los paneles
+GET http://localhost:4000/api/paneles
+Accept: application/json
+
+### Obtener panel por id
+GET http://localhost:4000/api/panel/1
+Accept: application/json
+
+### Crear panel (ejemplo)
+POST http://localhost:4000/api/paneles
+Content-Type: application/json
+
+{
+  "name": "Panel Básico",
+  "description": "Paquete de pruebas básicas",
+  "status": "ACTIVE"
+}

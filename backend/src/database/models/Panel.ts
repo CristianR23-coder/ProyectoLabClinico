@@ -3,13 +3,11 @@ import { DataTypes, Model } from "sequelize";
 import sequelize from "../db";
 import { PanelItem } from "./PanelItem";
 
-export type PanelState = "ACTIVO" | "INACTIVO";
-
 export interface PanelI {
   id?: number;
   name: string;                   // nombre del panel
   description?: string | null;    // descripción corta
-  state: PanelState;              // ACTIVO / INACTIVO
+  status: "ACTIVE" | "INACTIVE";  // estado lógico
   // Nota: en DB no guardamos createdAt/updatedAt porque timestamps=false (igual a tus otros modelos)
 }
 
@@ -17,7 +15,7 @@ export class Panel extends Model<PanelI> implements PanelI {
   public id!: number;
   public name!: string;
   public description?: string | null;
-  public state!: PanelState;
+  public status!: "ACTIVE" | "INACTIVE";
 }
 
 Panel.init(
@@ -36,10 +34,10 @@ Panel.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    state: {
-      type: DataTypes.ENUM("ACTIVO", "INACTIVO"),
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       allowNull: false,
-      defaultValue: "ACTIVO",
+      defaultValue: "ACTIVE",
     },
   },
   {

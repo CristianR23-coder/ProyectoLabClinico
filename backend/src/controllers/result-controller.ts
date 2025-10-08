@@ -6,7 +6,10 @@ export class ResultController {
   public async getAllResults(req: Request, res: Response) {
     try {
       const results: ResultI[] = await Result.findAll({
-        where: { resultState: ["PENDIENTE", "VALIDADO"] },
+        where: {
+          status: "ACTIVE",
+          resultState: ["PENDIENTE", "VALIDADO"],
+        },
       });
       res.status(200).json({ results });
     } catch (error) {
@@ -21,6 +24,7 @@ export class ResultController {
       const result = await Result.findOne({
         where: {
           id: pk,
+          status: "ACTIVE",
           resultState: ["PENDIENTE", "VALIDADO"]
         },
       });

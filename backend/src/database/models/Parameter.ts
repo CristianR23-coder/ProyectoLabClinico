@@ -16,6 +16,7 @@ export interface ParameterI {
   typeValue: TypeValue;        // tipo de valor
   decimals?: number | null;    // decimales si es numérico
   visualOrder?: number;        // orden de aparición (opcional)
+  status: "ACTIVE" | "INACTIVE"; // estado lógico
 }
 
 export class Parameter extends Model<ParameterI> implements ParameterI {
@@ -29,6 +30,7 @@ export class Parameter extends Model<ParameterI> implements ParameterI {
   public typeValue!: TypeValue;
   public decimals?: number | null;
   public visualOrder?: number;
+  public status!: "ACTIVE" | "INACTIVE";
 }
 
 Parameter.init(
@@ -83,6 +85,11 @@ Parameter.init(
     visualOrder: {
       type: DataTypes.INTEGER,
       allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
     },
   },
   {

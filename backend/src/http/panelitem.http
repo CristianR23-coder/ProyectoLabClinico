@@ -1,0 +1,21 @@
+# PanelItems - endpoints de ejemplo
+
+### Obtener todos los panel items
+GET http://localhost:4000/api/panelitems
+Accept: application/json
+
+### Obtener panel item por id
+GET http://localhost:4000/api/panelitem/1
+Accept: application/json
+
+### Crear panel item (ejemplo)
+POST http://localhost:4000/api/panelitems
+Content-Type: application/json
+
+{
+  "panelId": 1,
+  "kind": "EXAM",
+  "examId": 2,
+  "required": true,
+  "order": 1
+}

@@ -1,0 +1,24 @@
+# Doctores - endpoints de ejemplo
+
+### Obtener todos los doctores
+GET http://localhost:4000/api/doctores
+Accept: application/json
+
+### Obtener doctor por id
+GET http://localhost:4000/api/doctor/2
+Accept: application/json
+
+### Crear doctor (ejemplo)
+POST http://localhost:4000/api/doctores
+Content-Type: application/json
+
+{
+  "docType": "DNI",
+  "docNumber": "87654321",
+  "name": "Ana Gomez",
+  "specialty": "Cardiologia",
+  "phone": "987654321",
+  "email": "ana.gomez@example.com",
+  "user_id": 2,
+  "status": "ACTIVE"
+}

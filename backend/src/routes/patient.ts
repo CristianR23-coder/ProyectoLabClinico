@@ -5,7 +5,7 @@ export class PatientRoutes {
 	public patientController: PatientController = new PatientController();
 
 	public routes(app: Router): void {
-		app.route("/pacientes").get(this.patientController.getAllPatients);
-		// app.route("/paciente/:id").get(this.patientController.getPatientById);
+		app.route("/api/pacientes").get(this.patientController.getAllPatients);
+		app.route("/api/paciente/:id").get(this.patientController.getPatientById);
 	}
 }

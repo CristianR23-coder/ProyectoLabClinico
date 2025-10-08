@@ -16,6 +16,7 @@ export interface PanelItemI {
   required?: boolean;              // si es obligatorio
   order?: number | null;           // orden de visualización
   notes?: string | null;           // nota/observación
+  status: "ACTIVE" | "INACTIVE";   // estado lógico
 }
 
 export class PanelItem extends Model<PanelItemI> implements PanelItemI {
@@ -27,6 +28,7 @@ export class PanelItem extends Model<PanelItemI> implements PanelItemI {
   public required?: boolean;
   public order?: number | null;
   public notes?: string | null;
+  public status!: "ACTIVE" | "INACTIVE";
 }
 
 PanelItem.init(
@@ -74,6 +76,11 @@ PanelItem.init(
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
     },
   },
   {

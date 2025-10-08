@@ -7,6 +7,7 @@ export class OrderItemController {
     try {
       const orderItems: OrderItemI[] = await OrderItem.findAll({
         where: {
+          status: "ACTIVE",
           state: [
             "PENDIENTE",
             "TOMADO",
@@ -29,6 +30,7 @@ export class OrderItemController {
       const orderItem = await OrderItem.findOne({
         where: {
           id: pk,
+          status: "ACTIVE",
           state: [
             "PENDIENTE",
             "TOMADO",

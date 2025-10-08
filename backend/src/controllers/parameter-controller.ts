@@ -5,7 +5,9 @@ export class ParameterController {
   // Obtener todos los parámetros
   public async getAllParameters(req: Request, res: Response) {
     try {
-      const parameters: ParameterI[] = await Parameter.findAll();
+      const parameters: ParameterI[] = await Parameter.findAll({
+        where: { status: "ACTIVE" },
+      });
       res.status(200).json({ parameters });
     } catch (error) {
       res.status(500).json({ error: "Error fetching parameters" });
@@ -17,7 +19,7 @@ export class ParameterController {
     try {
       const { id: pk } = req.params;
       const parameter = await Parameter.findOne({
-        where: { id: pk },
+        where: { id: pk, status: "ACTIVE" },
       });
       if (parameter) {
         res.status(200).json(parameter);

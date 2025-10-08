@@ -1,0 +1,27 @@
+# Pacientes - endpoints de ejemplo
+
+### Obtener todos los pacientes
+GET http://localhost:4000/api/pacientes
+Accept: application/json
+
+### Obtener paciente por id
+GET http://localhost:4000/api/paciente/1
+Accept: application/json
+
+### Crear paciente (ejemplo)
+POST http://localhost:4000/api/pacientes
+Content-Type: application/json
+
+{
+  "docType": "DNI",
+  "docNumber": "12345678",
+  "firstName": "Luis",
+  "lastName": "Martinez",
+  "birthDate": "1990-05-20",
+  "gender": "M",
+  "phone": "3001112222",
+  "email": "luis@example.com",
+  "address": "Calle 123",
+  "userId": 3,
+  "status": "ACTIVE"
+}

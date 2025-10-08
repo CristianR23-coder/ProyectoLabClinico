@@ -84,6 +84,7 @@ async function createFakeData() {
 
   // Patients
   const patients: Patient[] = [];
+  const patientInsuranceMap = new Map<number, number>();
   for (let i = 0; i < 30; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
@@ -124,6 +125,7 @@ async function createFakeData() {
     } as any);
 
     patients.push(p);
+    patientInsuranceMap.set(p.id, chosenInsurance.id);
   }
 
   // Exams
@@ -150,10 +152,11 @@ async function createFakeData() {
         code: faker.string.alphanumeric(5).toUpperCase(),
         name: faker.word.words({ count: 2 }),
         unit: faker.helpers.arrayElement(['mg/dL','g/dL','%','IU/L','mmol/L']),
-  refMin: faker.number.float({ min: 0.1, max: 10, fractionDigits: 2 }),
-  refMax: faker.number.float({ min: 10.1, max: 200, fractionDigits: 2 }),
+        refMin: faker.number.float({ min: 0.1, max: 10, fractionDigits: 2 }),
+        refMax: faker.number.float({ min: 10.1, max: 200, fractionDigits: 2 }),
         typeValue: 'NUMERICO',
         decimals: 2,
+        status: 'ACTIVE',
       } as any);
       parameters.push(pr);
     }
@@ -165,7 +168,7 @@ async function createFakeData() {
     const pa = await Panel.create({
       name: `Panel ${faker.word.words({ count: 2 })}`,
       description: faker.lorem.sentence(),
-      state: 'ACTIVO',
+      status: 'ACTIVE',
     } as any);
     panels.push(pa);
 
@@ -177,6 +180,7 @@ async function createFakeData() {
         examId: faker.helpers.arrayElement(exams).id,
         required: faker.datatype.boolean(),
         order: j + 1,
+        status: 'ACTIVE',
       } as any);
     }
   }
@@ -184,13 +188,16 @@ async function createFakeData() {
   // Orders
   const orders: Order[] = [];
   for (let i = 0; i < 40; i++) {
+    const patient = faker.helpers.arrayElement(patients);
+    const patientInsuranceId = patientInsuranceMap.get(patient.id);
+
     const ord = await Order.create({
       orderDate: faker.date.recent({ days: 30 }),
       state: 'CREADA',
       priority: faker.helpers.arrayElement(['RUTINA', 'URGENTE']),
-      patientId: faker.helpers.arrayElement(patients).id,
+      patientId: patient.id,
       doctorId: faker.helpers.arrayElement(doctors).id,
-      insuranceId: faker.helpers.arrayElement(insurances).id,
+      insuranceId: patientInsuranceId ?? faker.helpers.arrayElement(insurances).id,
       netTotal: 0,
       observations: faker.lorem.sentence(),
       status: 'ACTIVE',
@@ -209,6 +216,7 @@ async function createFakeData() {
         name: ex.name,
         price: price,
         state: 'PENDIENTE',
+        status: 'ACTIVE',
       } as any);
       orderTotal += price;
     }
@@ -226,6 +234,7 @@ async function createFakeData() {
       drawDate: faker.date.recent({ days: 10 }),
       state: 'RECOLECTADA',
       observations: faker.lorem.sentence(),
+      status: 'ACTIVE',
     } as any);
     samples.push(sm);
 
@@ -249,6 +258,7 @@ async function createFakeData() {
         units: pr?.unit ?? null,
         comment: faker.lorem.sentence(),
         resultState: 'PENDIENTE',
+        status: 'ACTIVE',
       } as any);
     }
   }

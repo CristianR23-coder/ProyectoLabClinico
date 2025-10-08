@@ -5,7 +5,7 @@ export class InsuranceRoutes {
     public insuranceController: InsuranceController = new InsuranceController();
 
     public routes(app: Router): void {
-        app.route("/seguros").get(this.insuranceController.getAllInsurances);
-        // app.route("/seguro/:id").get(this.insuranceController.getInsuranceById);
+        app.route("/api/seguros").get(this.insuranceController.getAllInsurances);
+        // app.route("/api/seguro/:id").get(this.insuranceController.getInsuranceById);
     }
 }

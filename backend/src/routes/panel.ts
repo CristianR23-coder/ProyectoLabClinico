@@ -5,7 +5,7 @@ export class PanelRoutes {
 	public panelController: PanelController = new PanelController();
 
 	public routes(app: Router): void {
-		app.route("/paneles").get(this.panelController.getAllPanels);
-		// app.route("/panel/:id").get(this.panelController.getPanelById);
+			app.route("/api/paneles").get(this.panelController.getAllPanels);
+			// app.route("/api/panel/:id").get(this.panelController.getPanelById);
 	}
 }

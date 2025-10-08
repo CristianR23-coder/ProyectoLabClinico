@@ -1,0 +1,23 @@
+# Examenes - endpoints de ejemplo
+
+### Obtener todos los exámenes
+GET http://localhost:4000/api/examenes
+Accept: application/json
+
+### Obtener examen por id
+GET http://localhost:4000/api/examen/1
+Accept: application/json
+
+### Crear examen (ejemplo)
+POST http://localhost:4000/api/examenes
+Content-Type: application/json
+
+{
+  "code": "HB001",
+  "name": "Hemograma",
+  "method": "Automatizado",
+  "specimenType": "SANGRE",
+  "processingTimeMin": 60,
+  "priceBase": 10.00,
+  "status": "ACTIVE"
+}

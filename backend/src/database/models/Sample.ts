@@ -29,6 +29,7 @@ export interface SampleI {
   drawDate?: Date | null;          // fecha/hora de toma
   state: SampleState;              // estado de la muestra
   observations?: string | null;    // observaciones
+  status: "ACTIVE" | "INACTIVE";   // estado lógico para borrado suave
 }
 
 export class Sample extends Model<SampleI> implements SampleI {
@@ -39,6 +40,7 @@ export class Sample extends Model<SampleI> implements SampleI {
   public drawDate?: Date | null;
   public state!: SampleState;
   public observations?: string | null;
+  public status!: "ACTIVE" | "INACTIVE";
 }
 
 Sample.init(
@@ -87,6 +89,11 @@ Sample.init(
     observations: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
     },
   },
   {

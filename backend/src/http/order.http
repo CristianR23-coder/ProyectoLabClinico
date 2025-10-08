@@ -1,0 +1,36 @@
+# Orders - endpoints de ejemplo
+
+### Obtener todas las órdenes
+GET http://localhost:4000/api/ordenes
+Accept: application/json
+
+### Obtener orden por id
+GET http://localhost:4000/api/orden/1
+Accept: application/json
+
+### Crear orden (ejemplo)
+POST http://localhost:4000/api/ordenes
+Content-Type: application/json
+
+{
+  "orderDate": "2025-10-06T09:00:00Z",
+  "priority": "RUTINA",
+  "patientId": 1,
+  "doctorId": 2,
+  "netTotal": 50.00,
+  "observations": "Prueba"
+}
+
+### Crear orden enviando insuranceId (será validado)
+POST http://localhost:4000/api/ordenes
+Content-Type: application/json
+
+{
+  "orderDate": "2025-10-06T09:00:00Z",
+  "priority": "RUTINA",
+  "patientId": 1,
+  "doctorId": 2,
+  "insuranceId": 1,
+  "netTotal": 50.00,
+  "observations": "Prueba con insuranceId"
+}

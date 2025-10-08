@@ -2,11 +2,11 @@ import { Request, Response } from "express";
 import { Panel, PanelI } from "../database/models/Panel";
 
 export class PanelController {
-  // Obtener todos los paneles con estado "ACTIVO"
+  // Obtener todos los paneles con status "ACTIVE"
   public async getAllPanels(req: Request, res: Response) {
     try {
       const panels: PanelI[] = await Panel.findAll({
-        where: { state: "ACTIVO" },
+        where: { status: "ACTIVE" },
       });
       res.status(200).json({ panels });
     } catch (error) {
@@ -21,7 +21,7 @@ export class PanelController {
       const panel = await Panel.findOne({
         where: {
           id: pk,
-          state: "ACTIVO",
+          status: "ACTIVE",
         },
       });
       if (panel) {

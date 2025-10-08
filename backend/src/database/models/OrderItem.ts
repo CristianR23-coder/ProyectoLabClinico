@@ -21,6 +21,7 @@ export interface OrderItemI {
   name: string;         // examen.nombre (denormalizado)
   price: number;        // precio (puede ajustarse)
   state: OrderItemState;// estado del ítem
+  status: "ACTIVE" | "INACTIVE"; // estado lógico
 }
 
 export class OrderItem extends Model<OrderItemI> implements OrderItemI {
@@ -31,6 +32,7 @@ export class OrderItem extends Model<OrderItemI> implements OrderItemI {
   public name!: string;
   public price!: number;
   public state!: OrderItemState;
+  public status!: "ACTIVE" | "INACTIVE";
 }
 
 OrderItem.init(
@@ -79,6 +81,11 @@ OrderItem.init(
       ),
       allowNull: false,
       defaultValue: "PENDIENTE",
+    },
+    status: {
+      type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+      allowNull: false,
+      defaultValue: "ACTIVE",
     },
   },
   {

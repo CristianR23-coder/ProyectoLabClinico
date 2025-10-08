@@ -6,14 +6,17 @@ export class SampleController {
   public async getAllSamples(req: Request, res: Response) {
     try {
       const samples: SampleI[] = await Sample.findAll({
-        where: { state: [
-          "RECOLECTADA",
-          "ALMACENADA",
-          "ENVIADA",
-          "EN_PROCESO",
-          "EVALUADA",
-          "RECHAZADA"
-        ] },
+        where: {
+          status: "ACTIVE",
+          state: [
+            "RECOLECTADA",
+            "ALMACENADA",
+            "ENVIADA",
+            "EN_PROCESO",
+            "EVALUADA",
+            "RECHAZADA"
+          ]
+        },
       });
       res.status(200).json({ samples });
     } catch (error) {
@@ -28,6 +31,7 @@ export class SampleController {
       const sample = await Sample.findOne({
         where: {
           id: pk,
+          status: "ACTIVE",
           state: [
             "RECOLECTADA",
             "ALMACENADA",
