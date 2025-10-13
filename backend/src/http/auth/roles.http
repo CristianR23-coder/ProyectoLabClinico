@@ -1,0 +1,50 @@
+@baseUrl = http://localhost:4000
+@token =
+
+### ================== ROLES ==================
+
+### Obtener todos los roles
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{token}}
+
+###
+
+### Crear un rol
+POST {{baseUrl}}/api/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "LAB_TECH",
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Obtener rol por ID
+GET {{baseUrl}}/api/roles/1
+Authorization: Bearer {{token}}
+
+###
+
+### Actualizar un rol
+PUT {{baseUrl}}/api/role/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "LAB_TECH_UPDATED",
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Eliminar un rol físicamente
+DELETE {{baseUrl}}/api/role/1
+Authorization: Bearer {{token}}
+
+###
+
+### Eliminar un rol lógicamente
+DELETE {{baseUrl}}/api/role/1/soft
+Authorization: Bearer {{token}}

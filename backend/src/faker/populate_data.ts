@@ -1,7 +1,10 @@
 import { faker } from '@faker-js/faker';
 import sequelize from '../database/db';
 
-import { User } from '../database/models/User';
+import { User } from '../database/models/auth/User';
+import bcrypt from 'bcryptjs';
+import { Role } from '../database/models/auth/Role';
+import { RoleUser } from '../database/models/auth/RoleUser';
 import { Doctor } from '../database/models/Doctor';
 import { Insurance } from '../database/models/Insurance';
 import { Patient } from '../database/models/Patient';
@@ -17,6 +20,7 @@ import { Result } from '../database/models/Result';
 
 async function createFakeData() {
   const dialect = sequelize.getDialect();
+  const rolesMap = new Map<string, any>();
   try {
     if (dialect === 'mysql') {
       // Desactivar temporalmente las comprobaciones de FK para poder dropear tablas con dependencias
@@ -25,6 +29,13 @@ async function createFakeData() {
 
     await sequelize.sync({ force: true });
     console.log('DB synced — creating fake data...');
+    // Ensure basic roles exist so we can link RoleUser entries
+    const baseRoles = ['PATIENT', 'DOCTOR', 'ADMIN', 'STAFF'];
+    for (const rn of baseRoles) {
+      let r = await Role.findOne({ where: { name: rn } });
+      if (!r) r = await Role.create({ name: rn, is_active: 'ACTIVE' } as any);
+      rolesMap.set(rn, r);
+    }
   } finally {
     if (dialect === 'mysql') {
       // Reactivar comprobaciones de FK
@@ -52,7 +63,16 @@ async function createFakeData() {
     while (await User.findOne({ where: { username } })) {
       username = `${usernameBase}${suffix++}`;
     }
-    const user = await User.create({ username, password: docNumber, role: 'DOCTOR', status: 'ACTIVE' } as any);
+    const hashed = await bcrypt.hash(docNumber, 8);
+    const user = await User.create({ username, password: hashed, role: 'DOCTOR', status: 'ACTIVE' } as any);
+    // link to RoleUser table
+    try {
+      const role = rolesMap.get('DOCTOR');
+      if (role) await RoleUser.create({ role_id: role.id, user_id: user.id, is_active: 'ACTIVE' } as any);
+    } catch (err) {
+      // no bloquear la creación de datos si falla el linkeo
+      console.warn('Warning: could not create RoleUser for doctor', err);
+    }
 
     const d = await Doctor.create({
       docType: 'DNI',
@@ -97,7 +117,15 @@ async function createFakeData() {
     while (await User.findOne({ where: { username } })) {
       username = `${usernameBase}${suffix++}`;
     }
-    const user = await User.create({ username, password: docNumber, role: 'PATIENT', status: 'ACTIVE' } as any);
+    const hashed = await bcrypt.hash(docNumber, 8);
+    const user = await User.create({ username, password: hashed, role: 'PATIENT', status: 'ACTIVE' } as any);
+    // link to RoleUser table
+    try {
+      const role = rolesMap.get('PATIENT');
+      if (role) await RoleUser.create({ role_id: role.id, user_id: user.id, is_active: 'ACTIVE' } as any);
+    } catch (err) {
+      console.warn('Warning: could not create RoleUser for patient', err);
+    }
 
     const chosenInsurance = faker.helpers.arrayElement(insurances);
     const p = await Patient.create({
@@ -135,7 +163,7 @@ async function createFakeData() {
       code: faker.string.alphanumeric(6).toUpperCase(),
       name: faker.commerce.productName(),
       method: faker.word.words({ count: 3 }),
-      specimenType: faker.helpers.arrayElement(['SANGRE','SUERO','PLASMA','ORINA','SALIVA','HECES','TEJIDO','OTRA']),
+      specimenType: faker.helpers.arrayElement(['SANGRE', 'SUERO', 'PLASMA', 'ORINA', 'SALIVA', 'HECES', 'TEJIDO', 'OTRA']),
       processingTimeMin: faker.number.int({ min: 10, max: 1440 }),
       status: 'ACTIVE',
       priceBase: faker.number.int({ min: 5, max: 200 }),
@@ -151,7 +179,7 @@ async function createFakeData() {
         examenId: ex.id,
         code: faker.string.alphanumeric(5).toUpperCase(),
         name: faker.word.words({ count: 2 }),
-        unit: faker.helpers.arrayElement(['mg/dL','g/dL','%','IU/L','mmol/L']),
+        unit: faker.helpers.arrayElement(['mg/dL', 'g/dL', '%', 'IU/L', 'mmol/L']),
         refMin: faker.number.float({ min: 0.1, max: 10, fractionDigits: 2 }),
         refMax: faker.number.float({ min: 10.1, max: 200, fractionDigits: 2 }),
         typeValue: 'NUMERICO',
@@ -229,7 +257,7 @@ async function createFakeData() {
   for (const ord of orders.slice(0, 30)) {
     const sm = await Sample.create({
       orderId: ord.id,
-      type: faker.helpers.arrayElement(['SANGRE','ORINA','SALIVA','TEJIDO','LCR']),
+      type: faker.helpers.arrayElement(['SANGRE', 'ORINA', 'SALIVA', 'TEJIDO', 'LCR']),
       barcode: faker.string.alphanumeric(10),
       drawDate: faker.date.recent({ days: 10 }),
       state: 'RECOLECTADA',

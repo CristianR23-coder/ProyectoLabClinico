@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:4000
+@token =
+
+### ================== REFRESH TOKENS ==================
+
+### Obtener todos los refresh tokens
+GET {{baseUrl}}/api/refresh-tokens
+Authorization: Bearer {{token}}
+
+###
+
+### (Opcional) Invalidar refresh token
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "<your-refresh-token-here>"
+}

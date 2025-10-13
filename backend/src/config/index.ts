@@ -3,6 +3,11 @@ import express, { Application } from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import { Routes } from '../routes/index';
+import { RoleRoutes } from '../routes/auth/role';
+import { ResourceRoutes } from '../routes/auth/resource';
+import { ResourceRoleRoutes } from '../routes/auth/resourceRole';
+import { RoleUserRoutes } from '../routes/auth/roleUser';
+import { RefreshTokenRoutes } from '../routes/auth/refreshToken';
 
 // Importa sequelize como *named export* para mantener la base del anterior
 import sequelize from '../database/db';
@@ -63,7 +68,13 @@ export class App {
     this.routePrv.patientInsuranceRoutes.routes(this.app);
     this.routePrv.orderRoutes.routes(this.app);
     this.routePrv.panelItemRoutes.routes(this.app);
-
+    this.routePrv.roleRoutes.routes(this.app);
+    this.routePrv.resourceRoutes.routes(this.app);
+    this.routePrv.resourceRoleRoutes.routes(this.app);
+    this.routePrv.roleUserRoutes.routes(this.app);
+    this.routePrv.refreshTokenRoutes.routes(this.app);
+    this.routePrv.authUserRoutes.routes(this.app);
+    this.routePrv.authRoutes.routes(this.app);
     // Monta las rutas como en el código “anterior”
 
   }

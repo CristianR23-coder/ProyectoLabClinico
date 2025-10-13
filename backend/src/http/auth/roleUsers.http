@@ -1,0 +1,52 @@
+@baseUrl = http://localhost:4000
+@token =
+
+### ================== ROLE USERS ==================
+
+### Obtener todos los role-users
+GET {{baseUrl}}/api/role-users
+Authorization: Bearer {{token}}
+
+###
+
+### Crear un role-user
+POST {{baseUrl}}/api/role-user
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role_id": 1,
+  "user_id": 1,
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Obtener role-user por ID
+GET {{baseUrl}}/api/role-users/1
+Authorization: Bearer {{token}}
+
+###
+
+### Actualizar un role-user
+PUT {{baseUrl}}/api/role-user/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role_id": 2,
+  "user_id": 1,
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Eliminar un role-user físicamente
+DELETE {{baseUrl}}/api/role-user/1
+Authorization: Bearer {{token}}
+
+###
+
+### Eliminar un role-user lógicamente
+DELETE {{baseUrl}}/api/role-user/1/soft
+Authorization: Bearer {{token}}

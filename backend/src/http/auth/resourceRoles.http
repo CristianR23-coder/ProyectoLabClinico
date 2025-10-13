@@ -1,0 +1,52 @@
+@baseUrl = http://localhost:4000
+@token =
+
+### ================== RESOURCE ROLES ==================
+
+### Obtener todos los resource-roles
+GET {{baseUrl}}/api/resource-roles
+Authorization: Bearer {{token}}
+
+###
+
+### Crear un resource-role
+POST {{baseUrl}}/api/resource-role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "resource_id": 1,
+  "role_id": 1,
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Obtener resource-role por ID
+GET {{baseUrl}}/api/resource-roles/1
+Authorization: Bearer {{token}}
+
+###
+
+### Actualizar un resource-role
+PUT {{baseUrl}}/api/resource-role/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "resource_id": 1,
+  "role_id": 1,
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Eliminar un resource-role físicamente
+DELETE {{baseUrl}}/api/resource-role/1
+Authorization: Bearer {{token}}
+
+###
+
+### Eliminar un resource-role lógicamente
+DELETE {{baseUrl}}/api/resource-role/1/soft
+Authorization: Bearer {{token}}

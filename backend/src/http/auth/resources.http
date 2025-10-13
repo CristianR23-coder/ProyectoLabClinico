@@ -1,0 +1,52 @@
+@baseUrl = http://localhost:4000
+@token =
+
+### ================== RESOURCES ==================
+
+### Obtener todos los recursos
+GET {{baseUrl}}/api/resources
+Authorization: Bearer {{token}}
+
+###
+
+### Crear un recurso
+POST {{baseUrl}}/api/resource
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "path": "/api/patients",
+  "method": "GET",
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Obtener recurso por ID
+GET {{baseUrl}}/api/resources/1
+Authorization: Bearer {{token}}
+
+###
+
+### Actualizar un recurso
+PUT {{baseUrl}}/api/resource/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "path": "/api/patients",
+  "method": "GET",
+  "is_active": "ACTIVE"
+}
+
+###
+
+### Eliminar un recurso físicamente
+DELETE {{baseUrl}}/api/resource/1
+Authorization: Bearer {{token}}
+
+###
+
+### Eliminar un recurso lógicamente
+DELETE {{baseUrl}}/api/resource/1/soft
+Authorization: Bearer {{token}}

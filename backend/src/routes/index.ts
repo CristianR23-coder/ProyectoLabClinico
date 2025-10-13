@@ -12,6 +12,13 @@ import { PanelRoutes } from "./panel";
 import { PatientInsuranceRoutes } from "./patientinsurance";
 import { OrderRoutes } from "./order";
 import { PanelItemRoutes } from "./panelitem";
+import { RoleRoutes } from "./auth/role";
+import { ResourceRoutes } from "./auth/resource";
+import { ResourceRoleRoutes } from "./auth/resourceRole";
+import { RoleUserRoutes } from "./auth/roleUser";
+import { RefreshTokenRoutes } from "./auth/refreshToken";
+import { AuthUserRoutes } from "./auth/users";
+import { AuthRoutes } from "./auth/auth";
 
 export class Routes {
    public userRoutes: UserRoutes = new UserRoutes();
@@ -27,4 +34,12 @@ export class Routes {
    public patientInsuranceRoutes: PatientInsuranceRoutes = new PatientInsuranceRoutes();
    public orderRoutes: OrderRoutes = new OrderRoutes();
    public panelItemRoutes: PanelItemRoutes = new PanelItemRoutes();
+   public roleRoutes: RoleRoutes = new RoleRoutes();
+   public resourceRoutes: ResourceRoutes = new ResourceRoutes();
+   public resourceRoleRoutes: ResourceRoleRoutes = new ResourceRoleRoutes();
+   public roleUserRoutes: RoleUserRoutes = new RoleUserRoutes();
+   public refreshTokenRoutes: RefreshTokenRoutes = new RefreshTokenRoutes();
+   public authUserRoutes: AuthUserRoutes = new AuthUserRoutes();
+   public authRoutes: AuthRoutes = new AuthRoutes();
 }
+

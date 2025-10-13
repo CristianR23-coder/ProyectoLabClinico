@@ -5,7 +5,7 @@ GET http://localhost:4000/api/doctores
 Accept: application/json
 
 ### Obtener doctor por id
-GET http://localhost:4000/api/doctor/2
+GET http://localhost:4000/api/doctor/9
 Accept: application/json
 
 ### Crear doctor (ejemplo)
@@ -13,12 +13,11 @@ POST http://localhost:4000/api/doctores
 Content-Type: application/json
 
 {
-  "docType": "DNI",
-  "docNumber": "87654321",
-  "name": "Ana Gomez",
+  "docType": "CC",
+  "docNumber": "1029860270",
+  "name": "Jesus Monsalvo",
   "specialty": "Cardiologia",
   "phone": "987654321",
   "email": "ana.gomez@example.com",
-  "user_id": 2,
   "status": "ACTIVE"
 }

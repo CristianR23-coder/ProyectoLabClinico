@@ -1,8 +1,11 @@
 // src/models/Patient.ts
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../db";
+import bcrypt from 'bcryptjs';
 import { Insurance } from "./Insurance";
-import { User } from "./User";
+import { User } from "./auth/User";
+import { Role } from "./auth/Role";
+import { RoleUser } from "./auth/RoleUser";
 
 export type ActiveState = "ACTIVE" | "INACTIVE";
 
@@ -129,5 +132,42 @@ User.hasMany(Patient, {
 Patient.belongsTo(User, {
   foreignKey: "userId",
   targetKey: "id",
+});
+
+// Hook: crear usuario automáticamente al crear un paciente si no se proporcionó userId
+Patient.afterCreate(async (patient, options) => {
+  try {
+    if (patient.userId) return;
+
+    const firstname = patient.firstName || '';
+    const lastname = patient.lastName || '';
+    const usernameBase = `${firstname}${lastname}`.replace(/\s+/g, '').normalize('NFD').replace(/[^\w]/g, '').toLowerCase();
+    let username = usernameBase;
+    let suffix = 1;
+
+    // Asegurar username único
+    while (await User.findOne({ where: { username } })) {
+      username = `${usernameBase}${suffix++}`;
+    }
+
+    const hashed = await bcrypt.hash(String(patient.docNumber), 8);
+
+    const user = await User.create({ username, password: hashed, role: 'PATIENT', status: 'ACTIVE' } as any);
+
+    // Vincular role_users si existe el rol
+    try {
+      const roleModel = await Role.findOne({ where: { name: user.role } });
+      if (roleModel) {
+        await RoleUser.create({ role_id: roleModel.id, user_id: user.id, is_active: 'ACTIVE' } as any);
+      }
+    } catch (err) {
+      console.warn('Warning: could not create RoleUser link for patient', err);
+    }
+
+    // Actualizar FK en patient
+    await patient.update({ userId: user.id } as any);
+  } catch (err) {
+    console.warn('Patient.afterCreate hook failed', err);
+  }
 });
 

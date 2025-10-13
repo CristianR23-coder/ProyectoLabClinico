@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:4000
+
+### ================== AUTH ==================
+
+### Registro (register)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "email": "admin@example.com",
+  "password": "admin",
+  "role": "ADMIN"
+}
+
+###
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+
+###
+
+### Logout (invalidar refresh token)
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "<your-refresh-token-here>"
+}
+

@@ -1,5 +1,5 @@
 import { Router, Application } from "express";
-import { UserController } from "../controllers/user-controller";
+import { UserController } from "../controllers/auth/user-controller";
 
 export class UserRoutes {
   public userController: UserController = new UserController();
