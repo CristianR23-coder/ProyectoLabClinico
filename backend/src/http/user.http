@@ -18,3 +18,97 @@ Content-Type: application/json
   "password": "12345678",
   "status": "ACTIVE"
 }
+# Usuarios API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
+
+## Rutas publicas
+
+### Crear usuario (publico)
+POST {{baseUrl}}/api/user/public
+Content-Type: application/json
+
+{
+  "username": "juanperez",
+  "password": "12345678",
+  "role": "PATIENT",
+  "status": "ACTIVE"
+}
+
+### Listar usuarios (publico)
+GET {{baseUrl}}/api/users/public
+Accept: application/json
+
+### Obtener usuario por id (publico)
+GET {{baseUrl}}/api/user/1/public
+Accept: application/json
+
+### Actualizar usuario (publico)
+PATCH {{baseUrl}}/api/user/1/public
+Content-Type: application/json
+
+{
+  "username": "juanperez",
+  "password": "Nuev4Contr4",
+  "role": "PATIENT",
+  "status": "ACTIVE"
+}
+
+### Eliminar usuario fisicamente (publico)
+DELETE {{baseUrl}}/api/user/1/public
+
+### Baja logica de usuario (publico)
+PATCH {{baseUrl}}/api/user/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear usuario (con auth)
+POST {{baseUrl}}/api/user
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "username": "admin.user",
+  "password": "Adm1nPassword!",
+  "role": "ADMIN",
+  "status": "ACTIVE"
+}
+
+### Listar usuarios (con auth)
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener usuario por id (con auth)
+GET {{baseUrl}}/api/user/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar usuario (con auth)
+PATCH {{baseUrl}}/api/user/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "username": "admin.actualizado",
+  "role": "STAFF",
+  "status": "ACTIVE"
+}
+
+### Eliminar usuario fisicamente (con auth)
+DELETE {{baseUrl}}/api/user/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de usuario (con auth)
+PATCH {{baseUrl}}/api/user/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}

@@ -20,3 +20,102 @@ Content-Type: application/json
   "price": 25.00,
   "state": "PENDIENTE"
 }
+# Items de orden API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
+
+## Rutas publicas
+
+### Crear item de orden (publico)
+POST {{baseUrl}}/api/orderitem/public
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "examId": 2,
+  "code": "EX123",
+  "name": "Examen general",
+  "price": 25.0,
+  "state": "PENDIENTE",
+  "status": "ACTIVE"
+}
+
+### Listar items de orden (publico)
+GET {{baseUrl}}/api/orderitems/public
+Accept: application/json
+
+### Obtener item de orden por id (publico)
+GET {{baseUrl}}/api/orderitem/1/public
+Accept: application/json
+
+### Actualizar item de orden (publico)
+PATCH {{baseUrl}}/api/orderitem/1/public
+Content-Type: application/json
+
+{
+  "state": "EN_PROCESO",
+  "price": 28.0,
+  "status": "ACTIVE"
+}
+
+### Eliminar item de orden fisicamente (publico)
+DELETE {{baseUrl}}/api/orderitem/1/public
+
+### Baja logica de item de orden (publico)
+PATCH {{baseUrl}}/api/orderitem/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear item de orden (con auth)
+POST {{baseUrl}}/api/orderitem
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "examId": 4,
+  "code": "EX900",
+  "name": "Perfil lipidico",
+  "price": 45.5,
+  "state": "PENDIENTE",
+  "status": "ACTIVE"
+}
+
+### Listar items de orden (con auth)
+GET {{baseUrl}}/api/orderitems
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener item de orden por id (con auth)
+GET {{baseUrl}}/api/orderitem/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar item de orden (con auth)
+PATCH {{baseUrl}}/api/orderitem/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "state": "VALIDADO",
+  "price": 47.0,
+  "status": "ACTIVE"
+}
+
+### Eliminar item de orden fisicamente (con auth)
+DELETE {{baseUrl}}/api/orderitem/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de item de orden (con auth)
+PATCH {{baseUrl}}/api/orderitem/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}

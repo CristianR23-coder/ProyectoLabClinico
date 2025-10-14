@@ -1,15 +1,11 @@
-# Samples - endpoints de ejemplo
+# Muestras API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todas las muestras
-GET http://localhost:4000/api/muestras
-Accept: application/json
+## Rutas publicas
 
-### Obtener muestra por id
-GET http://localhost:4000/api/muestra/1
-Accept: application/json
-
-### Crear muestra (ejemplo)
-POST http://localhost:4000/api/muestras
+### Crear muestra (publico)
+POST {{baseUrl}}/api/muestra/public
 Content-Type: application/json
 
 {
@@ -18,5 +14,86 @@ Content-Type: application/json
   "barcode": "ABC1234567",
   "drawDate": "2025-10-01T10:00:00Z",
   "state": "RECOLECTADA",
-  "observations": "Sin observaciones"
+  "observations": "Sin observaciones",
+  "status": "ACTIVE"
+}
+
+### Listar muestras (publico)
+GET {{baseUrl}}/api/muestras/public
+Accept: application/json
+
+### Obtener muestra por id (publico)
+GET {{baseUrl}}/api/muestra/1/public
+Accept: application/json
+
+### Actualizar muestra (publico)
+PATCH {{baseUrl}}/api/muestra/1/public
+Content-Type: application/json
+
+{
+  "state": "EN_PROCESO",
+  "observations": "En laboratorio",
+  "status": "ACTIVE"
+}
+
+### Eliminar muestra fisicamente (publico)
+DELETE {{baseUrl}}/api/muestra/1/public
+
+### Baja logica de muestra (publico)
+PATCH {{baseUrl}}/api/muestra/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear muestra (con auth)
+POST {{baseUrl}}/api/muestra
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "type": "ORINA",
+  "barcode": "XYZ987654",
+  "drawDate": "2025-10-05T08:30:00Z",
+  "state": "RECOLECTADA",
+  "observations": "Ayunas",
+  "status": "ACTIVE"
+}
+
+### Listar muestras (con auth)
+GET {{baseUrl}}/api/muestras
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener muestra por id (con auth)
+GET {{baseUrl}}/api/muestra/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar muestra (con auth)
+PATCH {{baseUrl}}/api/muestra/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "state": "EVALUADA",
+  "observations": "Resultados cargados",
+  "status": "ACTIVE"
+}
+
+### Eliminar muestra fisicamente (con auth)
+DELETE {{baseUrl}}/api/muestra/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de muestra (con auth)
+PATCH {{baseUrl}}/api/muestra/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

@@ -1,6 +1,6 @@
 # Orders - endpoints de ejemplo
 
-### Obtener todas las órdenes
+### Obtener todas las ordenes
 GET http://localhost:4000/api/ordenes
 Accept: application/json
 
@@ -21,7 +21,7 @@ Content-Type: application/json
   "observations": "Prueba"
 }
 
-### Crear orden enviando insuranceId (será validado)
+### Crear orden enviando insuranceId (sera validado)
 POST http://localhost:4000/api/ordenes
 Content-Type: application/json
 
@@ -33,4 +33,133 @@ Content-Type: application/json
   "insuranceId": 1,
   "netTotal": 50.00,
   "observations": "Prueba con insuranceId"
+}
+# Ordenes API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
+
+## Rutas publicas
+
+### Crear orden (publico)
+POST {{baseUrl}}/api/orden/public
+Content-Type: application/json
+
+{
+  "orderDate": "2025-10-06T09:00:00Z",
+  "priority": "RUTINA",
+  "patientId": 1,
+  "doctorId": 2,
+  "netTotal": 50.0,
+  "observations": "Solicitud inicial"
+}
+
+### Crear orden con aseguradora especifica (publico)
+POST {{baseUrl}}/api/orden/public
+Content-Type: application/json
+
+{
+  "orderDate": "2025-10-06T09:00:00Z",
+  "priority": "URGENTE",
+  "patientId": 1,
+  "doctorId": 3,
+  "insuranceId": 1,
+  "netTotal": 80.0,
+  "observations": "Prioridad alta"
+}
+
+### Listar ordenes (publico)
+GET {{baseUrl}}/api/ordenes/public
+Accept: application/json
+
+### Obtener orden por id (publico)
+GET {{baseUrl}}/api/orden/1/public
+Accept: application/json
+
+### Actualizar orden (publico)
+PATCH {{baseUrl}}/api/orden/1/public
+Content-Type: application/json
+
+{
+  "priority": "URGENTE",
+  "state": "EN_PROCESO",
+  "observations": "Actualizada por el laboratorio",
+  "netTotal": 95.5
+}
+
+### Eliminar orden fisicamente (publico)
+DELETE {{baseUrl}}/api/orden/1/public
+
+### Baja logica de orden (publico)
+PATCH {{baseUrl}}/api/orden/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear orden (con auth)
+POST {{baseUrl}}/api/orden
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "orderDate": "2025-10-07T10:30:00Z",
+  "priority": "RUTINA",
+  "patientId": 2,
+  "doctorId": 4,
+  "netTotal": 120.0,
+  "observations": "Orden creada con autenticacion"
+}
+
+### Crear orden con aseguradora especifica (con auth)
+POST {{baseUrl}}/api/orden
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "orderDate": "2025-10-07T12:00:00Z",
+  "priority": "URGENTE",
+  "patientId": 2,
+  "doctorId": 4,
+  "insuranceId": 3,
+  "netTotal": 145.75,
+  "observations": "Incluye insuranceId"
+}
+
+### Listar ordenes (con auth)
+GET {{baseUrl}}/api/ordenes
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener orden por id (con auth)
+GET {{baseUrl}}/api/orden/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar orden (con auth)
+PATCH {{baseUrl}}/api/orden/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "priority": "URGENTE",
+  "state": "VALIDADA",
+  "observations": "Actualizacion posterior",
+  "insuranceId": 2,
+  "netTotal": 150.0
+}
+
+### Eliminar orden fisicamente (con auth)
+DELETE {{baseUrl}}/api/orden/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de orden (con auth)
+PATCH {{baseUrl}}/api/orden/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

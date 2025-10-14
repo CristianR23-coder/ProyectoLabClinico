@@ -1,15 +1,11 @@
-# Examenes - endpoints de ejemplo
+# Examenes API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todos los exámenes
-GET http://localhost:4000/api/examenes
-Accept: application/json
+## Rutas publicas
 
-### Obtener examen por id
-GET http://localhost:4000/api/examen/1
-Accept: application/json
-
-### Crear examen (ejemplo)
-POST http://localhost:4000/api/examenes
+### Crear examen (publico)
+POST {{baseUrl}}/api/examen/public
 Content-Type: application/json
 
 {
@@ -18,6 +14,88 @@ Content-Type: application/json
   "method": "Automatizado",
   "specimenType": "SANGRE",
   "processingTimeMin": 60,
-  "priceBase": 10.00,
+  "priceBase": 25.0,
   "status": "ACTIVE"
+}
+
+### Listar examenes (publico)
+GET {{baseUrl}}/api/examenes/public
+Accept: application/json
+
+### Obtener examen por id (publico)
+GET {{baseUrl}}/api/examen/1/public
+Accept: application/json
+
+### Actualizar examen (publico)
+PATCH {{baseUrl}}/api/examen/1/public
+Content-Type: application/json
+
+{
+  "method": "Manual",
+  "processingTimeMin": 75,
+  "priceBase": 28.5,
+  "status": "ACTIVE"
+}
+
+### Eliminar examen fisicamente (publico)
+DELETE {{baseUrl}}/api/examen/1/public
+
+### Baja logica de examen (publico)
+PATCH {{baseUrl}}/api/examen/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear examen (con auth)
+POST {{baseUrl}}/api/examen
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "code": "GLU001",
+  "name": "Glucosa en sangre",
+  "method": "Enzimatico",
+  "specimenType": "SANGRE",
+  "processingTimeMin": 45,
+  "priceBase": 18.0,
+  "status": "ACTIVE"
+}
+
+### Listar examenes (con auth)
+GET {{baseUrl}}/api/examenes
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener examen por id (con auth)
+GET {{baseUrl}}/api/examen/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar examen (con auth)
+PATCH {{baseUrl}}/api/examen/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "method": "Automatizado",
+  "processingTimeMin": 50,
+  "priceBase": 20.0,
+  "status": "ACTIVE"
+}
+
+### Eliminar examen fisicamente (con auth)
+DELETE {{baseUrl}}/api/examen/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de examen (con auth)
+PATCH {{baseUrl}}/api/examen/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

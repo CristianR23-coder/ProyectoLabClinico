@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { UserRoutes } from "./user";
 import { DoctorRoutes } from "./doctor";
 import { ExamRoutes } from "./exam";
 import { InsuranceRoutes } from "./insurance";
@@ -21,7 +20,6 @@ import { AuthUserRoutes } from "./auth/users";
 import { AuthRoutes } from "./auth/auth";
 
 export class Routes {
-   public userRoutes: UserRoutes = new UserRoutes();
    public doctorRoutes: DoctorRoutes = new DoctorRoutes();
    public examRoutes: ExamRoutes = new ExamRoutes();
    public insuranceRoutes: InsuranceRoutes = new InsuranceRoutes();

@@ -1,17 +1,10 @@
 @baseUrl = http://localhost:4000
-@token =
+@authToken = {{authToken}}
 
 ### ================== ROLES ==================
 
-### Obtener todos los roles
-GET {{baseUrl}}/api/roles
-Authorization: Bearer {{token}}
-
-###
-
-### Crear un rol
-POST {{baseUrl}}/api/role
-Authorization: Bearer {{token}}
+### Crear rol (publico)
+POST {{baseUrl}}/api/role/public
 Content-Type: application/json
 
 {
@@ -19,17 +12,16 @@ Content-Type: application/json
   "is_active": "ACTIVE"
 }
 
-###
+### Listar roles (publico)
+GET {{baseUrl}}/api/roles/public
+Accept: application/json
 
-### Obtener rol por ID
-GET {{baseUrl}}/api/roles/1
-Authorization: Bearer {{token}}
+### Obtener rol por id (publico)
+GET {{baseUrl}}/api/role/1/public
+Accept: application/json
 
-###
-
-### Actualizar un rol
-PUT {{baseUrl}}/api/role/1
-Authorization: Bearer {{token}}
+### Actualizar rol (publico)
+PATCH {{baseUrl}}/api/role/1/public
 Content-Type: application/json
 
 {
@@ -37,14 +29,56 @@ Content-Type: application/json
   "is_active": "ACTIVE"
 }
 
-###
+### Eliminar rol fisicamente (publico)
+DELETE {{baseUrl}}/api/role/1/public
 
-### Eliminar un rol físicamente
+### Baja logica de rol (publico)
+PATCH {{baseUrl}}/api/role/1/logic/public
+Content-Type: application/json
+
+{
+  "is_active": "INACTIVE"
+}
+
+### Crear rol (con auth)
+POST {{baseUrl}}/api/role
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "SUPERVISOR",
+  "is_active": "ACTIVE"
+}
+
+### Listar roles (con auth)
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener rol por id (con auth)
+GET {{baseUrl}}/api/role/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar rol (con auth)
+PATCH {{baseUrl}}/api/role/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "SUPERVISOR_SENIOR",
+  "is_active": "ACTIVE"
+}
+
+### Eliminar rol fisicamente (con auth)
 DELETE {{baseUrl}}/api/role/1
-Authorization: Bearer {{token}}
+Authorization: Bearer {{authToken}}
 
-###
+### Baja logica de rol (con auth)
+PATCH {{baseUrl}}/api/role/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
 
-### Eliminar un rol lógicamente
-DELETE {{baseUrl}}/api/role/1/soft
-Authorization: Bearer {{token}}
+{
+  "is_active": "INACTIVE"
+}

@@ -1,22 +1,97 @@
-# Seguros - endpoints de ejemplo
+# Seguros API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todos los seguros
-GET http://localhost:4000/api/seguros
-Accept: application/json
+## Rutas publicas
 
-### Obtener seguro por id
-GET http://localhost:4000/api/seguro/1
-Accept: application/json
-
-### Crear seguro (ejemplo)
-POST http://localhost:4000/api/seguros
+### Crear seguro (publico)
+POST {{baseUrl}}/api/seguro/public
 Content-Type: application/json
 
 {
   "name": "Aseguradora X",
   "nit": "800123456",
   "phone": "3001234567",
-  "email": "contact@aseguradora.com",
+  "email": "contacto@aseguradora.com",
   "address": "Av. Principal 100",
   "status": "ACTIVE"
+}
+
+### Listar seguros (publico)
+GET {{baseUrl}}/api/seguros/public
+Accept: application/json
+
+### Obtener seguro por id (publico)
+GET {{baseUrl}}/api/seguro/1/public
+Accept: application/json
+
+### Actualizar seguro (publico)
+PATCH {{baseUrl}}/api/seguro/1/public
+Content-Type: application/json
+
+{
+  "phone": "3109876543",
+  "email": "servicio@aseguradora.com",
+  "status": "ACTIVE"
+}
+
+### Eliminar seguro fisicamente (publico)
+DELETE {{baseUrl}}/api/seguro/1/public
+
+### Baja logica de seguro (publico)
+PATCH {{baseUrl}}/api/seguro/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear seguro (con auth)
+POST {{baseUrl}}/api/seguro
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Aseguradora Y",
+  "nit": "900555444",
+  "phone": "3023332211",
+  "email": "contacto@aseguradoray.com",
+  "address": "Carrera 15 # 45-67",
+  "status": "ACTIVE"
+}
+
+### Listar seguros (con auth)
+GET {{baseUrl}}/api/seguros
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener seguro por id (con auth)
+GET {{baseUrl}}/api/seguro/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar seguro (con auth)
+PATCH {{baseUrl}}/api/seguro/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "phone": "3200001122",
+  "email": "soporte@aseguradoray.com",
+  "status": "ACTIVE"
+}
+
+### Eliminar seguro fisicamente (con auth)
+DELETE {{baseUrl}}/api/seguro/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de seguro (con auth)
+PATCH {{baseUrl}}/api/seguro/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

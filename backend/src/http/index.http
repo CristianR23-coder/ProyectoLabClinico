@@ -4,4 +4,4 @@
 GET http://localhost:4000/
 Accept: application/json
 
-# Puedes usar este archivo para agrupar pruebas rápidas del API
+# Puedes usar este archivo para agrupar pruebas rapidas del API

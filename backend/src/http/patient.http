@@ -1,15 +1,11 @@
-# Pacientes - endpoints de ejemplo
+# Pacientes API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todos los pacientes
-GET http://localhost:4000/api/pacientes
-Accept: application/json
+## Rutas publicas
 
-### Obtener paciente por id
-GET http://localhost:4000/api/paciente/1
-Accept: application/json
-
-### Crear paciente (ejemplo)
-POST http://localhost:4000/api/pacientes
+### Crear paciente (publico)
+POST {{baseUrl}}/api/paciente/public
 Content-Type: application/json
 
 {
@@ -22,6 +18,88 @@ Content-Type: application/json
   "phone": "3001112222",
   "email": "luis@example.com",
   "address": "Calle 123",
-  "userId": 3,
   "status": "ACTIVE"
+}
+
+### Listar pacientes (publico)
+GET {{baseUrl}}/api/pacientes/public
+Accept: application/json
+
+### Obtener paciente por id (publico)
+GET {{baseUrl}}/api/paciente/1/public
+Accept: application/json
+
+### Actualizar paciente (publico)
+PATCH {{baseUrl}}/api/paciente/1/public
+Content-Type: application/json
+
+{
+  "phone": "3009998888",
+  "address": "Carrera 45 # 12-34",
+  "status": "ACTIVE"
+}
+
+### Eliminar paciente fisicamente (publico)
+DELETE {{baseUrl}}/api/paciente/1/public
+
+### Baja logica de paciente (publico)
+PATCH {{baseUrl}}/api/paciente/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear paciente (con auth)
+POST {{baseUrl}}/api/paciente
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "docType": "CE",
+  "docNumber": "987654321",
+  "firstName": "Maria",
+  "lastName": "Gomez",
+  "birthDate": "1985-03-15",
+  "gender": "F",
+  "phone": "3015556666",
+  "email": "maria.gomez@example.com",
+  "address": "Avenida 10 # 20-30",
+  "status": "ACTIVE"
+}
+
+### Listar pacientes (con auth)
+GET {{baseUrl}}/api/pacientes
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener paciente por id (con auth)
+GET {{baseUrl}}/api/paciente/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar paciente (con auth)
+PATCH {{baseUrl}}/api/paciente/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "phone": "3021112233",
+  "address": "Calle 50 # 60-70",
+  "status": "ACTIVE"
+}
+
+### Eliminar paciente fisicamente (con auth)
+DELETE {{baseUrl}}/api/paciente/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de paciente (con auth)
+PATCH {{baseUrl}}/api/paciente/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

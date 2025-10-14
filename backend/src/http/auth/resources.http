@@ -1,52 +1,87 @@
 @baseUrl = http://localhost:4000
-@token =
+@authToken = {{authToken}}
 
 ### ================== RESOURCES ==================
 
-### Obtener todos los recursos
-GET {{baseUrl}}/api/resources
-Authorization: Bearer {{token}}
+### Crear recurso (publico)
+POST {{baseUrl}}/api/resource/public
+Content-Type: application/json
 
-###
+{
+  "path": "/api/pacientes/public",
+  "method": "GET",
+  "is_active": "ACTIVE"
+}
 
-### Crear un recurso
+
+### Listar recursos (publico)
+GET {{baseUrl}}/api/resources/public
+Accept: application/json
+
+### Obtener recurso por id (publico)
+GET {{baseUrl}}/api/resource/1/public
+Accept: application/json
+
+### Actualizar recurso (publico)
+PATCH {{baseUrl}}/api/resource/1/public
+Content-Type: application/json
+
+{
+  "method": "POST",
+  "is_active": "ACTIVE"
+}
+
+### Eliminar recurso fisicamente (publico)
+DELETE {{baseUrl}}/api/resource/1/public
+
+### Baja logica de recurso (publico)
+PATCH {{baseUrl}}/api/resource/1/logic/public
+Content-Type: application/json
+
+{
+  "is_active": "INACTIVE"
+}
+
+### Crear recurso (con auth)
 POST {{baseUrl}}/api/resource
-Authorization: Bearer {{token}}
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "path": "/api/patients",
-  "method": "GET",
+  "path": "/api/doctor",
+  "method": "PATCH",
   "is_active": "ACTIVE"
 }
 
-###
+### Listar recursos (con auth)
+GET {{baseUrl}}/api/resources
+Authorization: Bearer {{authToken}}
+Accept: application/json
 
-### Obtener recurso por ID
-GET {{baseUrl}}/api/resources/1
-Authorization: Bearer {{token}}
+### Obtener recurso por id (con auth)
+GET {{baseUrl}}/api/resource/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
 
-###
-
-### Actualizar un recurso
-PUT {{baseUrl}}/api/resource/1
-Authorization: Bearer {{token}}
+### Actualizar recurso (con auth)
+PATCH {{baseUrl}}/api/resource/1
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "path": "/api/patients",
-  "method": "GET",
+  "method": "DELETE",
   "is_active": "ACTIVE"
 }
 
-###
-
-### Eliminar un recurso físicamente
+### Eliminar recurso fisicamente (con auth)
 DELETE {{baseUrl}}/api/resource/1
-Authorization: Bearer {{token}}
+Authorization: Bearer {{authToken}}
 
-###
+### Baja logica de recurso (con auth)
+PATCH {{baseUrl}}/api/resource/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
 
-### Eliminar un recurso lógicamente
-DELETE {{baseUrl}}/api/resource/1/soft
-Authorization: Bearer {{token}}
+{
+  "is_active": "INACTIVE"
+}

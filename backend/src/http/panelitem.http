@@ -19,3 +19,104 @@ Content-Type: application/json
   "required": true,
   "order": 1
 }
+# Items de panel API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
+
+## Rutas publicas
+
+### Crear item de panel (publico)
+POST {{baseUrl}}/api/panelitem/public
+Content-Type: application/json
+
+{
+  "panelId": 1,
+  "kind": "EXAM",
+  "examId": 2,
+  "required": true,
+  "order": 1,
+  "notes": "Examen obligatorio",
+  "status": "ACTIVE"
+}
+
+### Listar items de panel (publico)
+GET {{baseUrl}}/api/panelitems/public
+Accept: application/json
+
+### Obtener item de panel por id (publico)
+GET {{baseUrl}}/api/panelitem/1/public
+Accept: application/json
+
+### Actualizar item de panel (publico)
+PATCH {{baseUrl}}/api/panelitem/1/public
+Content-Type: application/json
+
+{
+  "required": false,
+  "order": 2,
+  "notes": "Se vuelve opcional",
+  "status": "ACTIVE"
+}
+
+### Eliminar item de panel fisicamente (publico)
+DELETE {{baseUrl}}/api/panelitem/1/public
+
+### Baja logica de item de panel (publico)
+PATCH {{baseUrl}}/api/panelitem/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear item de panel (con auth)
+POST {{baseUrl}}/api/panelitem
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "panelId": 2,
+  "kind": "PARAMETER",
+  "parameterId": 5,
+  "required": true,
+  "order": 1,
+  "notes": "Incluye referencia",
+  "status": "ACTIVE"
+}
+
+### Listar items de panel (con auth)
+GET {{baseUrl}}/api/panelitems
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener item de panel por id (con auth)
+GET {{baseUrl}}/api/panelitem/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar item de panel (con auth)
+PATCH {{baseUrl}}/api/panelitem/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "required": true,
+  "order": 3,
+  "notes": "Reordenado en el panel",
+  "status": "ACTIVE"
+}
+
+### Eliminar item de panel fisicamente (con auth)
+DELETE {{baseUrl}}/api/panelitem/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de item de panel (con auth)
+PATCH {{baseUrl}}/api/panelitem/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}

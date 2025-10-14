@@ -55,7 +55,6 @@ export class App {
   private routes(): void {
     // Root opcional:
     this.app.get('/', (_req, res) => res.json({ message: 'API running 🚀' }));
-    this.routePrv.userRoutes.routes(this.app);
     this.routePrv.doctorRoutes.routes(this.app);
     this.routePrv.examRoutes.routes(this.app);
     this.routePrv.insuranceRoutes.routes(this.app);

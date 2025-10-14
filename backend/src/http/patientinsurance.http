@@ -4,7 +4,7 @@
 GET http://localhost:4000/api/patientinsurances
 Accept: application/json
 
-### Crear relación paciente-aseguradora (ejemplo)
+### Crear relacion paciente-aseguradora (ejemplo)
 POST http://localhost:4000/api/patientinsurances
 Content-Type: application/json
 
@@ -15,4 +15,103 @@ Content-Type: application/json
   "plan": "BASIC",
   "startDate": "2024-01-01",
   "status": "ACTIVE"
+}
+# Paciente - Aseguradora API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
+
+## Rutas publicas
+
+### Crear relacion paciente-aseguradora (publico)
+POST {{baseUrl}}/api/patientinsurance/public
+Content-Type: application/json
+
+{
+  "patientId": 1,
+  "insuranceId": 1,
+  "policyNumber": "00012345",
+  "plan": "BASIC",
+  "startDate": "2024-01-01",
+  "endDate": null,
+  "status": "ACTIVE"
+}
+
+### Listar relaciones (publico)
+GET {{baseUrl}}/api/patientinsurances/public
+Accept: application/json
+
+### Obtener relacion por paciente y aseguradora (publico)
+GET {{baseUrl}}/api/patientinsurance/1/1/public
+Accept: application/json
+
+### Actualizar relacion (publico)
+PATCH {{baseUrl}}/api/patientinsurance/1/1/public
+Content-Type: application/json
+
+{
+  "plan": "PREMIUM",
+  "endDate": "2025-12-31",
+  "status": "ACTIVE"
+}
+
+### Eliminar relacion fisicamente (publico)
+DELETE {{baseUrl}}/api/patientinsurance/1/1/public
+
+### Baja logica de relacion (publico)
+PATCH {{baseUrl}}/api/patientinsurance/1/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear relacion paciente-aseguradora (con auth)
+POST {{baseUrl}}/api/patientinsurance
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "patientId": 2,
+  "insuranceId": 3,
+  "policyNumber": "A-4567890",
+  "plan": "GOLD",
+  "startDate": "2025-01-01",
+  "endDate": null,
+  "status": "ACTIVE"
+}
+
+### Listar relaciones (con auth)
+GET {{baseUrl}}/api/patientinsurances
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener relacion por paciente y aseguradora (con auth)
+GET {{baseUrl}}/api/patientinsurance/2/3
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar relacion (con auth)
+PATCH {{baseUrl}}/api/patientinsurance/2/3
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "plan": "PLATINUM",
+  "endDate": "2026-01-01",
+  "status": "ACTIVE"
+}
+
+### Eliminar relacion fisicamente (con auth)
+DELETE {{baseUrl}}/api/patientinsurance/2/3
+Authorization: Bearer {{authToken}}
+
+### Baja logica de relacion (con auth)
+PATCH {{baseUrl}}/api/patientinsurance/2/3/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

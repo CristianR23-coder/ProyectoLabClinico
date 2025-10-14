@@ -1,57 +1,90 @@
 @baseUrl = http://localhost:4000
-@token =
+@authToken = {{authToken}}
 
 ### ================== USUARIOS (ADMIN) ==================
 
-### Obtener todos los usuarios
-GET {{baseUrl}}/api/auth/users
-Authorization: Bearer {{token}}
+### Crear usuario (publico)
+POST {{baseUrl}}/api/auth/users/public
+Content-Type: application/json
 
-###
+{
+  "username": "operador",
+  "password": "Operador123!",
+  "role": "STAFF",
+  "status": "ACTIVE"
+}
 
-### Crear un usuario
+### Listar usuarios (publico)
+GET {{baseUrl}}/api/auth/users/public
+Accept: application/json
+
+### Obtener usuario por id (publico)
+GET {{baseUrl}}/api/auth/users/1/public
+Accept: application/json
+
+### Actualizar usuario (publico)
+PATCH {{baseUrl}}/api/auth/users/1/public
+Content-Type: application/json
+
+{
+  "username": "operador_actualizado",
+  "role": "STAFF",
+  "status": "ACTIVE"
+}
+
+### Eliminar usuario fisicamente (publico)
+DELETE {{baseUrl}}/api/auth/users/1/public
+
+### Baja logica de usuario (publico)
+PATCH {{baseUrl}}/api/auth/users/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+### Crear usuario (con auth)
 POST {{baseUrl}}/api/auth/users
-Authorization: Bearer {{token}}
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "username": "admin",
+  "username": "supervisor",
+  "password": "Supervisor#2025",
   "role": "ADMIN",
-  "email": "admin@example.com",
-  "password": "admin",
-  "status": "ACTIVE",
-  "avatar": "https://example.com/avatar.png"
+  "status": "ACTIVE"
 }
 
-###
+### Listar usuarios (con auth)
+GET {{baseUrl}}/api/auth/users
+Authorization: Bearer {{authToken}}
+Accept: application/json
 
-### Obtener usuario por ID
-GET {{baseUrl}}/api/auth/users/39
-Authorization: Bearer {{token}}
+### Obtener usuario por id (con auth)
+GET {{baseUrl}}/api/auth/users/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
 
-###
-
-### Actualizar un usuario
-PUT {{baseUrl}}/api/auth/users/1
-Authorization: Bearer {{token}}
+### Actualizar usuario (con auth)
+PATCH {{baseUrl}}/api/auth/users/1
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "username": "usuario.actualizado",
-  "email": "usuario.demo@example.com",
-  "password": "Secret456!",
-  "status": "ACTIVE",
-  "avatar": "https://example.com/avatar.png"
+  "username": "supervisor_jefe",
+  "role": "ADMIN",
+  "status": "ACTIVE"
 }
 
-###
+### Eliminar usuario fisicamente (con auth)
+DELETE {{baseUrl}}/api/auth/users/1
+Authorization: Bearer {{authToken}}
 
-### Eliminar un usuario físicamente
-DELETE {{baseUrl}}/api/auth/users/39
-Authorization: Bearer {{token}}
+### Baja logica de usuario (con auth)
+PATCH {{baseUrl}}/api/auth/users/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
 
-###
-
-### Eliminar un usuario lógicamente
-PATCH {{baseUrl}}/api/auth/users/39/deactivate
-Authorization: Bearer {{token}}
+{
+  "status": "INACTIVE"
+}

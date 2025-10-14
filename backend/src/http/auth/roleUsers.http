@@ -1,17 +1,10 @@
 @baseUrl = http://localhost:4000
-@token =
+@authToken = {{authToken}}
 
 ### ================== ROLE USERS ==================
 
-### Obtener todos los role-users
-GET {{baseUrl}}/api/role-users
-Authorization: Bearer {{token}}
-
-###
-
-### Crear un role-user
-POST {{baseUrl}}/api/role-user
-Authorization: Bearer {{token}}
+### Crear role-user (publico)
+POST {{baseUrl}}/api/role-user/public
 Content-Type: application/json
 
 {
@@ -20,33 +13,74 @@ Content-Type: application/json
   "is_active": "ACTIVE"
 }
 
-###
+### Listar role-users (publico)
+GET {{baseUrl}}/api/role-users/public
+Accept: application/json
 
-### Obtener role-user por ID
-GET {{baseUrl}}/api/role-users/1
-Authorization: Bearer {{token}}
+### Obtener role-user por id (publico)
+GET {{baseUrl}}/api/role-user/1/public
+Accept: application/json
 
-###
-
-### Actualizar un role-user
-PUT {{baseUrl}}/api/role-user/1
-Authorization: Bearer {{token}}
+### Actualizar role-user (publico)
+PATCH {{baseUrl}}/api/role-user/1/public
 Content-Type: application/json
 
 {
   "role_id": 2,
-  "user_id": 1,
   "is_active": "ACTIVE"
 }
 
-###
+### Eliminar role-user fisicamente (publico)
+DELETE {{baseUrl}}/api/role-user/1/public
 
-### Eliminar un role-user físicamente
+### Baja logica de role-user (publico)
+PATCH {{baseUrl}}/api/role-user/1/logic/public
+Content-Type: application/json
+
+{
+  "is_active": "INACTIVE"
+}
+
+### Crear role-user (con auth)
+POST {{baseUrl}}/api/role-user
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "role_id": 3,
+  "user_id": 2,
+  "is_active": "ACTIVE"
+}
+
+### Listar role-users (con auth)
+GET {{baseUrl}}/api/role-users
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener role-user por id (con auth)
+GET {{baseUrl}}/api/role-user/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar role-user (con auth)
+PATCH {{baseUrl}}/api/role-user/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "role_id": 3,
+  "is_active": "ACTIVE"
+}
+
+### Eliminar role-user fisicamente (con auth)
 DELETE {{baseUrl}}/api/role-user/1
-Authorization: Bearer {{token}}
+Authorization: Bearer {{authToken}}
 
-###
+### Baja logica de role-user (con auth)
+PATCH {{baseUrl}}/api/role-user/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
 
-### Eliminar un role-user lógicamente
-DELETE {{baseUrl}}/api/role-user/1/soft
-Authorization: Bearer {{token}}
+{
+  "is_active": "INACTIVE"
+}

@@ -1,15 +1,11 @@
-# Resultados - endpoints de ejemplo
+# Resultados API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todos los resultados
-GET http://localhost:4000/api/resultados
-Accept: application/json
+## Rutas publicas
 
-### Obtener resultado por id
-GET http://localhost:4000/api/resultado/1
-Accept: application/json
-
-### Crear resultado (ejemplo)
-POST http://localhost:4000/api/resultados
+### Crear resultado (publico)
+POST {{baseUrl}}/api/resultado/public
 Content-Type: application/json
 
 {
@@ -18,8 +14,106 @@ Content-Type: application/json
   "examId": 2,
   "parameterId": 5,
   "numValue": 12.34,
+  "textValue": null,
+  "outRange": false,
   "dateResult": "2025-10-02T12:00:00Z",
   "validatedForId": 2,
   "validatedFor": "Dr. Ejemplo",
-  "resultState": "PENDIENTE"
+  "method": "Quimica clinica",
+  "units": "mg/dL",
+  "comment": "Sin observaciones",
+  "resultState": "PENDIENTE",
+  "status": "ACTIVE"
+}
+
+### Listar resultados (publico)
+GET {{baseUrl}}/api/resultados/public
+Accept: application/json
+
+### Obtener resultado por id (publico)
+GET {{baseUrl}}/api/resultado/1/public
+Accept: application/json
+
+### Actualizar resultado (publico)
+PATCH {{baseUrl}}/api/resultado/1/public
+Content-Type: application/json
+
+{
+  "numValue": 13.5,
+  "outRange": false,
+  "comment": "Ajuste de valor",
+  "resultState": "VALIDADO",
+  "status": "ACTIVE"
+}
+
+### Eliminar resultado fisicamente (publico)
+DELETE {{baseUrl}}/api/resultado/1/public
+
+### Baja logica de resultado (publico)
+PATCH {{baseUrl}}/api/resultado/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear resultado (con auth)
+POST {{baseUrl}}/api/resultado
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "sampleId": 2,
+  "examId": 3,
+  "parameterId": 6,
+  "numValue": 98.6,
+  "textValue": null,
+  "outRange": true,
+  "dateResult": "2025-10-04T09:30:00Z",
+  "validatedForId": 5,
+  "validatedFor": "Dra. Validacion",
+  "method": "Inmunoensayo",
+  "units": "UI/mL",
+  "comment": "Valores fuera de rango",
+  "resultState": "PENDIENTE",
+  "status": "ACTIVE"
+}
+
+### Listar resultados (con auth)
+GET {{baseUrl}}/api/resultados
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener resultado por id (con auth)
+GET {{baseUrl}}/api/resultado/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar resultado (con auth)
+PATCH {{baseUrl}}/api/resultado/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "numValue": 101.2,
+  "outRange": true,
+  "comment": "Revision en curso",
+  "resultState": "PENDIENTE",
+  "status": "ACTIVE"
+}
+
+### Eliminar resultado fisicamente (con auth)
+DELETE {{baseUrl}}/api/resultado/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de resultado (con auth)
+PATCH {{baseUrl}}/api/resultado/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

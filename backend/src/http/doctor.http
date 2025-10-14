@@ -1,15 +1,11 @@
-# Doctores - endpoints de ejemplo
+# Doctores API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todos los doctores
-GET http://localhost:4000/api/doctores
-Accept: application/json
+## Rutas publicas
 
-### Obtener doctor por id
-GET http://localhost:4000/api/doctor/9
-Accept: application/json
-
-### Crear doctor (ejemplo)
-POST http://localhost:4000/api/doctores
+### Crear doctor (publico)
+POST {{baseUrl}}/api/doctores/public
 Content-Type: application/json
 
 {
@@ -17,7 +13,91 @@ Content-Type: application/json
   "docNumber": "1029860270",
   "name": "Jesus Monsalvo",
   "specialty": "Cardiologia",
-  "phone": "987654321",
-  "email": "ana.gomez@example.com",
+  "medicalLicense": "MED-12345",
+  "phone": "3001234567",
+  "email": "jesus.monsalvo@example.com",
+  "user_id": 1,
   "status": "ACTIVE"
+}
+
+### Listar doctores (publico)
+GET {{baseUrl}}/api/doctores/public
+Accept: application/json
+
+### Obtener doctor por id (publico)
+GET {{baseUrl}}/api/doctor/1/public
+Accept: application/json
+
+### Actualizar doctor (publico)
+PATCH {{baseUrl}}/api/doctor/1/public
+Content-Type: application/json
+
+{
+  "phone": "3209876543",
+  "specialty": "Medicina interna",
+  "status": "ACTIVE"
+}
+
+### Eliminar doctor fisicamente (publico)
+DELETE {{baseUrl}}/api/doctor/1/public
+
+### Baja logica de doctor (publico)
+PATCH {{baseUrl}}/api/doctor/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear doctor (con auth)
+POST {{baseUrl}}/api/doctor
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "docType": "CC",
+  "docNumber": "1034567890",
+  "name": "Ana Quintero",
+  "specialty": "Pediatria",
+  "medicalLicense": "MED-67890",
+  "phone": "3015554444",
+  "email": "ana.quintero@example.com",
+  "user_id": 2,
+  "status": "ACTIVE"
+}
+
+### Listar doctores (con auth)
+GET {{baseUrl}}/api/doctores
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener doctor por id (con auth)
+GET {{baseUrl}}/api/doctor/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar doctor (con auth)
+PATCH {{baseUrl}}/api/doctor/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "phone": "3220001111",
+  "specialty": "Dermatologia",
+  "status": "ACTIVE"
+}
+
+### Eliminar doctor fisicamente (con auth)
+DELETE {{baseUrl}}/api/doctor/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de doctor (con auth)
+PATCH {{baseUrl}}/api/doctor/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

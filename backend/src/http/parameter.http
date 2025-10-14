@@ -1,15 +1,11 @@
-# Parameters - endpoints de ejemplo
+# Parametros API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
 
-### Obtener todos los parámetros
-GET http://localhost:4000/api/parametros
-Accept: application/json
+## Rutas publicas
 
-### Obtener parámetro por id
-GET http://localhost:4000/api/parametro/1
-Accept: application/json
-
-### Crear parámetro (ejemplo)
-POST http://localhost:4000/api/parametros
+### Crear parametro (publico)
+POST {{baseUrl}}/api/parametro/public
 Content-Type: application/json
 
 {
@@ -20,5 +16,92 @@ Content-Type: application/json
   "refMin": 12.0,
   "refMax": 17.0,
   "typeValue": "NUMERICO",
-  "decimals": 2
+  "decimals": 2,
+  "visualOrder": 1,
+  "status": "ACTIVE"
+}
+
+### Listar parametros (publico)
+GET {{baseUrl}}/api/parametros/public
+Accept: application/json
+
+### Obtener parametro por id (publico)
+GET {{baseUrl}}/api/parametro/1/public
+Accept: application/json
+
+### Actualizar parametro (publico)
+PATCH {{baseUrl}}/api/parametro/1/public
+Content-Type: application/json
+
+{
+  "unit": "mg/dL",
+  "refMin": 11.5,
+  "refMax": 16.5,
+  "status": "ACTIVE"
+}
+
+### Eliminar parametro fisicamente (publico)
+DELETE {{baseUrl}}/api/parametro/1/public
+
+### Baja logica de parametro (publico)
+PATCH {{baseUrl}}/api/parametro/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear parametro (con auth)
+POST {{baseUrl}}/api/parametro
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "examenId": 3,
+  "code": "P010",
+  "name": "Glucosa",
+  "unit": "mg/dL",
+  "refMin": 70,
+  "refMax": 110,
+  "typeValue": "NUMERICO",
+  "decimals": 1,
+  "visualOrder": 2,
+  "status": "ACTIVE"
+}
+
+### Listar parametros (con auth)
+GET {{baseUrl}}/api/parametros
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener parametro por id (con auth)
+GET {{baseUrl}}/api/parametro/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar parametro (con auth)
+PATCH {{baseUrl}}/api/parametro/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "unit": "mmol/L",
+  "refMin": 4.0,
+  "refMax": 6.0,
+  "status": "ACTIVE"
+}
+
+### Eliminar parametro fisicamente (con auth)
+DELETE {{baseUrl}}/api/parametro/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de parametro (con auth)
+PATCH {{baseUrl}}/api/parametro/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }

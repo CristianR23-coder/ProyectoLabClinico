@@ -13,7 +13,96 @@ POST http://localhost:4000/api/paneles
 Content-Type: application/json
 
 {
-  "name": "Panel Básico",
-  "description": "Paquete de pruebas básicas",
+  "name": "Panel Basico",
+  "description": "Paquete de pruebas basicas",
   "status": "ACTIVE"
+}
+# Paneles API
+@baseUrl = http://localhost:4000
+@authToken = {{authToken}}
+
+## Rutas publicas
+
+### Crear panel (publico)
+POST {{baseUrl}}/api/panel/public
+Content-Type: application/json
+
+{
+  "name": "Panel Basico",
+  "description": "Paquete de pruebas basicas",
+  "status": "ACTIVE"
+}
+
+### Listar paneles (publico)
+GET {{baseUrl}}/api/paneles/public
+Accept: application/json
+
+### Obtener panel por id (publico)
+GET {{baseUrl}}/api/panel/1/public
+Accept: application/json
+
+### Actualizar panel (publico)
+PATCH {{baseUrl}}/api/panel/1/public
+Content-Type: application/json
+
+{
+  "description": "Paquete de pruebas basicas actualizado",
+  "status": "ACTIVE"
+}
+
+### Eliminar panel fisicamente (publico)
+DELETE {{baseUrl}}/api/panel/1/public
+
+### Baja logica de panel (publico)
+PATCH {{baseUrl}}/api/panel/1/logic/public
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+## Rutas protegidas (requieren token)
+
+### Crear panel (con auth)
+POST {{baseUrl}}/api/panel
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Panel Avanzado",
+  "description": "Panel con pruebas especializadas",
+  "status": "ACTIVE"
+}
+
+### Listar paneles (con auth)
+GET {{baseUrl}}/api/paneles
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Obtener panel por id (con auth)
+GET {{baseUrl}}/api/panel/1
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Actualizar panel (con auth)
+PATCH {{baseUrl}}/api/panel/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "description": "Panel especializado actualizado",
+  "status": "ACTIVE"
+}
+
+### Eliminar panel fisicamente (con auth)
+DELETE {{baseUrl}}/api/panel/1
+Authorization: Bearer {{authToken}}
+
+### Baja logica de panel (con auth)
+PATCH {{baseUrl}}/api/panel/1/logic
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
 }
