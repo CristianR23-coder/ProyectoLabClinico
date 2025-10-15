@@ -25,6 +25,17 @@ async function createFakeData() {
     if (dialect === 'mysql') {
       // Desactivar temporalmente las comprobaciones de FK para poder dropear tablas con dependencias
       await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    } else if (dialect === 'mssql') {
+      // Elimina todas las FK antes de sincronizar con force:true para evitar errores de múltiples dependencias
+      const dropFkSql = `
+        DECLARE @sql NVARCHAR(MAX) = N'';
+        SELECT @sql = @sql + 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(pt.schema_id)) + '.' + QUOTENAME(pt.name) +
+                       ' DROP CONSTRAINT ' + QUOTENAME(fk.name) + ';'
+        FROM sys.foreign_keys fk
+        JOIN sys.tables pt ON fk.parent_object_id = pt.object_id;
+        IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+      `;
+      await sequelize.query(dropFkSql);
     }
 
     await sequelize.sync({ force: true });
@@ -45,6 +56,8 @@ async function createFakeData() {
         // no bloquear el proceso si falla al reactivar
         console.warn('Warning: could not re-enable FOREIGN_KEY_CHECKS', e);
       }
+    } else if (dialect === 'mssql') {
+      // No es necesario restaurar las FK: sync() las recrea al volver a crear las tablas
     }
   }
 
@@ -276,7 +289,12 @@ async function createFakeData() {
         sampleId: sm.id,
         examId: it.examId,
         parameterId: pr ? pr.id : parameters[0]?.id ?? 1,
-        numValue: pr ? faker.number.float({ min: pr.refMin ?? 0, max: pr.refMax ?? 100 }) : undefined,
+        numValue: pr
+          ? faker.number.float({
+            min: Math.min(pr.refMin ?? 0, pr.refMax ?? 100),
+            max: Math.max(pr.refMin ?? 0, pr.refMax ?? 100),
+          })
+          : undefined,
         textValue: pr ? null : faker.lorem.word(),
         outRange: faker.datatype.boolean(),
         dateResult: faker.date.recent({ days: 5 }),

@@ -43,6 +43,8 @@ PanelItem.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "panels", key: "id" },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
 
     kind: {
@@ -54,12 +56,16 @@ PanelItem.init(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: { model: "exams", key: "id" }, // nombre de tabla en duro, siguiendo tu patrón
+      onDelete: "NO ACTION",
+      onUpdate: "CASCADE",
     },
 
     parameterId: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: { model: "parameters", key: "id" },
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
     },
 
     required: {
@@ -93,19 +99,27 @@ PanelItem.init(
 
 // Relaciones adicionales (opcionales si existen los modelos referenciados)
 Exam.hasMany(PanelItem, {
-  foreignKey: "examId",
+  foreignKey: { name: "examId", allowNull: true },
   sourceKey: "id",
+  onDelete: "NO ACTION",
+  onUpdate: "CASCADE",
 });
 PanelItem.belongsTo(Exam, {
-  foreignKey: "examId",
+  foreignKey: { name: "examId", allowNull: true },
   targetKey: "id",
+  onDelete: "NO ACTION",
+  onUpdate: "CASCADE",
 });
 
 Parameter.hasMany(PanelItem, {
-  foreignKey: "parameterId",
+  foreignKey: { name: "parameterId", allowNull: true },
   sourceKey: "id",
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
 });
 PanelItem.belongsTo(Parameter, {
-  foreignKey: "parameterId",
+  foreignKey: { name: "parameterId", allowNull: true },
   targetKey: "id",
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
 });

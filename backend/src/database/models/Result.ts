@@ -67,21 +67,29 @@ Result.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "orders", key: "id" },
+      onDelete: "NO ACTION",
+      onUpdate: "CASCADE",
     },
     sampleId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "samples", key: "id" },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     examId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "exams", key: "id" },
+      onDelete: "NO ACTION",
+      onUpdate: "CASCADE",
     },
     parameterId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "parameters", key: "id" },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
 
     numValue: {
@@ -147,16 +155,36 @@ Result.init(
 // Relaciones
 // ────────────────────────────
 Order.hasMany(Result, { foreignKey: "orderId", sourceKey: "id" });
-Result.belongsTo(Order, { foreignKey: "orderId", targetKey: "id" });
+Result.belongsTo(Order, {
+  foreignKey: { name: "orderId", allowNull: false },
+  targetKey: "id",
+  onDelete: "NO ACTION",
+  onUpdate: "CASCADE",
+});
 
 Sample.hasMany(Result, { foreignKey: "sampleId", sourceKey: "id" });
-Result.belongsTo(Sample, { foreignKey: "sampleId", targetKey: "id" });
+Result.belongsTo(Sample, {
+  foreignKey: { name: "sampleId", allowNull: false },
+  targetKey: "id",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 Exam.hasMany(Result, { foreignKey: "examId", sourceKey: "id" });
-Result.belongsTo(Exam, { foreignKey: "examId", targetKey: "id" });
+Result.belongsTo(Exam, {
+  foreignKey: { name: "examId", allowNull: false },
+  targetKey: "id",
+  onDelete: "NO ACTION",
+  onUpdate: "CASCADE",
+});
 
 Parameter.hasMany(Result, { foreignKey: "parameterId", sourceKey: "id" });
-Result.belongsTo(Parameter, { foreignKey: "parameterId", targetKey: "id" });
+Result.belongsTo(Parameter, {
+  foreignKey: { name: "parameterId", allowNull: false },
+  targetKey: "id",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 Doctor.hasMany(Result, { foreignKey: "validatedForId", sourceKey: "id" });
 Result.belongsTo(Doctor, { foreignKey: "validatedForId", targetKey: "id" });

@@ -7,6 +7,7 @@ export interface ResourceI {
   id?: number;
   path: string;
   method: string;
+  description?: string;
   is_active?: "ACTIVE" | "INACTIVE";
 }
 
@@ -31,6 +32,10 @@ Resource.init(
     method: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     is_active: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),

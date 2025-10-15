@@ -50,10 +50,14 @@ Panel.init(
 
 // 1:N Panel → PanelItem
 Panel.hasMany(PanelItem, {
-  foreignKey: "panelId",
+  foreignKey: { name: "panelId", allowNull: false },
   sourceKey: "id",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
 });
 PanelItem.belongsTo(Panel, {
-  foreignKey: "panelId",
+  foreignKey: { name: "panelId", allowNull: false },
   targetKey: "id",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
 });
