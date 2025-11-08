@@ -65,6 +65,12 @@ export class UpdatePatient implements OnInit {
     if (!this.item?.id) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
+    const insuranceId = this.form.controls.insuranceId.value;
+    if (insuranceId && !this.insurances.some(i => i.id === insuranceId)) {
+      alert('La aseguradora seleccionada ya no está disponible. Selecciona otra e inténtalo de nuevo.');
+      return;
+    }
+
     const v = this.form.getRawValue();
     const insurance = v.insuranceId ? this.insurances.find(i => i.id === v.insuranceId) : undefined;
 

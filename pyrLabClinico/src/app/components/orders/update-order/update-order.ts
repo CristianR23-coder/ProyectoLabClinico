@@ -19,6 +19,9 @@ import { OrderI, OrderState } from '../../../models/order-model';
 import { PatientI } from '../../../models/patient-model';
 import { DoctorI } from '../../../models/doctor-model';
 import { InsuranceI } from '../../../models/insurance-model';
+import { PatientsService } from '../../../services/patient-service';
+import { DoctorsService } from '../../../services/doctor-service';
+import { InsurancesService } from '../../../services/insurance-service';
 import { OrderItemI } from '../../../models/order-item-model';
 import { ExamI } from '../../../models/exam-model';
 
@@ -42,25 +45,18 @@ export class UpdateOrder implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private ordersSvc = inject(OrdersService);
   private examsSvc = inject(ExamsService);
+  private patientsSvc = inject(PatientsService);
+  private doctorsSvc = inject(DoctorsService);
+  private insSvc = inject(InsurancesService);
 
   private sub?: Subscription;
   loading = true;
   saving = false;
   order?: OrderI;
 
-  // catálogos demo
-  patients: PatientI[] = [
-    { id: 501, docType: 'CC', docNumber: '123456', firstName: 'Ana', lastName: 'Perez', status: 'ACTIVE' },
-    { id: 502, docType: 'CC', docNumber: '789012', firstName: 'Luis', lastName: 'Gomez', status: 'ACTIVE' }
-  ];
-  doctors: DoctorI[] = [
-    { id: 80, docNumber: 'M-998', name: 'Dr. Lopez', status: 'ACTIVE' },
-    { id: 81, docNumber: 'M-777', name: 'Dr. Ruiz', status: 'ACTIVE' }
-  ];
-  insurances: InsuranceI[] = [
-    { id: 7, name: 'Health Plus', nit: '900.123.456', status: 'ACTIVE' },
-    { id: 8, name: 'Care One', nit: '901.777.111', status: 'ACTIVE' }
-  ];
+  patients: PatientI[] = [];
+  doctors: DoctorI[] = [];
+  insurances: InsuranceI[] = [];
 
   // catálogo de exámenes
   examsAll: ExamI[] = [];
@@ -97,8 +93,10 @@ export class UpdateOrder implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    // cargar exámenes
     this.examsSvc.list().subscribe(list => (this.examsAll = list));
+    this.patientsSvc.list({ status: 'ACTIVE' }).subscribe(list => this.patients = list);
+    this.doctorsSvc.list({ status: 'ACTIVE' }).subscribe(list => this.doctors = list);
+    this.insSvc.list({ status: 'ACTIVE' }).subscribe(list => this.insurances = list);
 
     if (this.orderId == null) {
       const idParam = this.route.snapshot.paramMap.get('id');

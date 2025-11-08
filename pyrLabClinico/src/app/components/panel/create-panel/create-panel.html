@@ -38,7 +38,7 @@
       <ng-template pTemplate="body" let-row let-i="rowIndex">
         <tr [formGroup]="row">
           <td>
-            <p-select formControlName="kind" [options]="kindOptions"></p-select>
+            <p-select formControlName="kind" [options]="kindOptions" appendTo="body"></p-select>
           </td>
 
           <td>
@@ -48,7 +48,8 @@
                         optionLabel="name"
                         optionValue="id"
                         [showClear]="true"
-                        placeholder="Selecciona examen">
+                        placeholder="Selecciona examen"
+                        appendTo="body">
               </p-select>
             </ng-container>
             <ng-template #paramSel>

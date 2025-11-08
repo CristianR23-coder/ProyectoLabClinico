@@ -3,7 +3,7 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges, inject } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { map, startWith, switchMap } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
@@ -45,37 +45,23 @@ export class AllParameters implements OnInit, OnChanges {
   rows$!: Observable<ParameterI[]>;
 
   ngOnInit(): void {
-    // primer valor del id (puede ser null)
     this.examenId$.next(this.examenId ?? null);
 
-    // ✅ construir el stream aquí
     this.rows$ = combineLatest([
-      this.svc.items$,                                              // todos los parámetros del mock
       this.form.valueChanges.pipe(startWith(this.form.getRawValue())),
       this.examenId$.pipe(startWith(this.examenId ?? null))
     ]).pipe(
-      map(([items, v, id]) => {
-        let out = items as ParameterI[];
-
-        if (id != null) {
-          out = out.filter(p => p.examenId === id);                 // filtra por examen solo si hay id
-        }
-
-        const q = (v?.q ?? '').trim().toLowerCase();
-        if (q) {
-          out = out.filter(p => {
-            const code = (p.code ?? '').toLowerCase();
-            const name = (p.name ?? '').toLowerCase();
-            const unit = (p.unit ?? '').toLowerCase();
-            return code.includes(q) || name.includes(q) || unit.includes(q);
-          });
-        }
-
-        return [...out].sort((a, b) =>
-          (a.visualOrder ?? 0) - (b.visualOrder ?? 0) ||
-          (a.id ?? 0) - (b.id ?? 0)
-        );
-      })
+      switchMap(([v, id]) =>
+        this.svc.list({
+          q: v?.q || undefined,
+          examenId: id != null ? Number(id) : undefined
+        }).pipe(
+          map(out => [...out].sort((a, b) =>
+            (a.visualOrder ?? 0) - (b.visualOrder ?? 0) ||
+            (a.id ?? 0) - (b.id ?? 0)
+          ))
+        )
+      )
     );
   }
 

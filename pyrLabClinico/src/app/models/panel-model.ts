@@ -7,6 +7,8 @@ export interface PanelItemI {
     kind: PanelItemKind;     // 'EXAM' | 'PARAM'
     examId?: number | null;  // si kind === 'EXAM'
     parameterId?: number | null; // si kind === 'PARAM'
+    examName?: string | null;
+    parameterName?: string | null;
     required?: boolean;      // si el item es obligatorio
     order?: number | null;   // orden de visualización
     notes?: string | null;   // nota/observación opcional

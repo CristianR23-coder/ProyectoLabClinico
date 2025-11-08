@@ -9,6 +9,7 @@ import { SessionService } from '../../../auth/session-service';
 import { Profile } from '../../pages/profile/profile';
 import { Observable } from 'rxjs';
 import { UserProfileService } from '../../../services/user-profile-service';
+import { AuthService } from '../../../auth/authservice';
 
 export interface PendingResult {
   orderCode: string;
@@ -27,6 +28,7 @@ export interface PendingResult {
 export class Header {
   private session = inject(SessionService);
   private userProfile = inject(UserProfileService);
+  private auth = inject(AuthService);
 
   @Input() pending: PendingResult[] = [];
   @Input() darkMode = false;
@@ -41,7 +43,7 @@ export class Header {
     this.darkModeChange.emit(this.darkMode);
   }
   doLogout() {
-    this.session.clear();
+    this.auth.logout();
     this.logout.emit();
   }
 

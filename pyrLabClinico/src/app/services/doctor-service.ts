@@ -1,83 +1,169 @@
 // src/app/services/doctors.service.ts
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { DoctorI } from '../models/doctor-model';
-import { UsersService } from './user-service';
 
-export interface DoctorListParams { q?: string; status?: 'ACTIVE'|'INACTIVE'; }
+export interface DoctorListParams { q?: string; status?: 'ACTIVE' | 'INACTIVE'; }
+interface DoctorListResponse { doctors?: DoctorApi[]; }
+type DoctorApi = Omit<DoctorI, 'userId'> & { user_id?: number | null };
 
 @Injectable({ providedIn: 'root' })
 export class DoctorsService {
-  private users = inject(UsersService);
+  private http = inject(HttpClient);
+  private readonly baseUrl = 'http://localhost:4000/api';
 
-  private readonly INITIAL: DoctorI[] = [
-    { id: 80,  userId: undefined, docNumber: 'M-998', name: 'Dr. Lopez', specialty: 'Medicina interna', status: 'ACTIVE',  phone: '3001234567', email: 'lopez@demo.com' },
-    { id: 81,  userId: undefined, docNumber: 'M-777', name: 'Dr. Ruiz',  specialty: 'Pediatría',        status: 'ACTIVE' },
-    { id: 120, userId: undefined, docNumber: 'M-555', name: 'Dra. Mora', specialty: 'Cardiología',      status: 'INACTIVE' },
-  ];
-  private readonly _items$ = new BehaviorSubject<DoctorI[]>([...this.INITIAL]);
+  private readonly _items$ = new BehaviorSubject<DoctorI[]>([]);
   readonly items$ = this._items$.asObservable();
 
-  list(params?: DoctorListParams): Observable<DoctorI[]> {
-    return this.items$.pipe(delay(120), map(items => this.applyFilters(items, params)));
+  private loaded = false;
+  private loading$?: Observable<DoctorI[]>;
+
+  list(params?: DoctorListParams, options?: { force?: boolean }): Observable<DoctorI[]> {
+    return this.ensureDataLoaded(options?.force).pipe(
+      switchMap(() =>
+        this.items$.pipe(map(items => this.applyFilters(items, params)))
+      )
+    );
   }
 
-  /** 🔹 al crear doctor, crea user (username=nombre+apellido, pass=docNumber) y vincula userId */
-  add(partial: Omit<DoctorI,'id'|'userId'> & { id?: number }): Observable<DoctorI> {
-    const nextId = this.generateId();
-    const tmp: DoctorI = { ...partial, id: partial.id ?? nextId };
+  refresh(): Observable<DoctorI[]> {
+    return this.ensureDataLoaded(true);
+  }
 
-    const user = this.users.createForDoctor({
-      name: tmp.name, docNumber: tmp.docNumber, status: tmp.status
-    });
-
-    const d: DoctorI = { ...tmp, userId: user.id };
-
-    this._items$.next([d, ...this._items$.value]);
-    return of(d).pipe(delay(80));
+  add(partial: Omit<DoctorI, 'id' | 'userId'> & { id?: number }): Observable<DoctorI> {
+    return this.http.post<DoctorApi>(`${this.baseUrl}/doctor`, this.mapToApi(partial)).pipe(
+      map(api => this.mapFromApi(api)),
+      tap(doc => this._items$.next([doc, ...this._items$.value]))
+    );
   }
 
   update(id: number, patch: Partial<DoctorI>): Observable<DoctorI | undefined> {
-    const arr = this._items$.value;
-    const idx = arr.findIndex(x => x.id === id);
-    if (idx === -1) return of(undefined).pipe(delay(50));
-    const prev = arr[idx];
-    const updated = { ...prev, ...patch };
-
-    if (prev.userId && patch.docNumber && patch.docNumber !== prev.docNumber) {
-      this.users.updatePassword(prev.userId, patch.docNumber);
-    }
-
-    const copy = [...arr]; copy[idx] = updated;
-    this._items$.next(copy);
-    return of(updated).pipe(delay(80));
+    return this.http.patch<DoctorApi>(`${this.baseUrl}/doctor/${id}`, this.mapToApi(patch)).pipe(
+      map(api => this.mapFromApi(api)),
+      tap(doc => this.upsert(doc)),
+      catchError(err => {
+        if (err?.status === 404) return of(undefined);
+        return throwError(() => err);
+      })
+    );
   }
 
   remove(id: number): Observable<boolean> {
-    const arr = this._items$.value;
-    const toRemove = arr.find(d => d.id === id);
-    const filtered = arr.filter(x => x.id !== id);
-    const changed = filtered.length !== arr.length;
-    if (changed) {
-      this._items$.next(filtered);
-      if (toRemove?.userId) this.users.setStatus(toRemove.userId, 'INACTIVE');
-    }
-    return of(changed).pipe(delay(60));
+    return this.http.patch(`${this.baseUrl}/doctor/${id}/logic`, {}).pipe(
+      map(() => true),
+      tap(() => {
+        const items = [...this._items$.value];
+        const idx = items.findIndex(d => d.id === id);
+        if (idx === -1) {
+          this.refresh().subscribe();
+          return;
+        }
+        items[idx] = { ...items[idx], status: 'INACTIVE' };
+        this._items$.next(items);
+      }),
+      catchError(err => {
+        if (err?.status === 404) return of(false);
+        return throwError(() => err);
+      })
+    );
   }
 
   getById(id: number): Observable<DoctorI | undefined> {
-    return this.items$.pipe(map(list => list.find(x => x.id === id)), delay(50));
-  }
-  getByUserId(userId: number): Observable<DoctorI | undefined> {
-    return this.items$.pipe(map(list => list.find(x => x.userId === userId)), delay(50));
+    return this.http.get<DoctorApi>(`${this.baseUrl}/doctor/${id}`).pipe(
+      map(api => this.mapFromApi(api)),
+      tap(doc => this.upsert(doc)),
+      catchError(err => {
+        if (err?.status === 404) return of(undefined);
+        return throwError(() => err);
+      })
+    );
   }
 
-  // helpers (sin cambios)
-  private applyFilters(items: DoctorI[], params?: DoctorListParams): DoctorI[] { /* ... tu mismo código ... */ return items; }
-  private generateId(): number {
-    const ids = this._items$.value.map(x => x.id ?? 0);
-    const max = ids.length ? Math.max(...ids) : 1;
-    return max + 1;
+  getByUserId(userId: number): Observable<DoctorI | undefined> {
+    return this.ensureDataLoaded().pipe(
+      switchMap(() =>
+        this.items$.pipe(map(list => list.find(x => x.userId === userId)))
+      )
+    );
+  }
+
+  private ensureDataLoaded(force = false): Observable<DoctorI[]> {
+    if (!force && this.loaded) {
+      return of(this._items$.value);
+    }
+
+    if (force) {
+      this.loading$ = undefined;
+      this.loaded = false;
+    }
+
+    if (!this.loading$) {
+      this.loading$ = this.http.get<DoctorListResponse>(`${this.baseUrl}/doctores`).pipe(
+        map(res => (res?.doctors ?? []).map(doc => this.mapFromApi(doc))),
+        tap(list => {
+          this._items$.next(list);
+          this.loaded = true;
+        }),
+        finalize(() => { this.loading$ = undefined; }),
+        shareReplay(1)
+      );
+    }
+
+    return this.loading$;
+  }
+
+  private upsert(doc: DoctorI): void {
+    if (!doc.id) return;
+    const copy = [...this._items$.value];
+    const idx = copy.findIndex(d => d.id === doc.id);
+    if (idx === -1) {
+      this._items$.next([doc, ...copy]);
+      return;
+    }
+    copy[idx] = doc;
+    this._items$.next(copy);
+  }
+
+  private applyFilters(items: DoctorI[], params?: DoctorListParams): DoctorI[] {
+    let filtered = [...items];
+
+    if (params?.status) {
+      filtered = filtered.filter(item => item.status === params.status);
+    }
+
+    const term = params?.q?.trim().toLowerCase();
+    if (term) {
+      filtered = filtered.filter(item => {
+        const haystack = [
+          item.name ?? '',
+          item.docNumber ?? '',
+          item.specialty ?? '',
+          item.email ?? '',
+          item.phone ?? ''
+        ].join(' ').toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    return filtered.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+  }
+
+  private mapFromApi(api: DoctorApi): DoctorI {
+    const { user_id, ...rest } = api;
+    return {
+      ...rest,
+      userId: typeof user_id === 'number' ? user_id : undefined
+    };
+  }
+
+  private mapToApi(payload: Partial<DoctorI>): Partial<DoctorApi> {
+    const { userId, ...rest } = payload;
+    const body: Partial<DoctorApi> = { ...rest };
+    if (typeof userId !== 'undefined') {
+      body.user_id = userId;
+    }
+    return body;
   }
 }

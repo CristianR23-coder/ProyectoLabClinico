@@ -4,10 +4,13 @@
     class="absolute inset-0 bg-[radial-gradient(1200px_600px_at_80%_-10%,rgba(59,130,246,0.25),transparent),linear-gradient(135deg,#0a74a7_0%,#0b5a8e_55%,#0f3e82_100%)]">
   </div>
 
+  <!-- Toast -->
+  <p-toast></p-toast>
+
   <!-- Card -->
   <div class="relative z-10 w-full max-w-md">
-    <div class="rounded-2xl bg-white/92 backdrop-blur-xl shadow-[0_20px_70px_rgba(10,37,64,0.25)]
-                border border-white/60 overflow-hidden">
+    <div
+      class="rounded-2xl bg-white/95 backdrop-blur-xl shadow-[0_20px_70px_rgba(10,37,64,0.25)] border border-white/60 overflow-hidden">
 
       <!-- Header -->
       <div class="px-7 pt-6 pb-4 flex items-center gap-3 border-b border-zinc-200/70">
@@ -24,36 +27,32 @@
       <!-- Body -->
       <div class="px-7 py-6">
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-          <!-- Usuario -->
+
+          <!-- Campo de usuario -->
           <div>
             <label for="username" class="block text-[13px] text-zinc-600 mb-1.5 font-semibold">Usuario</label>
-
             <div class="relative w-full">
-              <input id="username" pInputText type="text" formControlName="username"
-                     placeholder="Nombre de usuario" class="w-full pr-10 h-11 rounded-lg" />
+              <input id="username" pInputText type="text" formControlName="username" placeholder="Nombre de usuario"
+                class="w-full pr-10 h-11 rounded-lg" />
               <i class="pi pi-user absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"></i>
             </div>
-
-            <small *ngIf="form.get('username')?.invalid && form.get('username')?.touched"
-                   class="text-red-600">Ingresa tu usuario.</small>
+            <small *ngIf="form.get('username')?.touched && form.get('username')?.invalid" class="text-red-600 text-xs">
+              {{ getFieldError('username') }}
+            </small>
           </div>
+
 
           <!-- Contraseña -->
           <div>
             <label for="password" class="block text-[13px] font-semibold text-zinc-600 mb-1.5">Contraseña</label>
 
-            <p-password inputId="password"
-                        formControlName="password"
-                        placeholder="Contraseña"
-                        [toggleMask]="true"
-                        [feedback]="false"
-                        styleClass="w-full"
-                        inputStyleClass="w-full"
-                        autocomplete="current-password">
+            <p-password inputId="password" formControlName="password" placeholder="Contraseña" [toggleMask]="true"
+              [feedback]="false" styleClass="w-full" inputStyleClass="w-full" autocomplete="current-password">
             </p-password>
 
-            <small *ngIf="form.get('password')?.invalid && form.get('password')?.touched"
-                   class="text-red-600">Ingresa tu contraseña.</small>
+            <small *ngIf="form.get('password')?.touched && form.get('password')?.invalid" class="text-red-600 text-xs">
+              {{ getFieldError('password') }}
+            </small>
           </div>
 
           <!-- Extras -->
@@ -62,25 +61,24 @@
               <input type="checkbox" class="rounded border-zinc-300 text-sky-600 focus:ring-sky-500">
               Recordarme
             </label>
-            <a routerLink="/" class="text-sm text-sky-700 hover:underline">¿Olvidaste tu contraseña?</a>
+            <a routerLink="/forgot-password" class="text-sm text-sky-700 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </a>
           </div>
 
           <!-- Botón -->
-          <button pButton type="submit" label="Acceder" icon="pi pi-sign-in" class="w-full"
-                  [loading]="loading"
-                  [disabled]="form.invalid || loading">
+          <button pButton type="submit" label="Acceder" icon="pi pi-sign-in" class="w-full" [loading]="loading"
+            [disabled]="form.invalid || loading">
           </button>
 
-          <!-- Error -->
-          <p *ngIf="error()" class="text-red-600 text-sm text-center">
-            Usuario o contraseña inválidos.
-          </p>
         </form>
       </div>
 
       <!-- Footer -->
       <div class="px-7 pb-6 pt-2 text-center">
-        <a routerLink="/" class="text-sm text-sky-700 hover:underline">Volver al inicio</a>
+        <a (click)="goToRegister()" class="text-sm text-sky-700 hover:underline cursor-pointer">
+          ¿No tienes una cuenta? Regístrate
+        </a>
       </div>
     </div>
   </div>

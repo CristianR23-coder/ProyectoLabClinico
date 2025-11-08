@@ -76,7 +76,7 @@ export class CreateSample implements OnInit, OnDestroy {
 
     // Cargar exámenes (para specimenType de cada examen)
     this.subs.push(
-      this.examsSvc.exams$.subscribe(xs => {
+      this.examsSvc.exams$.subscribe((xs: ExamI[]) => {
         this.allExams = xs ?? [];
         // Si ya hay orderId seleccionado, recalculamos
         const currentOrderId = this.form.controls.orderId.value;

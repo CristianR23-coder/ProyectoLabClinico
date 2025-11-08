@@ -16,6 +16,9 @@ import { OrderI, OrderState } from '../../../models/order-model';
 import { PatientI } from '../../../models/patient-model';
 import { DoctorI } from '../../../models/doctor-model';
 import { InsuranceI } from '../../../models/insurance-model';
+import { PatientsService } from '../../../services/patient-service';
+import { DoctorsService } from '../../../services/doctor-service';
+import { InsurancesService } from '../../../services/insurance-service';
 
 // ⬇️ Usa la ruta real de tu ExamsService (según mostraste antes es /exams/service)
 import { ExamsService } from '../../../services/exam-service';
@@ -36,23 +39,16 @@ export class CreateOrder implements OnInit {
   private fb = inject(FormBuilder);
   private ordersSvc = inject(OrdersService);
   private examsSvc = inject(ExamsService);
+  private patientsSvc = inject(PatientsService);
+  private doctorsSvc = inject(DoctorsService);
+  private insSvc = inject(InsurancesService);
 
   @Output() created = new EventEmitter<OrderI>();
   @Output() cancelled = new EventEmitter<void>();
 
-  // Catálogos mock
-  patients: PatientI[] = [
-    { id: 501, docType: 'CC', docNumber: '123456', firstName: 'Ana',  lastName: 'Perez', status: 'ACTIVE' },
-    { id: 502, docType: 'CC', docNumber: '789012', firstName: 'Luis', lastName: 'Gomez', status: 'ACTIVE' }
-  ];
-  doctors: DoctorI[] = [
-    { id: 80, docNumber: 'M-998', name: 'Dr. Lopez', status: 'ACTIVE' },
-    { id: 81, docNumber: 'M-777', name: 'Dr. Ruiz',  status: 'ACTIVE' }
-  ];
-  insurances: InsuranceI[] = [
-    { id: 7, name: 'Health Plus', nit: '900.123.456', status: 'ACTIVE' },
-    { id: 8, name: 'Care One',    nit: '901.777.111', status: 'ACTIVE' }
-  ];
+  patients: PatientI[] = [];
+  doctors: DoctorI[] = [];
+  insurances: InsuranceI[] = [];
 
   // Exámenes disponibles (cargamos solo activos)
   exams: ExamI[] = [];
@@ -87,10 +83,10 @@ export class CreateOrder implements OnInit {
   items: OrderItemI[] = [];
 
   ngOnInit(): void {
-    // Cargar exámenes activos
-    this.examsSvc.list({ status: 'ACTIVE' }).subscribe(list => {
-      this.exams = list;
-    });
+    this.examsSvc.list({ status: 'ACTIVE' }).subscribe(list => this.exams = list);
+    this.patientsSvc.list({ status: 'ACTIVE' }).subscribe(list => this.patients = list);
+    this.doctorsSvc.list({ status: 'ACTIVE' }).subscribe(list => this.doctors = list);
+    this.insSvc.list({ status: 'ACTIVE' }).subscribe(list => this.insurances = list);
   }
 
   // Helpers

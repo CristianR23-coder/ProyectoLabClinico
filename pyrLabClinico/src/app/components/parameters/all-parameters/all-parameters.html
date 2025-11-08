@@ -19,7 +19,13 @@
         </div>
     </header>
 
-    <p-table [value]="(rows$ | async) ?? []" dataKey="id" [tableStyle]="{'min-width':'56rem'}">
+    <p-table [value]="(rows$ | async) ?? []"
+             dataKey="id"
+             [tableStyle]="{'min-width':'56rem'}"
+             [paginator]="true"
+             [rows]="10"
+             [rowsPerPageOptions]="[10,20,50]"
+             [lazy]="false">
         <ng-template pTemplate="header">
             <tr>
                 <th>Orden</th>

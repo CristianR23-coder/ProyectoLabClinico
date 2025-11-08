@@ -2,12 +2,18 @@ import { Request, Response } from "express";
 import { Insurance, InsuranceI } from "../database/models/Insurance";
 
 export class InsuranceController {
-  // Obtener todas las aseguradoras con estado "ACTIVE"
+  // Obtener aseguradoras. Si ?status=ACTIVE/INACTIVE, filtra; en otro caso trae todas.
   public async getAllInsurances(req: Request, res: Response) {
     try {
-      const insurances: InsuranceI[] = await Insurance.findAll({
-        where: { status: "ACTIVE" },
-      });
+      const rawStatus = (req.query.status as string | undefined)?.toUpperCase();
+      const allowed: InsuranceI['status'][] = ['ACTIVE', 'INACTIVE'];
+      const where: Partial<InsuranceI> = {};
+
+      if (rawStatus && allowed.includes(rawStatus as InsuranceI['status'])) {
+        where.status = rawStatus as InsuranceI['status'];
+      }
+
+      const insurances: InsuranceI[] = await Insurance.findAll({ where });
       res.status(200).json({ insurances });
     } catch (error) {
       res.status(500).json({ error: "Error fetching insurances" });

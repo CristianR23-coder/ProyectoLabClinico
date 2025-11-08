@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { startWith, switchMap } from 'rxjs';
@@ -29,7 +29,7 @@ type Status = 'ACTIVE' | 'INACTIVE';
   ],
   templateUrl: './all-doctors.html'
 })
-export class AllDoctors {
+export class AllDoctors implements OnInit {
   private fb = inject(FormBuilder);
   private svc = inject(DoctorsService);
 
@@ -59,6 +59,10 @@ export class AllDoctors {
   );
 
   // UI
+  ngOnInit(): void {
+    this.reloadDoctors();
+  }
+
   clear(): void {
     this.form.reset({ q: '', status: undefined });
   }
@@ -72,11 +76,17 @@ export class AllDoctors {
   // Modales
   openCreate(): void { this.showCreate = true; }
   closeCreate(): void { this.showCreate = false; }
-  onCreated(): void { this.closeCreate(); }
+  onCreated(): void {
+    this.closeCreate();
+    this.reloadDoctors();
+  }
 
   openEdit(id: number): void { this.selectedId = id; this.showEdit = true; }
   closeEdit(): void { this.showEdit = false; this.selectedId = undefined; }
-  onEdited(): void { this.closeEdit(); }
+  onEdited(): void {
+    this.closeEdit();
+    this.reloadDoctors();
+  }
 
   openView(id: number): void { this.viewedId = id; this.showView = true; }
   closeView(): void { this.showView = false; this.viewedId = undefined; }
@@ -89,11 +99,22 @@ export class AllDoctors {
   onViewDelete(id: number): void {
     const ok = confirm(`¿Eliminar el médico #${id}? Esta acción no se puede deshacer.`);
     if (!ok) return;
-    this.svc.remove(id).subscribe(() => this.closeView());
+    this.svc.remove(id).subscribe(success => {
+      if (success) {
+        this.closeView();
+        this.reloadDoctors();
+      }
+    });
   }
 
   // Para los botones de filtro con estilo dinámico
   isStatus(s?: Status): boolean {
     return this.form.controls.status.value === s;
+  }
+
+  private reloadDoctors(): void {
+    this.svc.refresh().subscribe({
+      error: err => console.error('[AllDoctors] reloadDoctors failed', err)
+    });
   }
 }

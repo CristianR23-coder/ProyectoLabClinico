@@ -2,12 +2,18 @@ import { Request, Response } from "express";
 import { Exam, ExamI } from "../database/models/Exam";
 
 export class ExamController {
-  // Obtener todos los exámenes con estado "ACTIVE"
+  // Obtener exámenes. Si ?status=ACTIVE/INACTIVE, filtra; caso contrario trae todos.
   public async getAllExams(req: Request, res: Response) {
     try {
-      const exams: ExamI[] = await Exam.findAll({
-        where: { status: "ACTIVE" },
-      });
+      const rawStatus = (req.query.status as string | undefined)?.toUpperCase();
+      const allowed: ExamI['status'][] = ['ACTIVE', 'INACTIVE'];
+      const where: Partial<ExamI> = {};
+
+      if (rawStatus && allowed.includes(rawStatus as ExamI['status'])) {
+        where.status = rawStatus as ExamI['status'];
+      }
+
+      const exams: ExamI[] = await Exam.findAll({ where });
       res.status(200).json({ exams });
     } catch (error) {
       res.status(500).json({ error: "Error fetching exams" });

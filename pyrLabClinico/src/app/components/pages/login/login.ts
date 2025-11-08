@@ -1,13 +1,15 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
-import { ButtonModule } from 'primeng/button';
-import { RouterModule, Router } from '@angular/router';
-import { UsersService } from '../../../services/user-service'; // ajusta la ruta si difiere
-import { SessionService } from '../../../auth/session-service';  // nuevo import
+import { ToastModule } from 'primeng/toast';
+import { CardModule } from 'primeng/card';
+import { MessageService } from 'primeng/api';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../../auth/authservice';
 
 @Component({
   selector: 'app-login',
@@ -15,67 +17,85 @@ import { firstValueFrom } from 'rxjs';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
+    ButtonModule,
     InputTextModule,
     PasswordModule,
-    ButtonModule
+    ToastModule,
+    CardModule
   ],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  styleUrls: ['./login.css'],
+  providers: [MessageService]
 })
 export class Login {
   form: FormGroup;
   loading = false;
-  errorMsg = '';
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private users: UsersService,
-    private session: SessionService   // inyectamos SessionService
+    private auth: AuthService,
+    private messageService: MessageService
   ) {
     this.form = this.fb.group({
-      username: ['', Validators.required],
-      password: ['', Validators.required]
+      username: ['', [Validators.required]],
+      password: ['', [Validators.required, Validators.minLength(0)]]
     });
   }
 
   async onSubmit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.markFormGroupTouched();
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Por favor complete todos los campos requeridos'
+      });
+      return;
+    }
 
     this.loading = true;
-    this.errorMsg = '';
-
-    const { username, password } = this.form.value as {
-      username: string;
-      password: string;
-    };
+    const { username, password } = this.form.value;
 
     try {
-      const user = await firstValueFrom(this.users.findByUsername(username));
-
-      if (!user || user.status !== 'ACTIVE' || (user.password && user.password !== password)) {
-        this.errorMsg = 'Usuario o contraseña inválidos.';
-        this.loading = false;
-        return;
-      }
-
-      // Guardamos la sesión usando SessionService
-      this.session.setSession(null, {
-        id: user.id!,
-        role: user.role,
-        username: user.username
+      await firstValueFrom(this.auth.login({ username, password }));
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Éxito',
+        detail: 'Sesión iniciada correctamente'
       });
-
-      this.router.navigate(['/home']);
-    } catch {
-      this.errorMsg = 'Error de autenticación.';
+      setTimeout(() => {
+        this.router.navigate(['/home']);
+      }, 1000);
+    } catch (error: any) {
+      console.error('Error en autenticación:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error?.error?.error ?? 'Usuario o contraseña incorrectos'
+      });
     } finally {
       this.loading = false;
     }
   }
 
-  error() {
-    return this.errorMsg;
+  goToRegister(): void {
+    this.router.navigate(['/register']);
+  }
+
+  private markFormGroupTouched(): void {
+    Object.keys(this.form.controls).forEach(key => {
+      this.form.get(key)?.markAsTouched();
+    });
+  }
+
+  getFieldError(fieldName: string): string {
+    const field = this.form.get(fieldName);
+    if (field?.errors && field?.touched) {
+      if (field.errors['required']) return `${fieldName} es requerido`;
+      if (field.errors['minlength'])
+        return `${fieldName} debe tener al menos ${field.errors['minlength'].requiredLength} caracteres`;
+    }
+    return '';
   }
 }

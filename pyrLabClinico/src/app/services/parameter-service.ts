@@ -1,93 +1,155 @@
-// src/app/parameters/service.ts
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+// src/app/services/parameter-service.ts
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+
 import { ParameterI, TypeValue } from '../models/parameter-model';
 
 export interface ParamListParams {
   q?: string;
+  examenId?: number;
+  type?: TypeValue;
 }
+
+interface ParameterListResponse { parameters?: ParameterApi[]; }
+interface ParameterApi extends ParameterI {}
 
 @Injectable({ providedIn: 'root' })
 export class ParameterService {
-  // Mock inicial (dos exámenes: 1 y 2)
-  private readonly INITIAL: ParameterI[] = [
-    { id: 101, examenId: 1, code: 'GLU', name: 'Glucosa', unit: 'mg/dL', refMin: 70, refMax: 100, typeValue: 'NUMERICO', decimals: 1, visualOrder: 1 },
-    { id: 102, examenId: 1, code: 'GLU-ALT', name: 'Comentario', unit: null, typeValue: 'TEXTO', decimals: null, visualOrder: 2 },
-    { id: 201, examenId: 2, code: 'COL', name: 'Colesterol', unit: 'mg/dL', refMin: 0, refMax: 200, typeValue: 'NUMERICO', decimals: 0, visualOrder: 1 },
-  ];
+  private http = inject(HttpClient);
+  private readonly baseUrl = 'http://localhost:4000/api';
 
-  private readonly _items$ = new BehaviorSubject<ParameterI[]>([...this.INITIAL]);
+  private readonly _items$ = new BehaviorSubject<ParameterI[]>([]);
   readonly items$ = this._items$.asObservable();
 
-  // ✅ NUEVO: lista TODOS los parámetros (sin filtrar por examen)
-  list(params?: ParamListParams): Observable<ParameterI[]> {
-    return this.items$.pipe(
-      map(items => this.applyFilters(items, params)),
-      map(items => [...items].sort((a, b) =>
-        (a.examenId ?? 0) - (b.examenId ?? 0) ||
-        (a.visualOrder ?? 0) - (b.visualOrder ?? 0) ||
-        (a.id ?? 0) - (b.id ?? 0)
-      )),
-      delay(80)
+  private loaded = false;
+  private loading$?: Observable<ParameterI[]>;
+
+  list(params?: ParamListParams, options?: { force?: boolean }): Observable<ParameterI[]> {
+    return this.ensureLoaded(options?.force).pipe(
+      map(list => this.applyFilters(list, params))
     );
+  }
+
+  refresh(): Observable<ParameterI[]> {
+    return this.ensureLoaded(true);
   }
 
   listByExam(examenId: number, params?: ParamListParams): Observable<ParameterI[]> {
-    return this.items$.pipe(
-      map(items => items.filter(p => p.examenId === examenId)),
-      map(items => this.applyFilters(items, params)),
-      map(items => [...items].sort((a, b) =>
-        (a.visualOrder ?? 0) - (b.visualOrder ?? 0) || (a.id ?? 0) - (b.id ?? 0)
-      )),
-      delay(120)
-    );
+    return this.list({ ...(params ?? {}), examenId });
   }
 
   getById(id: number): Observable<ParameterI | undefined> {
-    return this.items$.pipe(map(arr => arr.find(p => p.id === id)), delay(50));
+    return this.http.get<ParameterApi>(`${this.baseUrl}/parametro/${id}/public`).pipe(
+      map(api => this.mapFromApi(api)),
+      tap(param => this.upsert(param)),
+      catchError(err => {
+        if (err?.status === 404) return of(undefined);
+        return throwError(() => err);
+      })
+    );
   }
 
   add(examenId: number, partial: Omit<ParameterI, 'id' | 'examenId'> & { id?: number }): Observable<ParameterI> {
-    const nextId = this.generateId();
-    const row: ParameterI = { ...partial, id: partial.id ?? nextId, examenId };
-    this._items$.next([row, ...this._items$.value]);
-    return of(row).pipe(delay(100));
+    return this.http.post<ParameterApi>(`${this.baseUrl}/parametro/public`, this.mapToApi({ ...partial, examenId })).pipe(
+      map(api => this.mapFromApi(api)),
+      tap(param => this._items$.next([param, ...this._items$.value]))
+    );
   }
 
   update(id: number, patch: Partial<ParameterI>): Observable<ParameterI | undefined> {
-    const arr = this._items$.value;
-    const idx = arr.findIndex(x => x.id === id);
-    if (idx === -1) return of(undefined).pipe(delay(60));
-    const updated = { ...arr[idx], ...patch };
-    const copy = [...arr]; copy[idx] = updated;
-    this._items$.next(copy);
-    return of(updated).pipe(delay(100));
+    return this.http.patch<ParameterApi>(`${this.baseUrl}/parametro/${id}/public`, this.mapToApi(patch)).pipe(
+      map(api => this.mapFromApi(api)),
+      tap(param => this.upsert(param)),
+      catchError(err => {
+        if (err?.status === 404) return of(undefined);
+        return throwError(() => err);
+      })
+    );
   }
 
   remove(id: number): Observable<boolean> {
-    const arr = this._items$.value;
-    const filtered = arr.filter(x => x.id !== id);
-    const changed = filtered.length !== arr.length;
-    if (changed) this._items$.next(filtered);
-    return of(changed).pipe(delay(80));
+    return this.http.patch(`${this.baseUrl}/parametro/${id}/logic/public`, {}).pipe(
+      map(() => true),
+      tap(() => this._items$.next(this._items$.value.filter(p => p.id !== id))),
+      catchError(err => {
+        if (err?.status === 404) return of(false);
+        return throwError(() => err);
+      })
+    );
   }
 
-  // helpers
+  private ensureLoaded(force = false): Observable<ParameterI[]> {
+    if (!force && this.loaded) {
+      return of(this._items$.value);
+    }
+
+    if (force) {
+      this.loading$ = undefined;
+      this.loaded = false;
+    }
+
+    if (!this.loading$) {
+      this.loading$ = this.http.get<ParameterListResponse>(`${this.baseUrl}/parametros/public`).pipe(
+        map(res => (res.parameters ?? []).map(p => this.mapFromApi(p))),
+        tap(list => {
+          this._items$.next(list);
+          this.loaded = true;
+        }),
+        finalize(() => { this.loading$ = undefined; }),
+        shareReplay(1)
+      );
+    }
+
+    return this.loading$;
+  }
+
+  private upsert(parameter: ParameterI): void {
+    if (!parameter.id) return;
+    const copy = [...this._items$.value];
+    const idx = copy.findIndex(p => p.id === parameter.id);
+    if (idx === -1) {
+      this._items$.next([parameter, ...copy]);
+      return;
+    }
+    copy[idx] = parameter;
+    this._items$.next(copy);
+  }
+
+  private mapFromApi(api: ParameterApi): ParameterI {
+    return {
+      ...api,
+      examenId: api.examenId,
+      typeValue: api.typeValue
+    };
+  }
+
+  private mapToApi(payload: Partial<ParameterI>): Partial<ParameterApi> {
+    return {
+      ...payload
+    };
+  }
+
   private applyFilters(items: ParameterI[], params?: ParamListParams): ParameterI[] {
-    const q = params?.q?.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(p => {
-      const code = (p.code ?? '').toLowerCase();
-      const name = (p.name ?? '').toLowerCase();
-      const unit = (p.unit ?? '').toLowerCase();
-      return code.includes(q) || name.includes(q) || unit.includes(q);
-    });
-  }
+    let filtered = [...items];
+    if (params?.examenId) filtered = filtered.filter(p => p.examenId === params.examenId);
+    if (params?.type) filtered = filtered.filter(p => p.typeValue === params.type);
 
-  private generateId(): number {
-    const ids = this._items$.value.map(x => x.id ?? 0);
-    const max = ids.length ? Math.max(...ids) : 100;
-    return max + 1;
+    const q = params?.q?.trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter(p => {
+        const code = (p.code ?? '').toLowerCase();
+        const name = (p.name ?? '').toLowerCase();
+        const unit = (p.unit ?? '').toLowerCase();
+        return code.includes(q) || name.includes(q) || unit.includes(q);
+      });
+    }
+
+    return filtered.sort((a, b) =>
+      (a.examenId ?? 0) - (b.examenId ?? 0) ||
+      (a.visualOrder ?? 0) - (b.visualOrder ?? 0) ||
+      (a.id ?? 0) - (b.id ?? 0)
+    );
   }
 }

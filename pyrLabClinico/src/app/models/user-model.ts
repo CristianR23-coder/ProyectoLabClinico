@@ -6,6 +6,22 @@ export interface UserI {
   username: string;
   role: UserRole;
   status: UserStatus;
-  // SOLO para simulación (opcional). Quita en prod real.
   password?: string;
+  email?: string | null;
+}
+
+export interface AuthenticatedUser extends UserI {
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: AuthenticatedUser;
+  token: string;
+  refreshToken: string;
 }

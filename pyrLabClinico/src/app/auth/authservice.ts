@@ -1,42 +1,46 @@
 // src/app/auth/auth.service.ts
-import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
-// import { HttpClient } from '@angular/common/http'; // <- lo usarás luego
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
+import { LoginRequest, LoginResponse } from '../models/user-model';
+import { SessionService } from './session-service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private router = inject(Router);
-  // private http = inject(HttpClient); // <- cuando conectes backend
-  private _authed$ = new BehaviorSubject<boolean>(localStorage.getItem('DEMO_AUTH') === '1');
-  authed$ = this._authed$.asObservable();
+  private baseUrl = 'http://localhost:4000/api/auth';
+  private tokenKey = 'auth_token';
 
-  get authed() { return this._authed$.value; }
-  get token()  { return localStorage.getItem('DEMO_TOKEN'); }
+  constructor(
+    private http: HttpClient,
+    private session: SessionService
+  ) {}
 
-  // SIMULADO HOY
-  async login(username: string, password: string) {
-    if (!username || !password) return false;
-    localStorage.setItem('DEMO_AUTH', '1');
-    // localStorage.setItem('DEMO_TOKEN', 'fake-jwt'); // si quieres simular token
-    this._authed$.next(true);
-    return true;
+  login(credentials: LoginRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.baseUrl}/login`, credentials)
+      .pipe(
+        tap(response => {
+          if (response.token) {
+            this.setToken(response.token);
+            this.session.setSession(response);
+          }
+        })
+      );
   }
 
-  // MAÑANA (API real)
-  // login(username: string, password: string) {
-  //   return this.http.post<{token:string}>('/api/auth/login', { username, password })
-  //     .pipe(tap(res => {
-  //        localStorage.setItem('DEMO_TOKEN', res.token);
-  //        localStorage.setItem('DEMO_AUTH', '1');
-  //        this._authed$.next(true);
-  //     }));
-  // }
+  logout(): void {
+    localStorage.removeItem(this.tokenKey);
+    this.session.clear();
+  }
 
-  logout() {
-    localStorage.removeItem('DEMO_AUTH');
-    localStorage.removeItem('DEMO_TOKEN');
-    this._authed$.next(false);
-    this.router.navigateByUrl('/login');
+  getToken(): string | null {
+    return localStorage.getItem(this.tokenKey);
+  }
+
+  setToken(token: string): void {
+    localStorage.setItem(this.tokenKey, token);
+  }
+
+  isLoggedIn(): boolean {
+    return this.session.isLoggedIn;
   }
 }

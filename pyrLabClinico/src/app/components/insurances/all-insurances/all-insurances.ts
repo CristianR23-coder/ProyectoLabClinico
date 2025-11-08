@@ -1,5 +1,5 @@
 // src/app/components/insurances/all-insurances/all-insurances.ts
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { startWith, switchMap } from 'rxjs';
@@ -30,7 +30,7 @@ type Status = 'ACTIVE' | 'INACTIVE';
   ],
   templateUrl: './all-insurances.html'
 })
-export class AllInsurances {
+export class AllInsurances implements OnInit {
   private fb = inject(FormBuilder);
   private svc = inject(InsurancesService);
 
@@ -59,6 +59,10 @@ export class AllInsurances {
   );
 
   // ── UI helpers ──────────────────────────────────────────────────────────────
+  ngOnInit(): void {
+    this.reloadInsurances();
+  }
+
   clear(): void {
     this.form.reset({ q: '', status: undefined });
   }
@@ -75,7 +79,7 @@ export class AllInsurances {
 
   onCreated(_created: InsuranceI): void {
     this.showCreate = false;
-    // rows$ se refresca solo porque usamos list() por form changes
+    this.reloadInsurances();
   }
 
   openEdit(id: number): void {
@@ -87,7 +91,8 @@ export class AllInsurances {
     this.selectedId = undefined;
   }
   onEdited(_updated: InsuranceI): void {
-    this.closeEdit(); // la tabla se actualiza con list()
+    this.closeEdit();
+    this.reloadInsurances();
   }
 
   openView(id: number): void {
@@ -108,9 +113,17 @@ export class AllInsurances {
   onViewDelete(id: number): void {
     const ok = confirm(`¿Eliminar la aseguradora #${id}? Esta acción no se puede deshacer.`);
     if (!ok) return;
-    this.svc.remove(id).subscribe(() => {
-      this.closeView();
-      // list() re-evaluará en el próximo tick al cambiar el estado interno del servicio
+    this.svc.remove(id).subscribe(success => {
+      if (success) {
+        this.closeView();
+        this.reloadInsurances();
+      }
+    });
+  }
+
+  private reloadInsurances(): void {
+    this.svc.refresh().subscribe({
+      error: err => console.error('[AllInsurances] reloadInsurances failed', err)
     });
   }
 }

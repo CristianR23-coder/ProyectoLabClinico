@@ -3,12 +3,18 @@ import { Request, Response } from "express";
 import { Doctor, DoctorI } from "../database/models/Doctor";
 
 export class DoctorController {
-  // Obtener todos los doctores con estado "ACTIVE"
+  // Obtener doctores. Si se envía ?status=ACTIVE/INACTIVE, filtra; de lo contrario trae todos.
   public async getAllDoctors(req: Request, res: Response) {
     try {
-      const doctors: DoctorI[] = await Doctor.findAll({
-        where: { status: "ACTIVE" },
-      });
+      const rawStatus = (req.query.status as string | undefined)?.toUpperCase();
+      const allowed: DoctorI['status'][] = ['ACTIVE', 'INACTIVE'];
+      const where: Partial<DoctorI> = {};
+
+      if (rawStatus && allowed.includes(rawStatus as DoctorI['status'])) {
+        where.status = rawStatus as DoctorI['status'];
+      }
+
+      const doctors: DoctorI[] = await Doctor.findAll({ where });
       res.status(200).json({ doctors });
     } catch (error) {
       res.status(500).json({ error: "Error fetching doctors" });

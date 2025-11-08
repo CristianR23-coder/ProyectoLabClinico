@@ -63,19 +63,6 @@
       </p-select>
     </div>
 
-    <!-- Aseguradora (opcional) -->
-    <div>
-      <label class="block mb-1 text-sm font-semibold">Aseguradora (opcional)</label>
-      <p-select formControlName="insuranceId"
-                [options]="insurances"
-                optionLabel="name"
-                optionValue="id"
-                [filter]="true"
-                filterBy="name,nit"
-                placeholder="Selecciona aseguradora">
-      </p-select>
-    </div>
-
     <!-- Fecha de orden -->
     <div>
       <label class="block mb-1 text-sm font-semibold">Fecha de orden</label>

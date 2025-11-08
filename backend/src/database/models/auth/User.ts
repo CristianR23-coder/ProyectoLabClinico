@@ -31,17 +31,17 @@ export class User extends Model<UserI> implements UserI {
 
   public generateToken(): string {
     return jwt.sign({ id: this.id }, process.env.JWT_SECRET || "secret", {
-      expiresIn: '10m' // Token expires in 10 minutes
+      expiresIn: '5m' // Token expires in 5 minutes
     });
   }
 
   public generateRefreshToken(): { token: string, expiresAt: Date } {
     // const expiresIn = '24H';
-    const expiresIn = '5m';
+    const expiresIn = '10m';
     const token = jwt.sign({ id: this.id }, process.env.JWT_SECRET || 'secret', {
       expiresIn,
     });
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 1 minutos
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
     // const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
     return { token, expiresAt };
   }

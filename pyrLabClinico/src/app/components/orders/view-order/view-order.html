@@ -40,15 +40,6 @@
           <div class="text-sm" *ngIf="order.doctor?.specialty">Esp.: {{ order.doctor?.specialty }}</div>
         </div>
       </p-card>
-
-      <p-card>
-        <ng-template pTemplate="title">Aseguradora</ng-template>
-        <div class="space-y-1">
-          <div class="font-medium">{{ order.insurance?.name || '—' }}</div>
-          <div class="text-sm text-color-secondary" *ngIf="order.insurance?.nit">NIT {{ order.insurance?.nit }}</div>
-          <div class="text-sm" *ngIf="order.insurance?.email">Email: {{ order.insurance?.email }}</div>
-        </div>
-      </p-card>
     </div>
 
     <p-divider></p-divider>

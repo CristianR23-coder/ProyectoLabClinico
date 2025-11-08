@@ -55,14 +55,6 @@
     </div>
 
     <div>
-      <label class="block mb-1 text-sm font-semibold">Aseguradora (opcional)</label>
-      <p-select formControlName="insuranceId"
-                [options]="insurances" optionLabel="name" optionValue="id"
-                [filter]="true" filterBy="name,nit" placeholder="Selecciona aseguradora">
-      </p-select>
-    </div>
-
-    <div>
       <label class="block mb-1 text-sm font-semibold">Fecha de orden</label>
       <p-datepicker formControlName="orderDate" [showIcon]="true" inputId="orderDate" appendTo="body"></p-datepicker>
       <small class="p-error" *ngIf="form.get('orderDate')?.invalid && form.get('orderDate')?.touched">Requerido.</small>

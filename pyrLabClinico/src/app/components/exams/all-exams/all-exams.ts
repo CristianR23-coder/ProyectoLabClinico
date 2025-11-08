@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -28,7 +28,7 @@ import { ViewExam } from '../view-exam/view-exam';
   ],
   templateUrl: './all-exams.html'
 })
-export class AllExams {
+export class AllExams implements OnInit {
   private fb = inject(FormBuilder);
   private examsSvc = inject(ExamsService);
 
@@ -36,7 +36,10 @@ export class AllExams {
   showCreateExam = false;
   openCreateExam() { this.showCreateExam = true; }
   closeCreateExam() { this.showCreateExam = false; }
-  onExamCreated(_exam: ExamI) { this.showCreateExam = false; /* opcional: toast */ }
+  onExamCreated(_exam: ExamI) {
+    this.closeCreateExam();
+    this.reloadExams();
+  }
   showEditExam = false;
   selectedExamId?: number;
 
@@ -88,11 +91,7 @@ export class AllExams {
   }
 
   onDelete(id: number): void {
-    const ok = confirm(`¿Eliminar el examen #${id}? Esta acción no se puede deshacer.`);
-    if (!ok) return;
-    this.examsSvc.remove(id).subscribe(changed => {
-      if (!changed) console.error('No se pudo eliminar el examen', id);
-    });
+    this.deleteExam(id);
   }
 
   openEditExam(id: number) {
@@ -104,8 +103,8 @@ export class AllExams {
     this.selectedExamId = undefined;
   }
   onExamSaved(_exam: ExamI) {
-    // opcional: toast
     this.closeEditExam();
+    this.reloadExams();
   }
 
   // ====== VER ======
@@ -113,5 +112,28 @@ export class AllExams {
   openViewExam(id: number) { this.selectedExamId = id; this.showViewExam = true; }
   closeViewExam() { this.showViewExam = false; this.selectedExamId = undefined; }
   onViewEdit(id: number) { this.closeViewExam(); this.openEditExam(id); }
-  onViewDelete(id: number) { this.onDelete(id); this.closeViewExam(); }
+  onViewDelete(id: number) { this.deleteExam(id, () => this.closeViewExam()); }
+
+  ngOnInit(): void {
+    this.reloadExams();
+  }
+
+  private reloadExams(): void {
+    this.examsSvc.refresh().subscribe({
+      error: err => console.error('[AllExams] reload failed', err)
+    });
+  }
+
+  private deleteExam(id: number, onSuccess?: () => void): void {
+    const ok = confirm(`¿Eliminar el examen #${id}? Esta acción no se puede deshacer.`);
+    if (!ok) return;
+    this.examsSvc.remove(id).subscribe(changed => {
+      if (!changed) {
+        console.error('No se pudo eliminar el examen', id);
+        return;
+      }
+      this.reloadExams();
+      onSuccess?.();
+    });
+  }
 }

@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { InsuranceI } from '../models/insurance-model';
 
 export interface InsuranceListParams {
@@ -8,56 +9,112 @@ export interface InsuranceListParams {
   status?: 'ACTIVE' | 'INACTIVE';
 }
 
+interface InsuranceListResponse { insurances?: InsuranceI[]; }
+
 @Injectable({ providedIn: 'root' })
 export class InsurancesService {
-  private readonly INITIAL: InsuranceI[] = [
-    { id: 7, name: 'Health Plus', nit: '900.123.456', email: 'contacto@hp.com', phone: '3001234567', address: 'Calle 10 # 20-30', status: 'ACTIVE' },
-    { id: 8, name: 'Care One',    nit: '901.777.111', email: 'info@careone.com', phone: '3007654321', address: 'Av. 68 # 12-05', status: 'ACTIVE' },
-    { id: 9, name: 'Seguros XYZ', nit: '899.555.333', status: 'INACTIVE' } // sin dirección (opcional)
-  ];
+  private http = inject(HttpClient);
+  private readonly baseUrl = 'http://localhost:4000/api';
 
-  private readonly _insurances$ = new BehaviorSubject<InsuranceI[]>([...this.INITIAL]);
-  readonly insurances$ = this._insurances$.asObservable();
+  private readonly _items$ = new BehaviorSubject<InsuranceI[]>([]);
+  readonly items$ = this._items$.asObservable();
 
-  list(params?: InsuranceListParams): Observable<InsuranceI[]> {
-    return this.insurances$.pipe(
-      delay(120),
-      map(arr => this.applyFilters(arr, params))
+  private loaded = false;
+  private loading$?: Observable<InsuranceI[]>;
+
+  list(params?: InsuranceListParams, options?: { force?: boolean }): Observable<InsuranceI[]> {
+    return this.ensureDataLoaded(options?.force).pipe(
+      switchMap(() => this.items$.pipe(map(items => this.applyFilters(items, params))))
     );
   }
 
+  refresh(): Observable<InsuranceI[]> {
+    return this.ensureDataLoaded(true);
+  }
+
   add(partial: Omit<InsuranceI, 'id'> & { id?: number }): Observable<InsuranceI> {
-    const nextId = this.generateId();
-    const newItem: InsuranceI = { ...partial, id: partial.id ?? nextId };
-    this._insurances$.next([newItem, ...this._insurances$.value]);
-    return of(newItem).pipe(delay(100));
+    return this.http.post<InsuranceI>(`${this.baseUrl}/seguro`, partial).pipe(
+      tap(newItem => this._items$.next([newItem, ...this._items$.value]))
+    );
   }
 
   update(id: number, patch: Partial<InsuranceI>): Observable<InsuranceI | undefined> {
-    const arr = this._insurances$.value;
-    const idx = arr.findIndex(i => i.id === id);
-    if (idx === -1) return of(undefined).pipe(delay(80));
-
-    const updated: InsuranceI = { ...arr[idx], ...patch }; // ← address se mergea aquí
-    const copy = [...arr];
-    copy[idx] = updated;
-    this._insurances$.next(copy);
-    return of(updated).pipe(delay(90));
+    return this.http.patch<InsuranceI>(`${this.baseUrl}/seguro/${id}`, patch).pipe(
+      tap(item => this.upsert(item)),
+      catchError(err => {
+        if (err?.status === 404) return of(undefined);
+        return throwError(() => err);
+      })
+    );
   }
 
   remove(id: number): Observable<boolean> {
-    const arr = this._insurances$.value;
-    const filtered = arr.filter(i => i.id !== id);
-    const changed = filtered.length !== arr.length;
-    if (changed) this._insurances$.next(filtered);
-    return of(changed).pipe(delay(80));
+    return this.http.patch(`${this.baseUrl}/seguro/${id}/logic`, {}).pipe(
+      map(() => true),
+      tap(() => {
+        const arr = [...this._items$.value];
+        const idx = arr.findIndex(i => i.id === id);
+        if (idx === -1) {
+          this.refresh().subscribe();
+          return;
+        }
+        arr[idx] = { ...arr[idx], status: 'INACTIVE' };
+        this._items$.next(arr);
+      }),
+      catchError(err => {
+        if (err?.status === 404) return of(false);
+        return throwError(() => err);
+      })
+    );
   }
 
   getById(id: number): Observable<InsuranceI | undefined> {
-    return this.insurances$.pipe(map(arr => arr.find(i => i.id === id)), delay(60));
+    return this.http.get<InsuranceI>(`${this.baseUrl}/seguro/${id}`).pipe(
+      tap(item => this.upsert(item)),
+      catchError(err => {
+        if (err?.status === 404) return of(undefined);
+        return throwError(() => err);
+      })
+    );
   }
 
-  // helpers
+  private ensureDataLoaded(force = false): Observable<InsuranceI[]> {
+    if (!force && this.loaded) {
+      return of(this._items$.value);
+    }
+
+    if (force) {
+      this.loading$ = undefined;
+      this.loaded = false;
+    }
+
+    if (!this.loading$) {
+      this.loading$ = this.http.get<InsuranceListResponse>(`${this.baseUrl}/seguros`).pipe(
+        map(res => res.insurances ?? []),
+        tap(list => {
+          this._items$.next(list);
+          this.loaded = true;
+        }),
+        finalize(() => { this.loading$ = undefined; }),
+        shareReplay(1)
+      );
+    }
+
+    return this.loading$;
+  }
+
+  private upsert(item: InsuranceI): void {
+    if (!item?.id) return;
+    const arr = [...this._items$.value];
+    const idx = arr.findIndex(i => i.id === item.id);
+    if (idx === -1) {
+      this._items$.next([item, ...arr]);
+      return;
+    }
+    arr[idx] = item;
+    this._items$.next(arr);
+  }
+
   private applyFilters(items: InsuranceI[], params?: InsuranceListParams): InsuranceI[] {
     let out = items;
     if (params?.status) out = out.filter(r => r.status === params.status);
@@ -71,16 +128,10 @@ export class InsurancesService {
           (r.nit ?? '').toLowerCase().includes(q) ||
           (r.email ?? '').toLowerCase().includes(q) ||
           (r.phone ?? '').toLowerCase().includes(q) ||
-          (r.address ?? '').toLowerCase().includes(q) // ← address en el filtro global
+          (r.address ?? '').toLowerCase().includes(q)
         );
       });
     }
     return [...out].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
-  }
-
-  private generateId(): number {
-    const ids = this._insurances$.value.map(i => i.id ?? 0);
-    const max = ids.length ? Math.max(...ids) : 1;
-    return max + 1;
   }
 }
