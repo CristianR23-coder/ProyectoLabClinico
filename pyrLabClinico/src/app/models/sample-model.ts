@@ -18,4 +18,5 @@ export interface SampleI {
   drawDate?: string;               // fecha_toma (ISO)
   state: SampleState;              // estado
   observations?: string;           // observaciones
+  status?: 'ACTIVE' | 'INACTIVE';  // estado lógico backend
 }

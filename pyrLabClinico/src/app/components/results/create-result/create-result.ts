@@ -178,12 +178,16 @@ export class CreateResult implements OnInit {
       this.order = o ?? undefined;
 
       // muestras de la orden
-      if ((this.samplesSvc as any).list) {
-        this.samplesSvc.list({ orderId }).subscribe(ss => this.allowedSamples = ss || []);
+      const svc: any = this.samplesSvc as any;
+      if (typeof svc.listAll === 'function') {
+        svc.listAll({ orderId }).subscribe((ss: SampleI[]) => this.allowedSamples = ss || []);
+      } else if (typeof svc.list === 'function') {
+        svc.list({ orderId }).subscribe((res: any) => {
+          const list = Array.isArray(res) ? res : (res?.items ?? []);
+          this.allowedSamples = (list || []).filter((x: SampleI) => x.orderId === orderId);
+        });
       } else {
-        // fallback: si no hay list(), intentar items$
-        const s: any = this.samplesSvc as any;
-        const items$ = s.items$ ?? of([]);
+        const items$ = svc.items$ ?? of([]);
         items$.subscribe((all: SampleI[]) => {
           this.allowedSamples = (all || []).filter(x => x.orderId === orderId);
         });

@@ -13,7 +13,7 @@ import { DividerModule } from 'primeng/divider';
 import { ResultsService } from '../../../services/result-service';
 import { ResultI, ResultState } from '../../../models/result-model';
 import { ParameterService } from '../../../services/parameter-service';
-import { ParameterI } from '../../../models/parameter-model';
+import { ParameterI, TypeValue } from '../../../models/parameter-model';
 import { DoctorsService } from '../../../services/doctor-service';
 import { DoctorI } from '../../../models/doctor-model';
 
@@ -60,7 +60,10 @@ export class UpdateResult implements OnInit {
       this.result = r ?? undefined;
       if (!r) { this.loading = false; return; }
 
-      this.paramsSvc.getById(r.parameterId).subscribe(p => this.param = p ?? undefined);
+      this.paramsSvc.getById(r.parameterId).subscribe(p => {
+        this.param = p ?? undefined;
+        this.configureValueValidators(this.param?.typeValue);
+      });
 
       this.form.reset({
         numValue: r.numValue ?? null,
@@ -71,9 +74,9 @@ export class UpdateResult implements OnInit {
         comment: r.comment ?? null
       });
 
-      // validadores dinámicos
-      if (this.param?.typeValue === 'NUMERICO') this.form.controls.numValue.addValidators([Validators.required]);
-      else this.form.controls.textValue.addValidators([Validators.required, Validators.maxLength(200)]);
+      const inferredType: TypeValue | undefined =
+        this.param?.typeValue ?? (r.numValue != null ? 'NUMERICO' : 'TEXTO');
+      this.configureValueValidators(inferredType);
 
       this.loading = false;
     });
@@ -114,4 +117,21 @@ export class UpdateResult implements OnInit {
   }
 
   cancel(): void { this.cancelled.emit(); }
+
+  private configureValueValidators(type?: TypeValue | null): void {
+    const numCtrl = this.form.controls.numValue;
+    const textCtrl = this.form.controls.textValue;
+
+    numCtrl.clearValidators();
+    textCtrl.clearValidators();
+
+    if (type === 'NUMERICO') {
+      numCtrl.addValidators([Validators.required]);
+    } else {
+      textCtrl.addValidators([Validators.required, Validators.maxLength(200)]);
+    }
+
+    numCtrl.updateValueAndValidity({ emitEvent: false });
+    textCtrl.updateValueAndValidity({ emitEvent: false });
+  }
 }

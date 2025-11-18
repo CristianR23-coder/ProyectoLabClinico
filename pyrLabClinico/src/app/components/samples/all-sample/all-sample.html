@@ -31,47 +31,56 @@
     </p-select>
   </div>
 
-  <!-- Tabla -->
-  <p-table [value]="(rows$ | async) ?? []" dataKey="id" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10,20,50]"
-    [responsiveLayout]="'scroll'" [tableStyle]="{ 'min-width': '72rem' }">
+  <ng-container *ngIf="page$ | async as page">
+    <!-- Tabla -->
+    <p-table [value]="page.items" dataKey="id" [responsiveLayout]="'scroll'" [tableStyle]="{ 'min-width': '72rem' }">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Código</th>
+          <th>Tipo</th>
+          <th>Orden</th>
+          <th>Fecha toma</th>
+          <th>Estado</th>
+          <th class="w-40">Acciones</th>
+        </tr>
+      </ng-template>
 
-    <ng-template pTemplate="header">
-      <tr>
-        <th pSortableColumn="barcode">Código <p-sortIcon field="barcode"></p-sortIcon></th>
-        <th pSortableColumn="type">Tipo <p-sortIcon field="type"></p-sortIcon></th>
-        <th pSortableColumn="orderId">Orden <p-sortIcon field="orderId"></p-sortIcon></th>
-        <th pSortableColumn="drawDate">Fecha toma <p-sortIcon field="drawDate"></p-sortIcon></th>
-        <th pSortableColumn="state">Estado <p-sortIcon field="state"></p-sortIcon></th>
-        <th class="w-40">Acciones</th>
-      </tr>
-    </ng-template>
+      <ng-template pTemplate="body" let-s>
+        <tr>
+          <td class="font-mono">{{ s.barcode || '—' }}</td>
+          <td>{{ s.type }}</td>
+          <td>#{{ s.orderId }}</td>
+          <td>{{ s.drawDate ? (s.drawDate | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+          <td><p-tag [severity]="tagSeverity(s.state)" [value]="s.state"></p-tag></td>
+          <td class="flex gap-2">
+            <button pButton icon="pi pi-eye" [text]="true" [rounded]="true" severity="info" pTooltip="Ver"
+              (click)="onView(s)"></button>
+            <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" pTooltip="Editar"
+              (click)="openEdit(s.id)"></button>
+            <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" pTooltip="Eliminar"
+              (click)="onDelete(s)"></button>
+          </td>
+        </tr>
+      </ng-template>
 
-    <ng-template pTemplate="body" let-s>
-      <tr>
-        <td class="font-mono">{{ s.barcode || '—' }}</td>
-        <td>{{ s.type }}</td>
-        <td>#{{ s.orderId }}</td>
-        <td>{{ s.drawDate ? (s.drawDate | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
-        <td><p-tag [severity]="tagSeverity(s.state)" [value]="s.state"></p-tag></td>
-        <td class="flex gap-2">
-          <button pButton icon="pi pi-eye" [text]="true" [rounded]="true" severity="info" pTooltip="Ver"
-            (click)="onView(s)"></button>
-          <button pButton icon="pi pi-pencil" [text]="true" [rounded]="true" pTooltip="Editar"
-            (click)="openEdit(s.id)"></button>
-          <button pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" pTooltip="Eliminar"
-            (click)="onDelete(s)"></button>
-        </td>
-      </tr>
-    </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center italic text-gray-500 py-6">
+            No hay muestras que coincidan con el filtro.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="6" class="text-center italic text-gray-500 py-6">
-          No hay muestras que coincidan con el filtro.
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+    <p-paginator
+      class="mt-4"
+      [rows]="page.pageSize"
+      [totalRecords]="page.total"
+      [rowsPerPageOptions]="rowsPerPageOptions"
+      [first]="(page.page - 1) * page.pageSize"
+      (onPageChange)="onPageChange($event)">
+    </p-paginator>
+  </ng-container>
 
   <!-- Crear -->
   <p-dialog [(visible)]="showCreate" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '880px' }"

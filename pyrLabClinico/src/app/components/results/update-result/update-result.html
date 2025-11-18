@@ -17,17 +17,17 @@
         <ng-container [ngSwitch]="param?.typeValue">
           <div *ngSwitchCase="'NUMERICO'">
             <label class="block mb-1 text-sm font-semibold">Valor ({{ param?.unit || '—' }})</label>
-            <p-inputNumber formControlName="valorNumerico" [useGrouping]="false"></p-inputNumber>
+            <p-inputNumber formControlName="numValue" [useGrouping]="false"></p-inputNumber>
           </div>
           <div *ngSwitchDefault class="md:col-span-3">
             <label class="block mb-1 text-sm font-semibold">Valor</label>
-            <input pInputText formControlName="valorTexto" maxlength="200" />
+            <input pInputText formControlName="textValue" maxlength="200" />
           </div>
         </ng-container>
 
         <div>
           <label class="block mb-1 text-sm font-semibold">Fecha</label>
-          <p-datepicker formControlName="fechaResultado" [showIcon]="true" appendTo="body"></p-datepicker>
+          <p-datepicker formControlName="dateResult" [showIcon]="true" appendTo="body"></p-datepicker>
         </div>
 
         <div>
@@ -37,7 +37,7 @@
 
         <div class="md:col-span-3">
           <label class="block mb-1 text-sm font-semibold">Validado por</label>
-          <p-select formControlName="validadoPorId"
+          <p-select formControlName="validatedForId"
                     [options]="doctors"
                     optionLabel="name"
                     optionValue="id"
@@ -48,7 +48,7 @@
 
         <div class="md:col-span-3">
           <label class="block mb-1 text-sm font-semibold">Comentario</label>
-          <textarea pTextarea rows="2" formControlName="comentario" class="w-full"></textarea>
+          <textarea pTextarea rows="2" formControlName="comment" class="w-full"></textarea>
         </div>
       </div>
 

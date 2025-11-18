@@ -2,7 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { Observable, combineLatest, map, startWith } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
@@ -11,8 +12,10 @@ import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { TabsModule } from 'primeng/tabs';
+import { PaginatorModule } from 'primeng/paginator';
+import { PaginatorState } from 'primeng/paginator';
 
-import { SamplesService } from '../../../services/sample-service';   // ajusta si difiere
+import { SamplesService, PaginatedResult } from '../../../services/sample-service';   // ajusta si difiere
 import { SampleI, SampleState } from '../../../models/sample-model';
 import { SpecimenType } from '../../../models/exam-model';
 
@@ -29,7 +32,7 @@ type Filters = { q?: string; state?: SampleState; type?: SpecimenType };
   imports: [
     CommonModule, ReactiveFormsModule,
     TableModule, InputTextModule, ButtonModule, TagModule, SelectModule,
-    DialogModule, TabsModule,
+    DialogModule, TabsModule, PaginatorModule,
     CreateSample, UpdateSample, FormsModule, ViewSample
   ],
   templateUrl: './all-sample.html'
@@ -46,6 +49,8 @@ export class AllSample {
   // opciones (usa las que tengas en tu SampleState)
   readonly stateOptions: SampleState[] = ['RECOLECTADA', 'ENVIADA', 'EN_PROCESO', 'RECHAZADA'] as SampleState[];
   readonly typeOptions: SpecimenType[] = ['SANGRE', 'SUERO', 'PLASMA', 'ORINA', 'SALIVA', 'HECES', 'TEJIDO', 'OTRA'] as SpecimenType[];
+  readonly rowsPerPageOptions = [5, 10, 20, 50];
+  private readonly DEFAULT_PAGE_SIZE = 10;
 
   // filtros
   form = this.fb.group({
@@ -54,13 +59,10 @@ export class AllSample {
     type: this.fb.control<SpecimenType | undefined>(undefined),
   });
 
-  // Fuente de datos: soporta services con `samples$` o `items$`
-  private readonly source$: Observable<SampleI[]> = (() => {
-    const s = this.svc as any;
-    if (s.samples$) return s.samples$ as Observable<SampleI[]>;
-    if (s.items$) return s.items$ as Observable<SampleI[]>;
-    throw new Error('SamplesService debe exponer `samples$` o `items$` (Observable<SampleI[]>)');
-  })();
+  private pagination$ = new BehaviorSubject<{ page: number; pageSize: number }>({
+    page: 1,
+    pageSize: this.DEFAULT_PAGE_SIZE
+  });
 
   private readonly filters$ = this.form.valueChanges.pipe(
     startWith(this.form.getRawValue()),
@@ -68,11 +70,22 @@ export class AllSample {
       q: v?.q || undefined,
       state: v?.state || undefined,
       type: v?.type || undefined
-    } as Filters))
+    } as Filters)),
+    tap(() => this.resetPage())
   );
 
-  readonly rows$ = combineLatest([this.source$, this.filters$]).pipe(
-    map(([items, f]) => this.applyFilters(items, f))
+  page$: Observable<PaginatedResult<SampleI>> = combineLatest([
+    this.filters$,
+    this.pagination$
+  ]).pipe(
+    switchMap(([filter, pagination]) => this.svc.list({
+      q: filter.q,
+      state: filter.state,
+      type: filter.type,
+      page: pagination.page,
+      pageSize: pagination.pageSize
+    })),
+    shareReplay(1)
   );
 
   // Helpers UI
@@ -86,7 +99,10 @@ export class AllSample {
     }
   }
 
-  clear() { this.form.reset({ q: '', state: undefined, type: undefined }); }
+  clear() {
+    this.form.reset({ q: '', state: undefined, type: undefined });
+    this.resetPage(true);
+  }
 
   openCreate() { this.showCreate = true; }
   closeCreate() { this.showCreate = false; }
@@ -119,30 +135,16 @@ export class AllSample {
     this.selectedDetail = undefined;
   }
 
+  onPageChange(event: PaginatorState): void {
+    const rows = event.rows ?? this.pagination$.value.pageSize;
+    const first = event.first ?? 0;
+    const basePage = Math.floor(first / rows);
+    this.pagination$.next({ page: basePage + 1, pageSize: rows });
+  }
 
-  // Filtros
-  private applyFilters(items: SampleI[], p: Filters): SampleI[] {
-    let out = items;
-
-    if (p.state) out = out.filter(s => s.state === p.state);
-    if (p.type) out = out.filter(s => s.type === p.type);
-
-    const q = p.q?.trim().toLowerCase();
-    if (q) {
-      out = out.filter(s => {
-        const idStr = String(s.id ?? '');
-        const ordStr = String(s.orderId ?? '');
-        const bc = (s.barcode ?? '').toLowerCase();
-        const t = (s.type as string | undefined)?.toLowerCase?.() ?? '';
-        const st = (s.state as string | undefined)?.toLowerCase?.() ?? '';
-        const obs = (s.observations ?? '').toLowerCase();
-        return idStr.includes(q) || ordStr.includes(q) || bc.includes(q) || t.includes(q) || st.includes(q) || obs.includes(q);
-      });
-    }
-
-    // Ordena por drawDate desc y luego id desc
-    return [...out].sort((a, b) =>
-      (b.drawDate ?? '').localeCompare(a.drawDate ?? '') || (b.id ?? 0) - (a.id ?? 0)
-    );
+  private resetPage(force = false): void {
+    const current = this.pagination$.value;
+    if (!force && current.page === 1) return;
+    this.pagination$.next({ ...current, page: 1 });
   }
 }
