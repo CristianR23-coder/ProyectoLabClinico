@@ -33,28 +33,60 @@ LabPro follows a layered web architecture. An Angular single-page application ha
 ### 2.3 Visual explanation of the system’s operation
 
 ```txt
-[End User]
-    │  HTTPS + JWT
-    ▼
-+--------------------------+
-| Angular SPA (PrimeNG UI) |
-| - Routing/Guards        |
-| - Services (RxJS)       |
-+-----------+--------------+
-            │ REST/JSON
-            ▼
-+--------------------------+
-| Node.js/Express API      |
-| - Routes & Controllers   |
-| - Auth Middleware        |
-| - Sequelize Models       |
-+-----------+--------------+
-            │ SQL via ORM
-            ▼
-+--------------------------+
-| Relational Database      |
-| (MySQL/PostgreSQL/...)   |
-+--------------------------+
+┌────────────┐
+│ End User   │
+│ (browser)  │
+└─────┬──────┘
+      │ HTTPS + JWT, refresh token stored in SessionService
+      ▼
+┌──────────────────────────────┐
+│ Angular SPA (PrimeNG UI)     │
+│ • standalone components      │
+│ • router guards/interceptors │
+│ • RxJS view-model streams    │
+└─────┬────────────┬───────────┘
+      │ REST calls │ state updates
+      ▼            │
+┌──────────────────────────────┐
+│ Node.js / Express API        │
+│ • routes + controllers       │
+│ • auth/RBAC middleware       │
+│ • DTO validation (class-validator) │
+└─────┬────────────────────────┘
+      │ ORM queries / transactions
+      ▼
+┌──────────────────────────────┐
+│ Sequelize ORM Layer          │
+│ • Models & associations      │
+│ • Hooks (user ↔ patient sync)│
+│ • Dialect abstraction        │
+└─────┬────────────────────────┘
+      │ SQL (MySQL/PostgreSQL/SQL Server/Oracle)
+      ▼
+┌──────────────────────────────┐
+│ Relational Database          │
+│ • patients, orders, results  │
+│ • auth tables, logs          │
+└─────┬────────────────────────┘
+      │ persisted rows
+      ▼
+┌──────────────────────────────┐
+│ Response to Express          │
+│ • business rules applied     │
+└─────┬────────────────────────┘
+      │ JSON payload
+      ▼
+┌──────────────────────────────┐
+│ Angular Services             │
+│ • BehaviorSubject next()     │
+│ • error handling / toasts    │
+└─────┬────────────────────────┘
+      │ async pipe / template binding
+      ▼
+┌──────────────────────────────┐
+│ Angular Components | PrimeNG │
+│ • UI refresh + feedback      │
+└──────────────────────────────┘
 ```
 
 ## 3. Database Documentation (ENGLISH)
@@ -484,11 +516,34 @@ backend/
 > Note: `node_modules/` contains only third-party packages generated during installation; it is referenced but not expanded to preserve readability.
 
 ### 5.3 API Documentation (REST)
-Method Path: `POST /api/paciente`
+Below is a practical CRUD summary for the main resources. Unless noted otherwise, every endpoint requires a valid JWT token.
 
-Purpose:\
-Creates a patient record, triggers automatic portal user creation, and returns the persisted data.
+**Patients (pacientes, JWT required)**  
+Method Path: `GET /api/pacientes`  
+Purpose: List all patients.  
+Responses:  
+200 OK (example):
 
+```json
+[
+  {
+    "id": 1,
+    "firstName": "Laura",
+    "lastName": "Gomez",
+    "docType": "CC",
+    "docNumber": "1056874210",
+    "gender": "F",
+    "email": "laura.gomez@example.com",
+    "phone": "+57 3001234567",
+    "status": "ACTIVE",
+    "createdAt": "2024-10-13T19:20:22.000Z",
+    "updatedAt": "2024-11-16T03:02:22.000Z"
+  }
+]
+```
+
+Method Path: `POST /api/paciente`  
+Purpose: Create a patient record.  
 Request Body Example:
 
 ```json
@@ -502,14 +557,275 @@ Request Body Example:
   "phone": "+57 3001234567",
   "email": "laura.gomez@example.com",
   "address": "Cra 10 #25-18",
+  "insuranceId": 3,
   "status": "ACTIVE"
 }
 ```
 
-Responses:
-- 201 Created — returns the patient JSON plus generated `id` and `userId`.
-- 400 Bad Request — validation error (duplicate docNumber, invalid email).
-- 500 Internal Server Error — database connectivity or hook failure.
+Responses:  
+201 Created (example) returns stored fields plus generated `id`/`userId`.
+
+Method Path: `GET /api/paciente/:id`  
+Purpose: Fetch patient detail.  
+Responses: 200 OK (patient JSON) or 404 Not Found.
+
+Method Path: `PATCH /api/paciente/:id`  
+Purpose: Update demographics or insurance.  
+Request Body Example:
+
+```json
+{
+  "phone": "+57 3027896541",
+  "address": "Calle 80 #12-45",
+  "status": "ACTIVE"
+}
+```
+
+Responses: 200 OK (example returns updated row).
+
+Method Path: `PATCH /api/paciente/:id/logic`  
+Purpose: Logical delete (set status INACTIVE).  
+Responses: 200 OK (example): `{ "message": "Paciente desactivado" }`
+
+---
+
+**Doctors (doctores, JWT required)**  
+Method Path: `GET /api/doctores`  
+Purpose: List registered doctors.  
+Responses: 200 OK (array with specialty/contact info).
+
+Method Path: `POST /api/doctor`  
+Purpose: Register a doctor.  
+Request Body Example:
+
+```json
+{
+  "firstName": "Carlos",
+  "lastName": "Lopez",
+  "licenseNumber": "MED-25478",
+  "specialty": "Hematology",
+  "email": "carlos.lopez@clinic.com",
+  "phone": "+57 3201112233",
+  "status": "ACTIVE"
+}
+```
+
+Responses: 201 Created (doctor JSON).
+
+Method Path: `GET /api/doctor/:id` – Purpose: Fetch detail.  
+Method Path: `PATCH /api/doctor/:id` – Purpose: Update specialty/contact.  
+Method Path: `PATCH /api/doctor/:id/logic` – Purpose: Logical delete.  
+Responses: 200 OK on success.
+
+---
+
+**Exams (exámenes, JWT required)**  
+Method Path: `GET /api/examenes`  
+Purpose: List catalog exams.  
+Responses: 200 OK (example):
+
+```json
+{
+  "id": 12,
+  "code": "HB001",
+  "name": "Hemograma completo",
+  "method": "Automated",
+  "specimenType": "SANGRE",
+  "processingTimeMin": 45,
+  "priceBase": 45000,
+  "status": "ACTIVE",
+  "createdAt": "2024-08-12T15:05:00.000Z",
+  "updatedAt": "2024-10-02T21:10:11.000Z"
+}
+```
+
+Method Path: `POST /api/examen` – Purpose: Create an exam.  
+Method Path: `GET /api/examen/:id` – Purpose: Fetch exam detail.  
+Method Path: `PUT /api/examen/:id` – Purpose: Update exam metadata.  
+Method Path: `PATCH /api/examen/:id/logic` – Purpose: Logical delete.  
+Responses: 201 for POST, 200 for read/update/delete.
+
+---
+
+**Orders (órdenes, JWT required)**  
+Method Path: `GET /api/ordenes`  
+Purpose: List orders with related patient/doctor data.  
+Responses: 200 OK (example):
+
+```json
+[
+  {
+    "id": 101,
+    "orderDate": "2024-11-18T14:22:10.000Z",
+    "state": "CREADA",
+    "priority": "RUTINA",
+    "patientId": 1,
+    "doctorId": 5,
+    "insuranceId": 3,
+    "netTotal": 120000,
+    "observations": "Ayuno de 8h",
+    "orderItems": [
+      { "examId": 12, "name": "Hemograma", "price": 45000 },
+      { "examId": 18, "name": "Perfil Lipídico", "price": 75000 }
+    ]
+  }
+]
+```
+
+Method Path: `POST /api/orden`  
+Purpose: Create an order with items.  
+Request Body Example:
+
+```json
+{
+  "patientId": 1,
+  "doctorId": 5,
+  "insuranceId": 3,
+  "priority": "RUTINA",
+  "observations": "Ayuno de 8h",
+  "items": [
+    { "examId": 12 },
+    { "examId": 18 }
+  ]
+}
+```
+
+Responses: 201 Created (returns header + `orderItems`).
+
+Method Path: `GET /api/orden/:id` – Purpose: Fetch full order detail.  
+Method Path: `PATCH /api/orden/:id` – Purpose: Update workflow fields or items.  
+Method Path: `PATCH /api/orden/:id/cancel` – Purpose: Logical cancel (state ANULADA).  
+Responses: 200 OK on success.
+
+---
+
+**Samples (muestras, JWT required)**  
+Method Path: `GET /api/muestras`  
+Purpose: List collected samples (supports filters).  
+Responses: 200 OK with barcode/type/state info.
+
+Method Path: `POST /api/muestra`  
+Purpose: Register a sample for an order.  
+Request Body Example:
+
+```json
+{
+  "orderId": 101,
+  "type": "SANGRE VENOSA",
+  "barcode": "LAB-20241118-0001",
+  "drawDate": "2024-11-18T15:00:00.000Z",
+  "state": "RECOLECTADA",
+  "observations": "Sin incidentes"
+}
+```
+
+Responses: 201 Created (sample JSON).
+
+Method Path: `GET /api/muestra/:id` – Purpose: Fetch detail.  
+Method Path: `PATCH /api/muestra/:id` – Purpose: Update metadata or transition state.  
+Method Path: `PATCH /api/muestra/:id/logic` – Purpose: Logical delete.  
+Responses: 200 OK or 404 accordingly.
+
+---
+
+**Results (resultados, JWT required)**  
+Method Path: `GET /api/resultados`  
+Purpose: List parameter results.  
+Responses: 200 OK (example):
+
+```json
+{
+  "id": 500,
+  "orderId": 101,
+  "sampleId": 32,
+  "examId": 12,
+  "parameterId": 77,
+  "value": "13.8",
+  "unit": "g/dL",
+  "refMin": 12,
+  "refMax": 16,
+  "state": "VALIDADO",
+  "releasedAt": "2024-11-19T09:45:00.000Z"
+}
+```
+
+Method Path: `POST /api/resultado`  
+Purpose: Capture a measurement.  
+Request Body Example:
+
+```json
+{
+  "orderId": 101,
+  "sampleId": 32,
+  "examId": 12,
+  "parameterId": 77,
+  "value": "13.8",
+  "state": "BORRADOR"
+}
+```
+
+Responses: 201 Created (result JSON).
+
+Method Path: `GET /api/resultado/:id` – Purpose: Fetch detail.  
+Method Path: `PATCH /api/resultado/:id` – Purpose: Update value/state (e.g., VALIDADO).  
+Method Path: `DELETE /api/resultado/:id` – Purpose: Physical delete before release.  
+Responses: 200 OK (update), 200/204 OK (delete) or 404 if not found.
+
+---
+
+**Users (usuarios, JWT required)**  
+Method Path: `GET /api/auth/users`  
+Purpose: List portal accounts with their roles.  
+Responses: 200 OK (array).
+
+Method Path: `POST /api/auth/users`  
+Purpose: Create an administrative/staff user.  
+Request Body Example:
+
+```json
+{
+  "username": "admin.lab",
+  "password": "S3guro#2024",
+  "roleId": 1,
+  "status": "ACTIVE"
+}
+```
+
+Responses: 201 Created (user JSON without password hash).
+
+Method Path: `GET /api/auth/users/:id` – Purpose: Fetch detail.  
+Method Path: `PATCH /api/auth/users/:id` – Purpose: Update password/status/role.  
+Method Path: `PATCH /api/auth/users/:id/deactivate` – Purpose: Logical delete.  
+Auth-only endpoints (`POST /api/auth/login`, `POST /api/auth/refresh`) are the exceptions that accept credentials without prior JWT.
+
+---
+
+**Insurances (aseguradoras, JWT required)**  
+Method Path: `GET /api/aseguradoras`  
+Purpose: List insurance providers.  
+Responses: 200 OK (array).
+
+Method Path: `POST /api/aseguradora`  
+Purpose: Create an insurance.  
+Request Body Example:
+
+```json
+{
+  "name": "Salud Total",
+  "nit": "900123456",
+  "phone": "+57 6011234567",
+  "email": "contacto@saludtotal.com",
+  "address": "Cra 13 #45-10",
+  "status": "ACTIVE"
+}
+```
+
+Responses: 201 Created (insurance JSON).
+
+Method Path: `GET /api/aseguradora/:id` – Purpose: Fetch detail.  
+Method Path: `PATCH /api/aseguradora/:id` – Purpose: Update contact/status.  
+Method Path: `PATCH /api/aseguradora/:id/logic` – Purpose: Logical delete.  
+Responses: 200 OK or 404 if not found.
 
 ### 5.4 REST Client
 Each resource has an `.http` file under `backend/src/http`. For example, `backend/src/http/patient.http` bundles GET/POST/PATCH/DELETE requests ready for VS Code REST Client or the Thunder Client plugin. Environment variables use the `@baseUrl` placeholder, simplifying manual regression testing without leaving the IDE.
@@ -521,16 +837,378 @@ Framework Used:\ Angular 20.1 (standalone components) with PrimeNG 20, Tailwind 
 Folder Structure:
 
 ```txt
-pyrLabClinico/src/app/
-├── auth/           # Auth service, session service, guard, interceptor
-├── components/
-│   ├── pages/      # Landing, login, dashboard, repository, soon-page, etc.
-│   ├── layout/     # Shell, navigation, shared widgets
-│   ├── orders/, samples/, results/, patients/, doctors/, insurances/
-│   ├── parameters/, exams/, panels/, order-items/ modules
-├── models/         # TypeScript interfaces mirroring backend tables
-└── services/       # REST services wrapping HttpClient + RxJS caches
+pyrLabClinico/
+├── .vscode/
+│   ├── extensions.json
+│   ├── launch.json
+│   └── tasks.json
+├── public/
+│   ├── landing/
+│   │   ├── coagulacion.jpg
+│   │   ├── hematologia.jpg
+│   │   ├── infecciosas.jpg
+│   │   ├── inmunologia.png
+│   │   ├── landing-1.jpg
+│   │   ├── micro.png
+│   │   ├── microscopio.jpg
+│   │   ├── quimica.jpg
+│   │   └── video.jpg
+│   ├── favicon.ico
+│   ├── logo.jpg
+│   ├── logo.png
+│   ├── logo_collapsed.png
+│   └── user_icon.png
+├── src/
+│   ├── app/
+│   │   ├── auth/
+│   │   │   ├── auth.guard.ts
+│   │   │   ├── auth.interceptor.ts
+│   │   │   ├── authservice.spec.ts
+│   │   │   ├── authservice.ts
+│   │   │   ├── session-service.spec.ts
+│   │   │   └── session-service.ts
+│   │   ├── components/
+│   │   │   ├── doctors/
+│   │   │   │   ├── all-doctors/
+│   │   │   │   │   ├── all-doctors.css
+│   │   │   │   │   ├── all-doctors.html
+│   │   │   │   │   ├── all-doctors.spec.ts
+│   │   │   │   │   └── all-doctors.ts
+│   │   │   │   ├── create-doctor/
+│   │   │   │   │   ├── create-doctor.css
+│   │   │   │   │   ├── create-doctor.html
+│   │   │   │   │   ├── create-doctor.spec.ts
+│   │   │   │   │   └── create-doctor.ts
+│   │   │   │   ├── update-doctor/
+│   │   │   │   │   ├── update-doctor.css
+│   │   │   │   │   ├── update-doctor.html
+│   │   │   │   │   ├── update-doctor.spec.ts
+│   │   │   │   │   └── update-doctor.ts
+│   │   │   │   └── view-doctor/
+│   │   │   │       ├── view-doctor.css
+│   │   │   │       ├── view-doctor.html
+│   │   │   │       ├── view-doctor.spec.ts
+│   │   │   │       └── view-doctor.ts
+│   │   │   ├── exams/
+│   │   │   │   ├── all-exams/
+│   │   │   │   │   ├── all-exams.css
+│   │   │   │   │   ├── all-exams.html
+│   │   │   │   │   ├── all-exams.spec.ts
+│   │   │   │   │   └── all-exams.ts
+│   │   │   │   ├── create-exam/
+│   │   │   │   │   ├── create-exam.css
+│   │   │   │   │   ├── create-exam.html
+│   │   │   │   │   ├── create-exam.spec.ts
+│   │   │   │   │   └── create-exam.ts
+│   │   │   │   ├── update-exam/
+│   │   │   │   │   ├── update-exam.css
+│   │   │   │   │   ├── update-exam.html
+│   │   │   │   │   ├── update-exam.spec.ts
+│   │   │   │   │   └── update-exam.ts
+│   │   │   │   └── view-exam/
+│   │   │   │       ├── view-exam.css
+│   │   │   │       ├── view-exam.html
+│   │   │   │       ├── view-exam.spec.ts
+│   │   │   │       └── view-exam.ts
+│   │   │   ├── insurances/
+│   │   │   │   ├── all-insurances/
+│   │   │   │   │   ├── all-insurances.css
+│   │   │   │   │   ├── all-insurances.html
+│   │   │   │   │   ├── all-insurances.spec.ts
+│   │   │   │   │   └── all-insurances.ts
+│   │   │   │   ├── create-insurance/
+│   │   │   │   │   ├── create-insurance.css
+│   │   │   │   │   ├── create-insurance.html
+│   │   │   │   │   ├── create-insurance.spec.ts
+│   │   │   │   │   └── create-insurance.ts
+│   │   │   │   ├── update-insurance/
+│   │   │   │   │   ├── update-insurance.css
+│   │   │   │   │   ├── update-insurance.html
+│   │   │   │   │   ├── update-insurance.spec.ts
+│   │   │   │   │   └── update-insurance.ts
+│   │   │   │   └── view-insurance/
+│   │   │   │       ├── view-insurance.css
+│   │   │   │       ├── view-insurance.html
+│   │   │   │       ├── view-insurance.spec.ts
+│   │   │   │       └── view-insurance.ts
+│   │   │   ├── layout/
+│   │   │   │   ├── aside/
+│   │   │   │   │   ├── aside.css
+│   │   │   │   │   ├── aside.html
+│   │   │   │   │   ├── aside.spec.ts
+│   │   │   │   │   └── aside.ts
+│   │   │   │   ├── content/
+│   │   │   │   │   ├── content.css
+│   │   │   │   │   ├── content.html
+│   │   │   │   │   ├── content.spec.ts
+│   │   │   │   │   └── content.ts
+│   │   │   │   ├── footer/
+│   │   │   │   │   ├── footer.css
+│   │   │   │   │   ├── footer.html
+│   │   │   │   │   ├── footer.spec.ts
+│   │   │   │   │   └── footer.ts
+│   │   │   │   └── header/
+│   │   │   │       ├── header.css
+│   │   │   │       ├── header.html
+│   │   │   │       ├── header.spec.ts
+│   │   │   │       └── header.ts
+│   │   │   ├── order-items/
+│   │   │   │   ├── all-orit/
+│   │   │   │   │   ├── all-orit.css
+│   │   │   │   │   ├── all-orit.html
+│   │   │   │   │   ├── all-orit.spec.ts
+│   │   │   │   │   └── all-orit.ts
+│   │   │   │   ├── create-orit/
+│   │   │   │   │   ├── create-orit.css
+│   │   │   │   │   ├── create-orit.html
+│   │   │   │   │   ├── create-orit.spec.ts
+│   │   │   │   │   └── create-orit.ts
+│   │   │   │   ├── update-orit/
+│   │   │   │   │   ├── update-orit.css
+│   │   │   │   │   ├── update-orit.html
+│   │   │   │   │   ├── update-orit.spec.ts
+│   │   │   │   │   └── update-orit.ts
+│   │   │   │   └── view-orit/
+│   │   │   │       ├── view-orit.css
+│   │   │   │       ├── view-orit.html
+│   │   │   │       ├── view-orit.spec.ts
+│   │   │   │       └── view-orit.ts
+│   │   │   ├── orders/
+│   │   │   │   ├── all-order/
+│   │   │   │   │   ├── all-order.css
+│   │   │   │   │   ├── all-order.html
+│   │   │   │   │   ├── all-order.spec.ts
+│   │   │   │   │   └── all-order.ts
+│   │   │   │   ├── create-order/
+│   │   │   │   │   ├── create-order.css
+│   │   │   │   │   ├── create-order.html
+│   │   │   │   │   ├── create-order.spec.ts
+│   │   │   │   │   └── create-order.ts
+│   │   │   │   ├── update-order/
+│   │   │   │   │   ├── update-order.css
+│   │   │   │   │   ├── update-order.html
+│   │   │   │   │   ├── update-order.spec.ts
+│   │   │   │   │   └── update-order.ts
+│   │   │   │   └── view-order/
+│   │   │   │       ├── view-order.css
+│   │   │   │       ├── view-order.html
+│   │   │   │       ├── view-order.spec.ts
+│   │   │   │       └── view-order.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── dashboard/
+│   │   │   │   │   ├── dashboard.css
+│   │   │   │   │   ├── dashboard.html
+│   │   │   │   │   ├── dashboard.spec.ts
+│   │   │   │   │   └── dashboard.ts
+│   │   │   │   ├── home/
+│   │   │   │   │   ├── home.css
+│   │   │   │   │   ├── home.html
+│   │   │   │   │   ├── home.spec.ts
+│   │   │   │   │   └── home.ts
+│   │   │   │   ├── landing-page/
+│   │   │   │   │   ├── landing-page.css
+│   │   │   │   │   ├── landing-page.html
+│   │   │   │   │   ├── landing-page.spec.ts
+│   │   │   │   │   └── landing-page.ts
+│   │   │   │   ├── login/
+│   │   │   │   │   ├── login.css
+│   │   │   │   │   ├── login.html
+│   │   │   │   │   ├── login.spec.ts
+│   │   │   │   │   └── login.ts
+│   │   │   │   ├── not-found/
+│   │   │   │   │   ├── not-found.css
+│   │   │   │   │   ├── not-found.html
+│   │   │   │   │   ├── not-found.spec.ts
+│   │   │   │   │   └── not-found.ts
+│   │   │   │   ├── profile/
+│   │   │   │   │   ├── profile.css
+│   │   │   │   │   ├── profile.html
+│   │   │   │   │   ├── profile.spec.ts
+│   │   │   │   │   └── profile.ts
+│   │   │   │   ├── repository/
+│   │   │   │   │   ├── repository.css
+│   │   │   │   │   ├── repository.html
+│   │   │   │   │   ├── repository.spec.ts
+│   │   │   │   │   └── repository.ts
+│   │   │   │   └── soon-page/
+│   │   │   │       ├── soon-page.css
+│   │   │   │       ├── soon-page.html
+│   │   │   │       ├── soon-page.spec.ts
+│   │   │   │       └── soon-page.ts
+│   │   │   ├── panel/
+│   │   │   │   ├── all-panels/
+│   │   │   │   │   ├── all-panels.css
+│   │   │   │   │   ├── all-panels.html
+│   │   │   │   │   ├── all-panels.spec.ts
+│   │   │   │   │   └── all-panels.ts
+│   │   │   │   ├── create-panel/
+│   │   │   │   │   ├── create-panel.css
+│   │   │   │   │   ├── create-panel.html
+│   │   │   │   │   ├── create-panel.spec.ts
+│   │   │   │   │   └── create-panel.ts
+│   │   │   │   ├── update-panel/
+│   │   │   │   │   ├── update-panel.css
+│   │   │   │   │   ├── update-panel.html
+│   │   │   │   │   ├── update-panel.spec.ts
+│   │   │   │   │   └── update-panel.ts
+│   │   │   │   └── view-panel/
+│   │   │   │       ├── view-panel.css
+│   │   │   │       ├── view-panel.html
+│   │   │   │       ├── view-panel.spec.ts
+│   │   │   │       └── view-panel.ts
+│   │   │   ├── parameters/
+│   │   │   │   ├── all-parameters/
+│   │   │   │   │   ├── all-parameters.css
+│   │   │   │   │   ├── all-parameters.html
+│   │   │   │   │   ├── all-parameters.spec.ts
+│   │   │   │   │   └── all-parameters.ts
+│   │   │   │   ├── create-parameter/
+│   │   │   │   │   ├── create-parameter.css
+│   │   │   │   │   ├── create-parameter.html
+│   │   │   │   │   ├── create-parameter.spec.ts
+│   │   │   │   │   └── create-parameter.ts
+│   │   │   │   ├── update-parameter/
+│   │   │   │   │   ├── update-parameter.css
+│   │   │   │   │   ├── update-parameter.html
+│   │   │   │   │   ├── update-parameter.spec.ts
+│   │   │   │   │   └── update-parameter.ts
+│   │   │   │   └── view-parameter/
+│   │   │   │       ├── view-parameter.css
+│   │   │   │       ├── view-parameter.html
+│   │   │   │       ├── view-parameter.spec.ts
+│   │   │   │       └── view-parameter.ts
+│   │   │   ├── patients/
+│   │   │   │   ├── all-patients/
+│   │   │   │   │   ├── all-patients.css
+│   │   │   │   │   ├── all-patients.html
+│   │   │   │   │   ├── all-patients.spec.ts
+│   │   │   │   │   └── all-patients.ts
+│   │   │   │   ├── create-patient/
+│   │   │   │   │   ├── create-patient.css
+│   │   │   │   │   ├── create-patient.html
+│   │   │   │   │   ├── create-patient.spec.ts
+│   │   │   │   │   └── create-patient.ts
+│   │   │   │   ├── update-patient/
+│   │   │   │   │   ├── update-patient.css
+│   │   │   │   │   ├── update-patient.html
+│   │   │   │   │   ├── update-patient.spec.ts
+│   │   │   │   │   └── update-patient.ts
+│   │   │   │   └── view-patient/
+│   │   │   │       ├── view-patient.css
+│   │   │   │       ├── view-patient.html
+│   │   │   │       ├── view-patient.spec.ts
+│   │   │   │       └── view-patient.ts
+│   │   │   ├── results/
+│   │   │   │   ├── all-result/
+│   │   │   │   │   ├── all-result.css
+│   │   │   │   │   ├── all-result.html
+│   │   │   │   │   ├── all-result.spec.ts
+│   │   │   │   │   └── all-result.ts
+│   │   │   │   ├── create-result/
+│   │   │   │   │   ├── create-result.css
+│   │   │   │   │   ├── create-result.html
+│   │   │   │   │   ├── create-result.spec.ts
+│   │   │   │   │   └── create-result.ts
+│   │   │   │   ├── update-result/
+│   │   │   │   │   ├── update-result.css
+│   │   │   │   │   ├── update-result.html
+│   │   │   │   │   ├── update-result.spec.ts
+│   │   │   │   │   └── update-result.ts
+│   │   │   │   ├── validated-result/
+│   │   │   │   │   ├── validated-result.css
+│   │   │   │   │   ├── validated-result.html
+│   │   │   │   │   ├── validated-result.spec.ts
+│   │   │   │   │   └── validated-result.ts
+│   │   │   │   └── view-result/
+│   │   │   │       ├── view-result.css
+│   │   │   │       ├── view-result.html
+│   │   │   │       ├── view-result.spec.ts
+│   │   │   │       └── view-result.ts
+│   │   │   └── samples/
+│   │   │       ├── all-sample/
+│   │   │       │   ├── all-sample.css
+│   │   │       │   ├── all-sample.html
+│   │   │       │   ├── all-sample.spec.ts
+│   │   │       │   └── all-sample.ts
+│   │   │       ├── create-sample/
+│   │   │       │   ├── create-sample.css
+│   │   │       │   ├── create-sample.html
+│   │   │       │   ├── create-sample.spec.ts
+│   │   │       │   └── create-sample.ts
+│   │   │       ├── track-samples/
+│   │   │       │   ├── track-samples.css
+│   │   │       │   ├── track-samples.html
+│   │   │       │   ├── track-samples.spec.ts
+│   │   │       │   └── track-samples.ts
+│   │   │       ├── update-sample/
+│   │   │       │   ├── update-sample.css
+│   │   │       │   ├── update-sample.html
+│   │   │       │   ├── update-sample.spec.ts
+│   │   │       │   └── update-sample.ts
+│   │   │       └── view-sample/
+│   │   │           ├── view-sample.css
+│   │   │           ├── view-sample.html
+│   │   │           ├── view-sample.spec.ts
+│   │   │           └── view-sample.ts
+│   │   ├── models/
+│   │   │   ├── doctor-model.ts
+│   │   │   ├── exam-model.ts
+│   │   │   ├── insurance-model.ts
+│   │   │   ├── order-item-model.ts
+│   │   │   ├── order-model.ts
+│   │   │   ├── panel-model.ts
+│   │   │   ├── parameter-model.ts
+│   │   │   ├── patient-insurance-model.ts
+│   │   │   ├── patient-model.ts
+│   │   │   ├── result-model.ts
+│   │   │   ├── sample-model.ts
+│   │   │   └── user-model.ts
+│   │   ├── services/
+│   │   │   ├── dashboard-service.ts
+│   │   │   ├── doctor-service.spec.ts
+│   │   │   ├── doctor-service.ts
+│   │   │   ├── exam-service.spec.ts
+│   │   │   ├── exam-service.ts
+│   │   │   ├── insurance-service.spec.ts
+│   │   │   ├── insurance-service.ts
+│   │   │   ├── order-service.spec.ts
+│   │   │   ├── order-service.ts
+│   │   │   ├── panel-service.spec.ts
+│   │   │   ├── panel-service.ts
+│   │   │   ├── parameter-service.spec.ts
+│   │   │   ├── parameter-service.ts
+│   │   │   ├── patient-service.spec.ts
+│   │   │   ├── patient-service.ts
+│   │   │   ├── result-service.spec.ts
+│   │   │   ├── result-service.ts
+│   │   │   ├── sample-service.spec.ts
+│   │   │   ├── sample-service.ts
+│   │   │   ├── user-profile-service.spec.ts
+│   │   │   ├── user-profile-service.ts
+│   │   │   ├── user-service.spec.ts
+│   │   │   └── user-service.ts
+│   │   ├── app.config.ts
+│   │   ├── app.css
+│   │   ├── app.html
+│   │   ├── app.routes.ts
+│   │   ├── app.spec.ts
+│   │   └── app.ts
+│   ├── index.html
+│   ├── main.ts
+│   └── styles.css
+├── .editorconfig
+├── .gitignore
+├── .postcssrc.json
+├── README.md
+├── angular.json
+├── package-lock.json
+├── package.json
+├── tsconfig.app.json
+├── tsconfig.json
+└── tsconfig.spec.json
 ```
+
+> Note: `node_modules/` contains external dependencies installed via npm and is not expanded to keep the document manageable.
 
 Models, services and Components
 - Models (e.g., `patient-model.ts`, `order-model.ts`) define strong typing so templates and services remain type-safe.
@@ -540,29 +1218,90 @@ Models, services and Components
 ### 6.2 Visual explanation of the system’s operation
 
 ```txt
-[User Action]
-    │ forms/buttons
-    ▼
-Angular Component (PrimeNG UI)
-    │ subscribes to state
-    ▼
-RxJS-enabled Service (HttpClient)
-    │ adds Authorization header via auth.interceptor
-    ▼
-REST Call to Express API
-    │
-Database via Sequelize
-    │ results
-    ▼
-Service updates BehaviorSubject ➜ Component auto-refreshes ➜ Toast feedback
+┌────────────┐
+│ User Event │  (click, submit, navigation)
+└─────┬──────┘
+      │ triggers component handler
+      ▼
+┌─────────────────────────────┐
+│ Angular Component (PrimeNG) │
+│ • reacts to forms & guards  │
+│ • reads BehaviorSubjects    │
+└─────┬───────────┬───────────┘
+      │ async call │ update UI optimistically
+      ▼            │
+┌──────────────────────────────┐
+│ RxJS Service + HttpClient    │
+│ • authInterceptor injects JWT│
+│ • forkJoin/map compose data  │
+│ • catchError -> toast/modal  │
+└─────┬────────────────────────┘
+      │ REST/JSON over HTTPS
+      ▼
+┌──────────────────────────────┐
+│ Express API (Node/TypeScript)│
+│ • routes + controllers       │
+│ • RBAC + validation          │
+│ • Sequelize models           │
+└─────┬────────────────────────┘
+      │ SQL via ORM
+      ▼
+┌──────────────────────────────┐
+│ Relational Database          │
+│ • orders, samples, results   │
+│ • auth tables                │
+└─────┬────────────────────────┘
+      │ persisted entities
+      ▼
+┌──────────────────────────────┐
+│ Response DTO                 │
+│ • controllers shape payloads │
+└─────┬────────────────────────┘
+      │ Observable next()
+      ▼
+┌──────────────────────────────┐
+│ Service BehaviorSubject      │
+│ • merge/update caches        │
+│ • emit to subscribers        │
+└─────┬────────────────────────┘
+      │ async pipe in templates
+      ▼
+┌──────────────────────────────┐
+│ Component + PrimeNG widgets  │
+│ • tables/cards refresh       │
+│ • toasts/dialogs show result │
+└──────────────────────────────┘
 ```
 
 ## 7. Frontend–Backend Integration
-- Base URLs (`http://localhost:4000/api`) are centralized inside services; switching environments only requires updating the environment file or service constant.
-- The `authInterceptor` injects JWT tokens into every request and auto-logs the user out on 401/403, ensuring backend RBAC is enforced consistently.
-- Guards (`AuthGuard`) rely on `SessionService` flags written after successful login (`AuthService.login` handles token, refresh token, and user metadata storage).
-- Services compose multiple endpoints via `forkJoin` and `map` (e.g., patients + insurance relations) to send denormalized view models to components.
-- Error handling uses RxJS `catchError` to translate HTTP statuses into user-friendly toasts/dialogs, while backend controllers send descriptive errors for each failure mode.
+- **Base URLs & environments:** All Angular services import a single `API_URL` token defined in `src/environments` (or a constant inside `app.config`). Switching from local to staging/production only requires overriding that constant, which keeps every `HttpClient` call aligned with the Express gateway (`http://localhost:4000/api` by default). Additional headers such as `Accept-Language` are attached in one place to avoid duplication.
+
+- **Authentication flow:** The `authInterceptor` reads the current session from `SessionService`. When a JWT exists, it appends `Authorization: Bearer <token>` to the request. If the backend responds with 401/403, the interceptor invalidates the session, triggers `AuthService.refreshToken()` if a refresh token is available, and retries the request transparently. Otherwise, it redirects the user to `/auth/login`.
+
+- **Route protection & state:** `AuthGuard` checks `SessionService.isLoggedIn()` before allowing navigation. If the user is not authenticated, it redirects to the login page while storing the attempted URL for post-login redirection. The guard also checks role-based scopes so routes like `/administracion/pacientes` remain restricted to ADMIN/STAFF personas exposed by backend RBAC metadata.
+
+- **Service composition & caching:** Each feature service coordinates multiple REST endpoints. For example:
+
+```ts
+// patients-service.ts
+load(): Observable<PatientViewModel[]> {
+  return forkJoin([
+    this.http.get<Patient[]>(`${API_URL}/pacientes`),
+    this.http.get<PatientInsurance[]>(`${API_URL}/patientinsurances`)
+  ]).pipe(
+    map(([patients, insurances]) => this.mergeCoverage(patients, insurances)),
+    tap(viewModels => this.store.next(viewModels))
+  );
+}
+```
+
+This pattern keeps the UI reactive through `BehaviorSubject`s while minimizing duplicate HTTP calls. Similar logic exists in `OrdersService` (orders + samples + results) and `DashboardService` (KPIs from multiple endpoints).
+
+- **Error handling & observability:** Every service pipes the request through `catchError`, translating backend error structures (validation, business rules, 500s) into PrimeNG toasts or modal dialogs. The backend meanwhile logs structured JSON via `morgan` and custom middleware, so reproducing frontend errors is straightforward.
+
+- **Serialization & DTO parity:** TypeScript interfaces under `src/app/models` mirror Sequelize models (e.g., `doctor-model.ts`, `order-model.ts`). This ensures compile-time safety and avoids runtime shape mismatches. When backend responses include nested resources (orders with `orderItems`), the same interface is reused across the Angular layer and the Express controller response DTO, keeping transformations minimal.
+
+- **Real-time/async concerns:** Although HTTP/REST is the primary integration, modules such as sample tracking periodically poll `/api/muestras?state=EN_PROCESO` using RxJS timers to approximate real-time updates, while future WebSocket integration is encapsulated behind a `NotificationsService` so migration requires minimal changes.
 
 ## 8. Conclusions & Recommendations
 - The current layering keeps responsibilities separated (UI, API, persistence). Keep controllers slim by factoring repetitive validation into middleware or service helpers.
